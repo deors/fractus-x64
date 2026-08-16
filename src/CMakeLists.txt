@@ -47,6 +47,10 @@ target_link_libraries(fractus_core PUBLIC
 add_executable(fractus_x64
     app/main.c
     app/app.c
+    app/commons.c
+    app/files.c
+    app/config.c
+    app/fractal.c
 )
 
 target_include_directories(fractus_x64 PRIVATE
