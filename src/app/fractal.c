@@ -21,7 +21,7 @@ static fractus_status fractus_app_render_mandelbrot_menu(
     }
 
     if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_window(framebuffer, 135, 68, 504, 414) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_window(framebuffer, 135, 68, 504, 415) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 72, 15u, "Conjunto de Benoit B. Mandelbrot") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_group_box(framebuffer, fonts, 140, 100, 499, 139, 8u, 0u, "Metodo de dibujo") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
@@ -67,7 +67,7 @@ static fractus_status fractus_app_render_mandelbrot_menu(
         320,
         367,
         0u,
-        "Seleccione Tiempo de escape o Estimacion de distancias");
+        "Selecciona el algoritmo que se utilizara para generar el dibujo.");
 }
 
 fractus_status fractus_app_run_mandelbrot_menu_view(
@@ -148,8 +148,8 @@ static size_t fractus_app_build_mandel_config_entries_generic(
         {FRACTUS_APP_RECT(449, 302, 489, 322), 8u, 0u, "+"},
         {FRACTUS_APP_RECT(324, 332, 396, 352), 8u, 0u, color_opt0_label},
         {FRACTUS_APP_RECT(404, 332, 489, 352), 8u, 0u, color_opt1_label},
-        {FRACTUS_APP_RECT(210, 384, 310, 404), 8u, 0u, "Dibujar"},
-        {FRACTUS_APP_RECT(330, 384, 430, 404), 0u, 15u, "Cancelar"}
+        {FRACTUS_APP_RECT(210, 385, 310, 405), 8u, 0u, "Dibujar"},
+        {FRACTUS_APP_RECT(330, 385, 430, 405), 0u, 15u, "Cancelar"}
     };
 
     return fractus_app_copy_control_entries(
@@ -181,8 +181,8 @@ static fractus_status fractus_app_run_mandelbrot_generic_config_view(
     static const fractus_app_menu_entry mandel_menu_controls[] = {
         {FRACTUS_APP_RECT(148, 111, 314, 131), 8u, 0u, "Tiempo de escape"},
         {FRACTUS_APP_RECT(325, 111, 491, 131), 8u, 0u, "Estimacion de distancias"},
-        {FRACTUS_APP_RECT(210, 384, 310, 404), 6u, 8u, "Dibujar"},
-        {FRACTUS_APP_RECT(330, 384, 430, 404), 0u, 15u, "Cancelar"}
+        {FRACTUS_APP_RECT(210, 385, 310, 405), 6u, 8u, "Dibujar"},
+        {FRACTUS_APP_RECT(330, 385, 430, 405), 0u, 15u, "Cancelar"}
     };
     char buffer[32];
     const fractus_ui_radio_option color_options[] = {
@@ -297,13 +297,13 @@ static fractus_status fractus_app_run_mandelbrot_generic_config_view(
         } else if (selected_menu == FRACTUS_APP_MANDEL_YMAX_INC) {
             *ymax = fractus_app_clamp_f64(*ymax + 0.1, *ymin + 0.1, 5.0);
         } else if (selected_menu == FRACTUS_APP_MANDEL_ITER_DEC) {
-            *max_iterations = (uint32_t)fractus_app_clamp_i32((int32_t)*max_iterations - 16, 16, 1024);
+            *max_iterations = (uint32_t)fractus_app_clamp_i32((int32_t)*max_iterations - 4, 16, 1024);
         } else if (selected_menu == FRACTUS_APP_MANDEL_ITER_INC) {
-            *max_iterations = (uint32_t)fractus_app_clamp_i32((int32_t)*max_iterations + 16, 16, 1024);
+            *max_iterations = (uint32_t)fractus_app_clamp_i32((int32_t)*max_iterations + 4, 16, 1024);
         } else if (selected_menu == FRACTUS_APP_MANDEL_RADIUS_DEC) {
-            *escape_radius_squared = (double)fractus_app_clamp_i32((int32_t)*escape_radius_squared - 1, 1, 1000);
+            *escape_radius_squared = (double)fractus_app_clamp_i32((int32_t)*escape_radius_squared - 2, 4, 1000);
         } else if (selected_menu == FRACTUS_APP_MANDEL_RADIUS_INC) {
-            *escape_radius_squared = (double)fractus_app_clamp_i32((int32_t)*escape_radius_squared + 1, 1, 1000);
+            *escape_radius_squared = (double)fractus_app_clamp_i32((int32_t)*escape_radius_squared + 2, 4, 1000);
         } else if (selected_menu == FRACTUS_APP_MANDEL_COLOR_MODE_0) {
             *color_mode = 0;
         } else if (selected_menu == FRACTUS_APP_MANDEL_COLOR_MODE_1) {
@@ -864,7 +864,7 @@ static fractus_status fractus_app_render_julia_menu(
     }
 
     if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_window(framebuffer, 135, 68, 504, 441) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_window(framebuffer, 135, 68, 504, 442) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 72, 15u, "Conjuntos de Gaston Julia") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_group_box(framebuffer, fonts, 140, 100, 499, 139, 8u, 0u, "Metodo de dibujo") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
@@ -910,7 +910,7 @@ static fractus_status fractus_app_render_julia_menu(
         320,
         394,
         0u,
-        "Seleccione Tiempo de escape o Estimacion de distancias");
+        "Selecciona el algoritmo que se utilizara para generar el dibujo.");
 }
 
 fractus_status fractus_app_run_julia_menu_view(
@@ -995,8 +995,8 @@ static size_t fractus_app_build_julia_config_entries_generic(
         {FRACTUS_APP_RECT(449, 333, 489, 353), 8u, 0u, "+"},
         {FRACTUS_APP_RECT(324, 359, 396, 379), 8u, 0u, color_opt0_label},
         {FRACTUS_APP_RECT(404, 359, 489, 379), 8u, 0u, color_opt1_label},
-        {FRACTUS_APP_RECT(210, 411, 310, 431), 8u, 0u, "Dibujar"},
-        {FRACTUS_APP_RECT(330, 411, 430, 431), 0u, 15u, "Cancelar"}
+        {FRACTUS_APP_RECT(210, 412, 310, 432), 8u, 0u, "Dibujar"},
+        {FRACTUS_APP_RECT(330, 412, 430, 432), 0u, 15u, "Cancelar"}
     };
 
     return fractus_app_copy_control_entries(
@@ -1030,8 +1030,8 @@ static fractus_status fractus_app_run_julia_generic_config_view(
     static const fractus_app_menu_entry julia_menu_controls[] = {
         {FRACTUS_APP_RECT(148, 111, 314, 131), 8u, 0u, "Tiempo de escape"},
         {FRACTUS_APP_RECT(325, 111, 491, 131), 8u, 0u, "Estimacion de distancias"},
-        {FRACTUS_APP_RECT(210, 411, 310, 431), 6u, 8u, "Dibujar"},
-        {FRACTUS_APP_RECT(330, 411, 430, 431), 0u, 15u, "Cancelar"}
+        {FRACTUS_APP_RECT(210, 412, 310, 432), 6u, 8u, "Dibujar"},
+        {FRACTUS_APP_RECT(330, 412, 430, 432), 0u, 15u, "Cancelar"}
     };
     char buffer[32];
     const fractus_ui_radio_option color_options[] = {
@@ -1163,13 +1163,13 @@ static fractus_status fractus_app_run_julia_generic_config_view(
         } else if (selected_menu == FRACTUS_APP_JULIA_CIMAG_INC) {
             *constant_imag = fractus_app_clamp_f64(*constant_imag + 0.05, -2.0, 2.0);
         } else if (selected_menu == FRACTUS_APP_JULIA_ITER_DEC) {
-            *max_iterations = (uint32_t)fractus_app_clamp_i32((int32_t)*max_iterations - 16, 16, 1024);
+            *max_iterations = (uint32_t)fractus_app_clamp_i32((int32_t)*max_iterations - 4, 16, 1024);
         } else if (selected_menu == FRACTUS_APP_JULIA_ITER_INC) {
-            *max_iterations = (uint32_t)fractus_app_clamp_i32((int32_t)*max_iterations + 16, 16, 1024);
+            *max_iterations = (uint32_t)fractus_app_clamp_i32((int32_t)*max_iterations + 4, 16, 1024);
         } else if (selected_menu == FRACTUS_APP_JULIA_RADIUS_DEC) {
-            *escape_radius_squared = (double)fractus_app_clamp_i32((int32_t)*escape_radius_squared - 1, 1, 1000);
+            *escape_radius_squared = (double)fractus_app_clamp_i32((int32_t)*escape_radius_squared - 2, 4, 1000);
         } else if (selected_menu == FRACTUS_APP_JULIA_RADIUS_INC) {
-            *escape_radius_squared = (double)fractus_app_clamp_i32((int32_t)*escape_radius_squared + 1, 1, 1000);
+            *escape_radius_squared = (double)fractus_app_clamp_i32((int32_t)*escape_radius_squared + 2, 4, 1000);
         } else if (selected_menu == FRACTUS_APP_JULIA_COLOR_MODE_0) {
             *color_mode = 0;
         } else if (selected_menu == FRACTUS_APP_JULIA_COLOR_MODE_1) {
@@ -1403,7 +1403,7 @@ fractus_status fractus_app_run_biomorph_config_view(
     if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_window(framebuffer, 135, 68, 504, 434) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 72, 15u, "Biomorfos de Clifford Pickover") != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, 140, 100, 499, 377, 8u, 0u, "Parametros del biomorfo") != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_group_box(framebuffer, fonts, 140, 100, 499, 378, 8u, 0u, "Parametros del biomorfo") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
@@ -1573,7 +1573,7 @@ static fractus_status fractus_app_render_plasma_menu(
     }
 
     if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_window(framebuffer, 160, 120, 479, 319) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_window(framebuffer, 160, 120, 479, 321) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 124, 15u, "Fractales por el metodo de plasma") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_group_box(framebuffer, fonts, 165, 152, 474, 191, 8u, 0u, "Metodo de dibujo") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
@@ -1611,9 +1611,9 @@ static fractus_status fractus_app_render_plasma_menu(
         fonts,
         FRACTUS_FONT_SMALL,
         320,
-        269,
+        273,
         0u,
-        "Seleccione Rectangulos o Circulos");
+        "Selecciona el algoritmo que se utilizara para generar el dibujo.");
 }
 
 fractus_status fractus_app_run_plasma_menu_view(
@@ -1629,8 +1629,8 @@ fractus_status fractus_app_run_plasma_menu_view(
     static const fractus_app_menu_entry plasma_menu_controls[] = {
         {FRACTUS_APP_RECT(210, 163, 310, 183), 8u, 0u, "Rectangulos"},
         {FRACTUS_APP_RECT(330, 163, 430, 183), 8u, 0u, "Circulos"},
-        {FRACTUS_APP_RECT(210, 289, 310, 309), 6u, 8u, "Dibujar"},
-        {FRACTUS_APP_RECT(330, 289, 430, 309), 0u, 15u, "Cancelar"}
+        {FRACTUS_APP_RECT(210, 291, 310, 311), 6u, 8u, "Dibujar"},
+        {FRACTUS_APP_RECT(330, 291, 430, 311), 0u, 15u, "Cancelar"}
     };
     fractus_ui_menu_option plasma_menu_options[FRACTUS_APP_ARRAY_COUNT(plasma_menu_controls)];
     int selected_menu = -1;
@@ -1685,8 +1685,8 @@ static size_t fractus_app_build_plasma_rectangular_config_entries(
     static const fractus_app_menu_entry controls[] = {
         {FRACTUS_APP_RECT(379, 206, 419, 226), 8u, 0u, "-"},
         {FRACTUS_APP_RECT(424, 206, 464, 226), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(210, 289, 310, 309), 8u, 0u, "Dibujar"},
-        {FRACTUS_APP_RECT(330, 289, 430, 309), 0u, 15u, "Cancelar"}
+        {FRACTUS_APP_RECT(210, 291, 310, 311), 8u, 0u, "Dibujar"},
+        {FRACTUS_APP_RECT(330, 291, 430, 311), 0u, 15u, "Cancelar"}
     };
 
     return fractus_app_copy_control_entries(
@@ -1707,8 +1707,8 @@ fractus_status fractus_app_run_plasma_rectangular_config_view(
     static const fractus_app_menu_entry plasma_menu_controls[] = {
         {FRACTUS_APP_RECT(210, 163, 310, 183), 8u, 0u, "Rectangulos"},
         {FRACTUS_APP_RECT(330, 163, 430, 183), 8u, 0u, "Circulos"},
-        {FRACTUS_APP_RECT(210, 289, 310, 309), 6u, 8u, "Dibujar"},
-        {FRACTUS_APP_RECT(330, 289, 430, 309), 0u, 15u, "Cancelar"}
+        {FRACTUS_APP_RECT(210, 291, 310, 311), 6u, 8u, "Dibujar"},
+        {FRACTUS_APP_RECT(330, 291, 430, 311), 0u, 15u, "Cancelar"}
     };
     char buffer[32];
     fractus_app_menu_entry dialog_entries[FRACTUS_APP_DIALOG_BUTTON_CAPACITY];
@@ -1741,7 +1741,7 @@ fractus_status fractus_app_run_plasma_rectangular_config_view(
     /* 2. Textos y controles. */
     snprintf(buffer, sizeof(buffer), "%d", pending->dispersion);
     if (fractus_ui_draw_numeric_row(framebuffer, fonts, 175, 211, "Indice de dispersion", 299, 206, 371, 226, buffer) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 320, 269, 0u, "Valores bajos suavizan el gradiente; altos lo acentuan.") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 320, 273, 0u, "Valores bajos suavizan el gradiente; altos lo acentuan.") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_button_list(
             framebuffer,
             fonts,
@@ -1800,8 +1800,8 @@ static size_t fractus_app_build_plasma_circular_config_entries(
         {FRACTUS_APP_RECT(424, 206, 464, 226), 8u, 0u, "+"},
         {FRACTUS_APP_RECT(379, 236, 419, 256), 8u, 0u, "-"},
         {FRACTUS_APP_RECT(424, 236, 464, 256), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(210, 289, 310, 309), 8u, 0u, "Dibujar"},
-        {FRACTUS_APP_RECT(330, 289, 430, 309), 0u, 15u, "Cancelar"}
+        {FRACTUS_APP_RECT(210, 291, 310, 311), 8u, 0u, "Dibujar"},
+        {FRACTUS_APP_RECT(330, 291, 430, 311), 0u, 15u, "Cancelar"}
     };
 
     return fractus_app_copy_control_entries(
@@ -1822,8 +1822,8 @@ fractus_status fractus_app_run_plasma_circular_config_view(
     static const fractus_app_menu_entry plasma_menu_controls[] = {
         {FRACTUS_APP_RECT(210, 163, 310, 183), 8u, 0u, "Rectangulos"},
         {FRACTUS_APP_RECT(330, 163, 430, 183), 8u, 0u, "Circulos"},
-        {FRACTUS_APP_RECT(210, 289, 310, 309), 6u, 8u, "Dibujar"},
-        {FRACTUS_APP_RECT(330, 289, 430, 309), 0u, 15u, "Cancelar"}
+        {FRACTUS_APP_RECT(210, 291, 310, 311), 6u, 8u, "Dibujar"},
+        {FRACTUS_APP_RECT(330, 291, 430, 311), 0u, 15u, "Cancelar"}
     };
     char buffer[32];
     fractus_app_menu_entry dialog_entries[FRACTUS_APP_DIALOG_BUTTON_CAPACITY];
@@ -1860,7 +1860,7 @@ fractus_status fractus_app_run_plasma_circular_config_view(
     }
     snprintf(buffer, sizeof(buffer), "%d", pending->max_radius);
     if (fractus_ui_draw_numeric_row(framebuffer, fonts, 175, 241, "Radio maximo", 299, 236, 371, 256, buffer) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 320, 269, 0u, "Mas circulos y radios mayores producen dibujos mas densos.") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 320, 273, 0u, "Mas circulos y radios mayores producen dibujos mas densos.") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_button_list(
             framebuffer,
             fonts,
@@ -1880,9 +1880,9 @@ fractus_status fractus_app_run_plasma_circular_config_view(
             *params = *pending;
             *view = FRACTUS_APP_VIEW_PLASMA_CIRCULAR;
         } else if (selected_menu == FRACTUS_APP_PLASMA_CIRCLES_DEC) {
-            pending->circle_count = fractus_app_clamp_i32(pending->circle_count - 25, 10, 5000);
+            pending->circle_count = fractus_app_clamp_i32(pending->circle_count - 5, 5, 5000);
         } else if (selected_menu == FRACTUS_APP_PLASMA_CIRCLES_INC) {
-            pending->circle_count = fractus_app_clamp_i32(pending->circle_count + 25, 10, 5000);
+            pending->circle_count = fractus_app_clamp_i32(pending->circle_count + 5, 5, 5000);
         } else if (selected_menu == FRACTUS_APP_PLASMA_RADIUS_DEC) {
             pending->max_radius = fractus_app_clamp_i32(pending->max_radius - 5, 1, 100);
         } else if (selected_menu == FRACTUS_APP_PLASMA_RADIUS_INC) {
