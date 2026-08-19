@@ -153,7 +153,9 @@ fractus_status fractus_app_set_message(
 int fractus_app_view_is_generated_drawing(fractus_app_view view)
 {
     return view == FRACTUS_APP_VIEW_MANDELBROT ||
+           view == FRACTUS_APP_VIEW_MANDELBROT_DEM ||
            view == FRACTUS_APP_VIEW_JULIA ||
+           view == FRACTUS_APP_VIEW_JULIA_DEM ||
            view == FRACTUS_APP_VIEW_BIOMORPH ||
            view == FRACTUS_APP_VIEW_PLASMA_RECTANGULAR ||
            view == FRACTUS_APP_VIEW_PLASMA_CIRCULAR;

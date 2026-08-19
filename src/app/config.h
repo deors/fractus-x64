@@ -84,6 +84,19 @@ fractus_status fractus_app_run_biomorph_radius_config_view(
     fractus_ui_numeric_field *biomorph_radius_field,
     fractus_app_view *view);
 
+fractus_status fractus_app_run_biomorph_cutoff_config_view(
+    fractus_framebuffer *framebuffer,
+    const fractus_font_library *fonts,
+    fractus_ui_context *ui,
+    fractus_legacy_config *legacy_config,
+    fractus_legacy_config *config_draft,
+    fractus_mandelbrot_params *mandelbrot_params,
+    fractus_julia_params *julia_params,
+    fractus_biomorph_params *biomorph_params,
+    const char *cfg_path,
+    fractus_ui_numeric_field *biomorph_cutoff_field,
+    fractus_app_view *view);
+
 fractus_status fractus_app_run_video_config_view(
     fractus_framebuffer *framebuffer,
     const fractus_font_library *fonts,

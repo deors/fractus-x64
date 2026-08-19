@@ -42,6 +42,9 @@ void fractus_app_apply_legacy_numeric_config(
     biomorph_params->escape_radius_squared = (config->biomorph_escape_radius_squared > 0)
         ? (double)config->biomorph_escape_radius_squared
         : biomorph_params->escape_radius_squared;
+    biomorph_params->cutoff = (config->biomorph_cutoff > 0)
+        ? (double)config->biomorph_cutoff
+        : biomorph_params->cutoff;
 }
 
 void fractus_app_capture_palette_to_config(
@@ -472,6 +475,108 @@ fractus_status fractus_app_run_biomorph_radius_config_view(
         } else if (selected_menu == FRACTUS_APP_SIMPLE_CONFIG_INC) {
             config_draft->biomorph_escape_radius_squared = (int16_t)fractus_app_clamp_i32((int32_t)config_draft->biomorph_escape_radius_squared + 4, 4, 1000);
             (void)fractus_ui_numeric_field_init_int(biomorph_radius_field, (fractus_rect_i32){305, 250, 73, 22}, (int32_t)config_draft->biomorph_escape_radius_squared, 4, 1000);
+        }
+    }
+
+    return FRACTUS_STATUS_OK;
+}
+
+fractus_status fractus_app_run_biomorph_cutoff_config_view(
+    fractus_framebuffer *framebuffer,
+    const fractus_font_library *fonts,
+    fractus_ui_context *ui,
+    fractus_legacy_config *legacy_config,
+    fractus_legacy_config *config_draft,
+    fractus_mandelbrot_params *mandelbrot_params,
+    fractus_julia_params *julia_params,
+    fractus_biomorph_params *biomorph_params,
+    const char *cfg_path,
+    fractus_ui_numeric_field *biomorph_cutoff_field,
+    fractus_app_view *view)
+{
+    fractus_app_menu_entry dialog_entries[FRACTUS_APP_DIALOG_BUTTON_CAPACITY];
+    fractus_ui_menu_option dialog_options[FRACTUS_APP_DIALOG_BUTTON_CAPACITY];
+    size_t dialog_entry_count;
+    int selected_menu = -1;
+    int cancelled = 0;
+    int skip_mouse_input = 0;
+
+    if (framebuffer == NULL || fonts == NULL || ui == NULL ||
+        legacy_config == NULL || config_draft == NULL ||
+        mandelbrot_params == NULL || julia_params == NULL || biomorph_params == NULL ||
+        biomorph_cutoff_field == NULL || view == NULL) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    dialog_entry_count = fractus_app_build_simple_config_entries(dialog_entries, FRACTUS_APP_ARRAY_COUNT(dialog_entries));
+    fractus_app_build_options_from_entries(dialog_options, dialog_entries, dialog_entry_count);
+
+    /* 1. Contenedor exterior. */
+    if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_window(framebuffer, 150, 150, 489, 329) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 154, 15u, "Umbral de escape para biomorfos") != FRACTUS_STATUS_OK) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    /* 2. Textos y controles. */
+    if (fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 320, 210, 0u, "Valor conservado en fractus.cfg. Rango: 1 a 1000.") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 175, 255, 0u, "Umbral de escape") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_numeric_field(framebuffer, fonts, biomorph_cutoff_field) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_button_list(
+            framebuffer,
+            fonts,
+            dialog_entries,
+            dialog_entry_count,
+            fractus_ui_active_menu_index(ui, dialog_options, dialog_entry_count)) != FRACTUS_STATUS_OK) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    /* 3. Teclado en el campo editable. */
+    {
+        int edit_accepted = 0;
+        int edit_cancelled = 0;
+        int was_editing = biomorph_cutoff_field->editing;
+
+        if (fractus_ui_numeric_field_handle_input(biomorph_cutoff_field, ui, fonts, &edit_accepted, &edit_cancelled) != FRACTUS_STATUS_OK) {
+            fractus_app_log("runtime: biomorph cutoff inline edit failed");
+            return FRACTUS_STATUS_ERROR;
+        }
+
+        if (edit_accepted) {
+            int32_t edited_value;
+
+            if (fractus_ui_numeric_field_get_int(biomorph_cutoff_field, &edited_value) == FRACTUS_STATUS_OK) {
+                config_draft->biomorph_cutoff = (int16_t)edited_value;
+            }
+            (void)fractus_ui_numeric_field_init_int(biomorph_cutoff_field, (fractus_rect_i32){305, 250, 73, 22}, (int32_t)config_draft->biomorph_cutoff, 1, 1000);
+        } else if (edit_cancelled) {
+            (void)fractus_ui_numeric_field_init_int(biomorph_cutoff_field, (fractus_rect_i32){305, 250, 73, 22}, (int32_t)config_draft->biomorph_cutoff, 1, 1000);
+        }
+
+        if (was_editing || biomorph_cutoff_field->editing) {
+            skip_mouse_input = 1;
+        }
+    }
+
+    /* 4. Raton y acciones de botones. */
+    if (!skip_mouse_input && fractus_ui_menu(ui, dialog_options, dialog_entry_count, &selected_menu, &cancelled)) {
+        if (cancelled || selected_menu == FRACTUS_APP_SIMPLE_CONFIG_CANCEL) {
+            *view = FRACTUS_APP_VIEW_MAIN_MENU;
+        } else if (selected_menu == FRACTUS_APP_SIMPLE_CONFIG_ACCEPT) {
+            *legacy_config = *config_draft;
+            fractus_app_capture_palette_to_config(framebuffer, legacy_config);
+            fractus_app_apply_legacy_numeric_config(legacy_config, mandelbrot_params, julia_params, biomorph_params);
+            if (cfg_path != NULL && cfg_path[0] != '\0' &&
+                fractus_app_save_legacy_config(cfg_path, framebuffer, legacy_config) != FRACTUS_STATUS_OK) {
+                fractus_app_log("runtime: saving fractus.cfg failed");
+            }
+            *view = FRACTUS_APP_VIEW_MAIN_MENU;
+        } else if (selected_menu == FRACTUS_APP_SIMPLE_CONFIG_DEC) {
+            config_draft->biomorph_cutoff = (int16_t)fractus_app_clamp_i32((int32_t)config_draft->biomorph_cutoff - 1, 1, 1000);
+            (void)fractus_ui_numeric_field_init_int(biomorph_cutoff_field, (fractus_rect_i32){305, 250, 73, 22}, (int32_t)config_draft->biomorph_cutoff, 1, 1000);
+        } else if (selected_menu == FRACTUS_APP_SIMPLE_CONFIG_INC) {
+            config_draft->biomorph_cutoff = (int16_t)fractus_app_clamp_i32((int32_t)config_draft->biomorph_cutoff + 1, 1, 1000);
+            (void)fractus_ui_numeric_field_init_int(biomorph_cutoff_field, (fractus_rect_i32){305, 250, 73, 22}, (int32_t)config_draft->biomorph_cutoff, 1, 1000);
         }
     }
 

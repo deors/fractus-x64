@@ -35,6 +35,7 @@ static const fractus_app_menu_entry fractus_app_main_menu_controls[] = {
     {FRACTUS_APP_RECT(10, 310, 312, 330), 5u, 15u, "Numero maximo de iteraciones"},
     {FRACTUS_APP_RECT(10, 330, 312, 350), 5u, 15u, "Radio de escape para Mandelbrot y Julia"},
     {FRACTUS_APP_RECT(10, 350, 312, 370), 5u, 15u, "Radio de escape para biomorfos"},
+    {FRACTUS_APP_RECT(10, 370, 312, 390), 5u, 15u, "Umbral de escape para biomorfos"},
     {FRACTUS_APP_RECT(10, 430, 130, 450), 8u, 0u, "Ayuda"},
     {FRACTUS_APP_RECT(509, 430, 629, 450), 8u, 0u, "Acerca de..."},
     {FRACTUS_APP_RECT(260, 430, 380, 450), 0u, 15u, "Salir del programa"}
@@ -55,7 +56,7 @@ static fractus_status fractus_app_draw_main_menu_frame(
         fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 30, 0u, "Dibujo de conjuntos fractales") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_group_box(framebuffer, fonts, 5, 60, 318, 275, 8u, 0u, "Tipos de conjuntos") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_group_box(framebuffer, fonts, 322, 60, 635, 375, 8u, 0u, "Graficos y colores") != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, 5, 280, 318, 375, 8u, 0u, "Configuracion por defecto") != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_group_box(framebuffer, fonts, 5, 280, 318, 395, 8u, 0u, "Configuracion por defecto") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
@@ -120,6 +121,7 @@ static fractus_status fractus_app_run_main_menu_view(
     fractus_ui_numeric_field *iterations_field,
     fractus_ui_numeric_field *escape_radius_field,
     fractus_ui_numeric_field *biomorph_radius_field,
+    fractus_ui_numeric_field *biomorph_cutoff_field,
     fractus_app_graphic_file *graphic_files,
     size_t *graphic_file_count,
     size_t *graphic_file_page,
@@ -141,6 +143,7 @@ static fractus_status fractus_app_run_main_menu_view(
         mandelbrot_params == NULL || mandelbrot_pending == NULL || julia_params == NULL ||
         julia_pending == NULL || biomorph_params == NULL || biomorph_pending == NULL ||
         iterations_field == NULL || escape_radius_field == NULL || biomorph_radius_field == NULL ||
+        biomorph_cutoff_field == NULL ||
         graphic_files == NULL || graphic_file_count == NULL || graphic_file_page == NULL || palette_files == NULL ||
         palette_file_count == NULL || palette_file_page == NULL || runtime_error_message == NULL || cfg_path == NULL ||
         save_next_graphic == NULL) {
@@ -170,11 +173,9 @@ static fractus_status fractus_app_run_main_menu_view(
         if (cancelled || selected_menu == FRACTUS_APP_MENU_EXIT_INDEX) {
             *running = 0;
         } else if (selected_menu == 0) {
-            *mandelbrot_pending = *mandelbrot_params;
-            *view = FRACTUS_APP_VIEW_MANDELBROT_CONFIG;
+            *view = FRACTUS_APP_VIEW_MANDELBROT_MENU;
         } else if (selected_menu == 1) {
-            *julia_pending = *julia_params;
-            *view = FRACTUS_APP_VIEW_JULIA_CONFIG;
+            *view = FRACTUS_APP_VIEW_JULIA_MENU;
         } else if (selected_menu == 2) {
             *biomorph_pending = *biomorph_params;
             *view = FRACTUS_APP_VIEW_BIOMORPH_CONFIG;
@@ -210,6 +211,15 @@ static fractus_status fractus_app_run_main_menu_view(
                 4,
                 1000);
             *view = FRACTUS_APP_VIEW_BIOMORPH_RADIUS_CONFIG;
+        } else if (selected_menu == FRACTUS_APP_MENU_BIOMORPH_CUTOFF_INDEX) {
+            *config_draft = *legacy_config;
+            (void)fractus_ui_numeric_field_init_int(
+                biomorph_cutoff_field,
+                (fractus_rect_i32){305, 250, 73, 22},
+                (int32_t)config_draft->biomorph_cutoff,
+                1,
+                1000);
+            *view = FRACTUS_APP_VIEW_BIOMORPH_CUTOFF_CONFIG;
         } else if (selected_menu == FRACTUS_APP_MENU_LOAD_GRAPHIC_INDEX) {
             *graphic_file_count = fractus_app_list_graphic_files(platform, graphic_files, FRACTUS_APP_GRAPHIC_FILE_CAPACITY);
             *graphic_file_page = 0u;
@@ -343,8 +353,12 @@ int fractus_app_run(void)
     fractus_legacy_config config_draft;
     fractus_mandelbrot_params mandelbrot_params;
     fractus_mandelbrot_params mandelbrot_pending;
+    fractus_mandelbrot_dem_params mandelbrot_dem_params;
+    fractus_mandelbrot_dem_params mandelbrot_dem_pending;
     fractus_julia_params julia_params;
     fractus_julia_params julia_pending;
+    fractus_julia_dem_params julia_dem_params;
+    fractus_julia_dem_params julia_dem_pending;
     fractus_biomorph_params biomorph_params;
     fractus_biomorph_params biomorph_pending;
     fractus_plasma_params plasma_rectangular_params;
@@ -352,12 +366,14 @@ int fractus_app_run(void)
     fractus_plasma_circular_params plasma_circular_params;
     fractus_plasma_circular_params plasma_circular_pending;
     fractus_app_mandelbrot_selection mandelbrot_selection;
+    fractus_app_mandelbrot_selection mandelbrot_dem_selection;
     fractus_color_rgba8 palette_original_color;
     fractus_color_rgba8 palette_pending_color;
     fractus_color_rgba8 palette_copy_color;
     fractus_ui_numeric_field iterations_field;
     fractus_ui_numeric_field escape_radius_field;
     fractus_ui_numeric_field biomorph_radius_field;
+    fractus_ui_numeric_field biomorph_cutoff_field;
     fractus_ui_numeric_field palette_red_field;
     fractus_ui_numeric_field palette_green_field;
     fractus_ui_numeric_field palette_blue_field;
@@ -372,6 +388,12 @@ int fractus_app_run(void)
     int current_drawing_saved;
     int drawing_presented_once;
     int mandelbrot_needs_render;
+    int mandelbrot_dem_needs_render;
+    int julia_needs_render;
+    int julia_dem_needs_render;
+    int biomorph_needs_render;
+    int plasma_rectangular_needs_render;
+    int plasma_circular_needs_render;
     int present_is_drawing;
     uint32_t save_feedback_frames;
     uint32_t palette_selected_index;
@@ -394,10 +416,12 @@ int fractus_app_run(void)
     memset(&iterations_field, 0, sizeof(iterations_field));
     memset(&escape_radius_field, 0, sizeof(escape_radius_field));
     memset(&biomorph_radius_field, 0, sizeof(biomorph_radius_field));
+    memset(&biomorph_cutoff_field, 0, sizeof(biomorph_cutoff_field));
     memset(&palette_red_field, 0, sizeof(palette_red_field));
     memset(&palette_green_field, 0, sizeof(palette_green_field));
     memset(&palette_blue_field, 0, sizeof(palette_blue_field));
     memset(&mandelbrot_selection, 0, sizeof(mandelbrot_selection));
+    memset(&mandelbrot_dem_selection, 0, sizeof(mandelbrot_dem_selection));
     memset(graphic_files, 0, sizeof(graphic_files));
     memset(palette_files, 0, sizeof(palette_files));
     memset(cfg_path, 0, sizeof(cfg_path));
@@ -413,6 +437,12 @@ int fractus_app_run(void)
     current_drawing_saved = 1;
     drawing_presented_once = 0;
     mandelbrot_needs_render = 1;
+    mandelbrot_dem_needs_render = 1;
+    julia_needs_render = 1;
+    julia_dem_needs_render = 1;
+    biomorph_needs_render = 1;
+    plasma_rectangular_needs_render = 1;
+    plasma_circular_needs_render = 1;
     save_feedback_frames = 0u;
     fractus_app_log("startup: begin");
 
@@ -454,6 +484,18 @@ int fractus_app_run(void)
         240u,
         FRACTUS_MANDELBROT_COLOR_ESCAPE
     };
+    mandelbrot_dem_params = (fractus_mandelbrot_dem_params){
+        -2.4,
+        1.2,
+        -1.2,
+        1.2,
+        240u,
+        1000.0,
+        0u,
+        16u,
+        240u,
+        FRACTUS_MANDELBROT_DEM_COLOR_BOUNDARY
+    };
     julia_params = (fractus_julia_params){
         -1.8,
         1.8,
@@ -465,7 +507,22 @@ int fractus_app_run(void)
         4.0,
         0u,
         16u,
-        240u
+        240u,
+        FRACTUS_JULIA_COLOR_ESCAPE
+    };
+    julia_dem_params = (fractus_julia_dem_params){
+        -1.8,
+        1.8,
+        -1.2,
+        1.2,
+        -0.745,
+        0.113,
+        240u,
+        100.0,
+        0u,
+        16u,
+        240u,
+        FRACTUS_JULIA_DEM_COLOR_BOUNDARY
     };
     biomorph_params = (fractus_biomorph_params){
         -2.0,
@@ -476,9 +533,12 @@ int fractus_app_run(void)
         0.55,
         240u,
         1000.0,
+        1.0,
         0u,
         16u,
-        240u
+        240u,
+        FRACTUS_BIOMORPH_EQ_Z2,
+        FRACTUS_BIOMORPH_TRAP_RE_OR_IM
     };
     plasma_rectangular_params = (fractus_plasma_params){
         1337u,
@@ -512,6 +572,14 @@ int fractus_app_run(void)
             cfg_path[0] = '\0';
         }
     }
+    mandelbrot_dem_params.max_iterations = mandelbrot_params.max_iterations;
+    mandelbrot_dem_params.escape_radius_squared = (legacy_config.escape_radius_squared > 0)
+        ? (double)legacy_config.escape_radius_squared
+        : mandelbrot_dem_params.escape_radius_squared;
+    julia_dem_params.max_iterations = julia_params.max_iterations;
+    julia_dem_params.escape_radius_squared = (legacy_config.escape_radius_squared > 0)
+        ? (double)legacy_config.escape_radius_squared
+        : julia_dem_params.escape_radius_squared;
     if (fractus_app_sync_framebuffer_palette(&core.drawing_framebuffer, &core.ui_framebuffer) != FRACTUS_STATUS_OK) {
         fractus_app_log("startup: drawing palette sync failed");
         fractus_ui_shutdown(&ui);
@@ -574,6 +642,7 @@ int fractus_app_run(void)
                         &iterations_field,
                         &escape_radius_field,
                         &biomorph_radius_field,
+                        &biomorph_cutoff_field,
                         graphic_files,
                         &graphic_file_count,
                         &graphic_file_page,
@@ -587,6 +656,19 @@ int fractus_app_run(void)
                     fractus_app_log("runtime: main menu failed");
                     running = 0;
                 }
+            } else if (view == FRACTUS_APP_VIEW_MANDELBROT_MENU) {
+                if (fractus_app_run_mandelbrot_menu_view(
+                        &core.ui_framebuffer,
+                        &fonts,
+                        &ui,
+                        &mandelbrot_params,
+                        &mandelbrot_pending,
+                        &mandelbrot_dem_params,
+                        &mandelbrot_dem_pending,
+                        &view) != FRACTUS_STATUS_OK) {
+                    fractus_app_log("runtime: mandelbrot menu failed");
+                    running = 0;
+                }
             } else if (view == FRACTUS_APP_VIEW_MANDELBROT_CONFIG) {
                 if (fractus_app_run_mandelbrot_config_view(
                         &core.ui_framebuffer,
@@ -598,6 +680,30 @@ int fractus_app_run(void)
                     fractus_app_log("runtime: mandelbrot config failed");
                     running = 0;
                 }
+            } else if (view == FRACTUS_APP_VIEW_MANDELBROT_DEM_CONFIG) {
+                if (fractus_app_run_mandelbrot_dem_config_view(
+                        &core.ui_framebuffer,
+                        &fonts,
+                        &ui,
+                        &mandelbrot_dem_params,
+                        &mandelbrot_dem_pending,
+                        &view) != FRACTUS_STATUS_OK) {
+                    fractus_app_log("runtime: mandelbrot dem config failed");
+                    running = 0;
+                }
+            } else if (view == FRACTUS_APP_VIEW_JULIA_MENU) {
+                if (fractus_app_run_julia_menu_view(
+                        &core.ui_framebuffer,
+                        &fonts,
+                        &ui,
+                        &julia_params,
+                        &julia_pending,
+                        &julia_dem_params,
+                        &julia_dem_pending,
+                        &view) != FRACTUS_STATUS_OK) {
+                    fractus_app_log("runtime: julia menu failed");
+                    running = 0;
+                }
             } else if (view == FRACTUS_APP_VIEW_JULIA_CONFIG) {
                 if (fractus_app_run_julia_config_view(
                         &core.ui_framebuffer,
@@ -607,6 +713,17 @@ int fractus_app_run(void)
                         &julia_pending,
                         &view) != FRACTUS_STATUS_OK) {
                     fractus_app_log("runtime: julia config failed");
+                    running = 0;
+                }
+            } else if (view == FRACTUS_APP_VIEW_JULIA_DEM_CONFIG) {
+                if (fractus_app_run_julia_dem_config_view(
+                        &core.ui_framebuffer,
+                        &fonts,
+                        &ui,
+                        &julia_dem_params,
+                        &julia_dem_pending,
+                        &view) != FRACTUS_STATUS_OK) {
+                    fractus_app_log("runtime: julia dem config failed");
                     running = 0;
                 }
             } else if (view == FRACTUS_APP_VIEW_BIOMORPH_CONFIG) {
@@ -716,6 +833,22 @@ int fractus_app_run(void)
                         &biomorph_radius_field,
                         &view) != FRACTUS_STATUS_OK) {
                     fractus_app_log("runtime: biomorph radius config failed");
+                    running = 0;
+                }
+            } else if (view == FRACTUS_APP_VIEW_BIOMORPH_CUTOFF_CONFIG) {
+                if (fractus_app_run_biomorph_cutoff_config_view(
+                        &core.ui_framebuffer,
+                        &fonts,
+                        &ui,
+                        &legacy_config,
+                        &config_draft,
+                        &mandelbrot_params,
+                        &julia_params,
+                        &biomorph_params,
+                        cfg_path,
+                        &biomorph_cutoff_field,
+                        &view) != FRACTUS_STATUS_OK) {
+                    fractus_app_log("runtime: biomorph cutoff config failed");
                     running = 0;
                 }
             } else if (view == FRACTUS_APP_VIEW_LOAD_GRAPHIC) {
@@ -914,10 +1047,18 @@ int fractus_app_run(void)
                      (ui.press_pending && ui.press_event.buttons.right))) {
                     mandelbrot_selection.active = 0;
                     mandelbrot_selection.has_first_corner = 0;
+                } else if (view == FRACTUS_APP_VIEW_MANDELBROT_DEM &&
+                    mandelbrot_dem_selection.active &&
+                    ((ui.key_press_pending && ui.key_pressed == 27u) ||
+                     (ui.press_pending && ui.press_event.buttons.right))) {
+                    mandelbrot_dem_selection.active = 0;
+                    mandelbrot_dem_selection.has_first_corner = 0;
                 } else if ((ui.key_press_pending && ui.key_pressed == 27u) ||
                     (ui.press_pending && ui.press_event.buttons.right)) {
                     mandelbrot_selection.active = 0;
                     mandelbrot_selection.has_first_corner = 0;
+                    mandelbrot_dem_selection.active = 0;
+                    mandelbrot_dem_selection.has_first_corner = 0;
                     view = FRACTUS_APP_VIEW_MAIN_MENU;
                 }
 
@@ -925,7 +1066,9 @@ int fractus_app_run(void)
                     (ui.key_pressed == 'g' || ui.key_pressed == 'G') &&
                     current_drawing_saved == 0 &&
                     (view == FRACTUS_APP_VIEW_MANDELBROT ||
+                     view == FRACTUS_APP_VIEW_MANDELBROT_DEM ||
                      view == FRACTUS_APP_VIEW_JULIA ||
+                     view == FRACTUS_APP_VIEW_JULIA_DEM ||
                      view == FRACTUS_APP_VIEW_BIOMORPH ||
                      view == FRACTUS_APP_VIEW_PLASMA_RECTANGULAR ||
                      view == FRACTUS_APP_VIEW_PLASMA_CIRCULAR ||
@@ -997,43 +1140,276 @@ int fractus_app_run(void)
                             present_is_drawing = 1;
                         }
                     }
+                } else if (view == FRACTUS_APP_VIEW_MANDELBROT_DEM) {
+                    fractus_size_u32 previous_drawing_size = core.drawing_framebuffer.size;
+                    present_framebuffer = &core.drawing_framebuffer;
+                    present_is_drawing = 1;
+                    if (fractus_app_ensure_drawing_framebuffer_size(&legacy_config, &core.drawing_framebuffer, &core.ui_framebuffer) != FRACTUS_STATUS_OK) {
+                        fractus_app_log("runtime: drawing framebuffer resize failed");
+                        running = 0;
+                    } else {
+                        if (previous_drawing_size.width != core.drawing_framebuffer.size.width ||
+                            previous_drawing_size.height != core.drawing_framebuffer.size.height) {
+                            mandelbrot_dem_needs_render = 1;
+                        }
+                        if (fractus_app_handle_mandelbrot_dem_selection_input(
+                                &platform,
+                                &core.drawing_framebuffer,
+                                &ui,
+                                &mandelbrot_dem_params,
+                                &mandelbrot_dem_selection)) {
+                            current_drawing_saved = 0;
+                            drawing_presented_once = 0;
+                            save_next_graphic = 0;
+                            render_save_next_graphic = 0;
+                            save_requested_this_frame = 0;
+                            mandelbrot_dem_needs_render = 1;
+                        }
+                    }
+                    if (running) {
+                        if (mandelbrot_dem_needs_render) {
+                            if (fractus_app_render_mandelbrot_dem(
+                                    &platform,
+                                    &core.drawing_framebuffer,
+                                    &fonts,
+                                    &mandelbrot_dem_params,
+                                    &render_save_next_graphic,
+                                    runtime_error_message,
+                                    sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                                fractus_app_log("runtime: mandelbrot dem render failed");
+                                running = 0;
+                            } else {
+                                mandelbrot_dem_needs_render = 0;
+                            }
+                        } else if (render_save_next_graphic &&
+                            fractus_app_save_next_graphic_if_requested(
+                                &platform,
+                                &core.drawing_framebuffer,
+                                &render_save_next_graphic,
+                                runtime_error_message,
+                                sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                            fractus_app_log("runtime: mandelbrot dem save failed");
+                            running = 0;
+                        }
+                    }
+                    if (running && mandelbrot_dem_selection.active) {
+                        if (fractus_app_copy_framebuffer_for_overlay(&mandelbrot_overlay_framebuffer, &core.drawing_framebuffer) != FRACTUS_STATUS_OK ||
+                            fractus_app_draw_mandelbrot_selection_overlay(&platform, &mandelbrot_overlay_framebuffer, &ui, &mandelbrot_dem_selection) != FRACTUS_STATUS_OK) {
+                            fractus_app_log("runtime: mandelbrot dem selection overlay failed");
+                            running = 0;
+                        } else {
+                            present_framebuffer = &mandelbrot_overlay_framebuffer;
+                            present_is_drawing = 1;
+                        }
+                    }
                 } else if (view == FRACTUS_APP_VIEW_JULIA) {
+                    fractus_size_u32 previous_drawing_size = core.drawing_framebuffer.size;
                     mandelbrot_selection.active = 0;
                     mandelbrot_selection.has_first_corner = 0;
+                    mandelbrot_dem_selection.active = 0;
+                    mandelbrot_dem_selection.has_first_corner = 0;
                     present_framebuffer = &core.drawing_framebuffer;
                     present_is_drawing = 1;
-                    if (fractus_app_ensure_drawing_framebuffer_size(&legacy_config, &core.drawing_framebuffer, &core.ui_framebuffer) != FRACTUS_STATUS_OK ||
-                        fractus_app_render_julia(&platform, &core.drawing_framebuffer, &fonts, &julia_params, &render_save_next_graphic, runtime_error_message, sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
-                        fractus_app_log("runtime: julia render failed");
+                    if (fractus_app_ensure_drawing_framebuffer_size(&legacy_config, &core.drawing_framebuffer, &core.ui_framebuffer) != FRACTUS_STATUS_OK) {
+                        fractus_app_log("runtime: drawing framebuffer resize failed");
                         running = 0;
+                    } else {
+                        if (previous_drawing_size.width != core.drawing_framebuffer.size.width ||
+                            previous_drawing_size.height != core.drawing_framebuffer.size.height) {
+                            julia_needs_render = 1;
+                        }
+                    }
+                    if (running) {
+                        if (julia_needs_render) {
+                            if (fractus_app_render_julia(
+                                    &platform,
+                                    &core.drawing_framebuffer,
+                                    &fonts,
+                                    &julia_params,
+                                    &render_save_next_graphic,
+                                    runtime_error_message,
+                                    sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                                fractus_app_log("runtime: julia render failed");
+                                running = 0;
+                            } else {
+                                julia_needs_render = 0;
+                            }
+                        } else if (render_save_next_graphic &&
+                            fractus_app_save_next_graphic_if_requested(
+                                &platform,
+                                &core.drawing_framebuffer,
+                                &render_save_next_graphic,
+                                runtime_error_message,
+                                sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                            fractus_app_log("runtime: julia save failed");
+                            running = 0;
+                        }
+                    }
+                } else if (view == FRACTUS_APP_VIEW_JULIA_DEM) {
+                    fractus_size_u32 previous_drawing_size = core.drawing_framebuffer.size;
+                    mandelbrot_selection.active = 0;
+                    mandelbrot_selection.has_first_corner = 0;
+                    mandelbrot_dem_selection.active = 0;
+                    mandelbrot_dem_selection.has_first_corner = 0;
+                    present_framebuffer = &core.drawing_framebuffer;
+                    present_is_drawing = 1;
+                    if (fractus_app_ensure_drawing_framebuffer_size(&legacy_config, &core.drawing_framebuffer, &core.ui_framebuffer) != FRACTUS_STATUS_OK) {
+                        fractus_app_log("runtime: drawing framebuffer resize failed");
+                        running = 0;
+                    } else {
+                        if (previous_drawing_size.width != core.drawing_framebuffer.size.width ||
+                            previous_drawing_size.height != core.drawing_framebuffer.size.height) {
+                            julia_dem_needs_render = 1;
+                        }
+                    }
+                    if (running) {
+                        if (julia_dem_needs_render) {
+                            if (fractus_app_render_julia_dem(
+                                    &platform,
+                                    &core.drawing_framebuffer,
+                                    &fonts,
+                                    &julia_dem_params,
+                                    &render_save_next_graphic,
+                                    runtime_error_message,
+                                    sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                                fractus_app_log("runtime: julia dem render failed");
+                                running = 0;
+                            } else {
+                                julia_dem_needs_render = 0;
+                            }
+                        } else if (render_save_next_graphic &&
+                            fractus_app_save_next_graphic_if_requested(
+                                &platform,
+                                &core.drawing_framebuffer,
+                                &render_save_next_graphic,
+                                runtime_error_message,
+                                sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                            fractus_app_log("runtime: julia dem save failed");
+                            running = 0;
+                        }
                     }
                 } else if (view == FRACTUS_APP_VIEW_BIOMORPH) {
+                    fractus_size_u32 previous_drawing_size = core.drawing_framebuffer.size;
+                    mandelbrot_dem_selection.active = 0;
+                    mandelbrot_dem_selection.has_first_corner = 0;
                     present_framebuffer = &core.drawing_framebuffer;
                     present_is_drawing = 1;
-                    if (fractus_app_ensure_drawing_framebuffer_size(&legacy_config, &core.drawing_framebuffer, &core.ui_framebuffer) != FRACTUS_STATUS_OK ||
-                        fractus_app_render_biomorph(&platform, &core.drawing_framebuffer, &fonts, &biomorph_params, &render_save_next_graphic, runtime_error_message, sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
-                        fractus_app_log("runtime: biomorph render failed");
+                    if (fractus_app_ensure_drawing_framebuffer_size(&legacy_config, &core.drawing_framebuffer, &core.ui_framebuffer) != FRACTUS_STATUS_OK) {
+                        fractus_app_log("runtime: drawing framebuffer resize failed");
                         running = 0;
+                    } else {
+                        if (previous_drawing_size.width != core.drawing_framebuffer.size.width ||
+                            previous_drawing_size.height != core.drawing_framebuffer.size.height) {
+                            biomorph_needs_render = 1;
+                        }
+                    }
+                    if (running) {
+                        if (biomorph_needs_render) {
+                            if (fractus_app_render_biomorph(
+                                    &platform,
+                                    &core.drawing_framebuffer,
+                                    &fonts,
+                                    &biomorph_params,
+                                    &render_save_next_graphic,
+                                    runtime_error_message,
+                                    sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                                fractus_app_log("runtime: biomorph render failed");
+                                running = 0;
+                            } else {
+                                biomorph_needs_render = 0;
+                            }
+                        } else if (render_save_next_graphic &&
+                            fractus_app_save_next_graphic_if_requested(
+                                &platform,
+                                &core.drawing_framebuffer,
+                                &render_save_next_graphic,
+                                runtime_error_message,
+                                sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                            fractus_app_log("runtime: biomorph save failed");
+                            running = 0;
+                        }
                     }
                 } else if (view == FRACTUS_APP_VIEW_PLASMA_RECTANGULAR) {
+                    fractus_size_u32 previous_drawing_size = core.drawing_framebuffer.size;
+                    mandelbrot_dem_selection.active = 0;
+                    mandelbrot_dem_selection.has_first_corner = 0;
                     present_framebuffer = &core.drawing_framebuffer;
                     present_is_drawing = 1;
                     if (fractus_app_ensure_drawing_framebuffer_size(&legacy_config, &core.drawing_framebuffer, &core.ui_framebuffer) != FRACTUS_STATUS_OK) {
                         fractus_app_log("runtime: drawing framebuffer resize failed");
                         running = 0;
-                    } else if (fractus_app_render_plasma_rectangular(&platform, &core.drawing_framebuffer, &fonts, &plasma_rectangular_params, &render_save_next_graphic, runtime_error_message, sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
-                        fractus_app_log("runtime: plasma rectangular render failed");
-                        running = 0;
+                    } else {
+                        if (previous_drawing_size.width != core.drawing_framebuffer.size.width ||
+                            previous_drawing_size.height != core.drawing_framebuffer.size.height) {
+                            plasma_rectangular_needs_render = 1;
+                        }
+                    }
+                    if (running) {
+                        if (plasma_rectangular_needs_render) {
+                            if (fractus_app_render_plasma_rectangular(
+                                    &platform,
+                                    &core.drawing_framebuffer,
+                                    &fonts,
+                                    &plasma_rectangular_params,
+                                    &render_save_next_graphic,
+                                    runtime_error_message,
+                                    sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                                fractus_app_log("runtime: plasma rectangular render failed");
+                                running = 0;
+                            } else {
+                                plasma_rectangular_needs_render = 0;
+                            }
+                        } else if (render_save_next_graphic &&
+                            fractus_app_save_next_graphic_if_requested(
+                                &platform,
+                                &core.drawing_framebuffer,
+                                &render_save_next_graphic,
+                                runtime_error_message,
+                                sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                            fractus_app_log("runtime: plasma rectangular save failed");
+                            running = 0;
+                        }
                     }
                 } else if (view == FRACTUS_APP_VIEW_PLASMA_CIRCULAR) {
+                    fractus_size_u32 previous_drawing_size = core.drawing_framebuffer.size;
+                    mandelbrot_dem_selection.active = 0;
+                    mandelbrot_dem_selection.has_first_corner = 0;
                     present_framebuffer = &core.drawing_framebuffer;
                     present_is_drawing = 1;
                     if (fractus_app_ensure_drawing_framebuffer_size(&legacy_config, &core.drawing_framebuffer, &core.ui_framebuffer) != FRACTUS_STATUS_OK) {
                         fractus_app_log("runtime: drawing framebuffer resize failed");
                         running = 0;
-                    } else if (fractus_app_render_plasma_circular(&platform, &core.drawing_framebuffer, &fonts, &plasma_circular_params, &render_save_next_graphic, runtime_error_message, sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
-                        fractus_app_log("runtime: circular plasma render failed");
-                        running = 0;
+                    } else {
+                        if (previous_drawing_size.width != core.drawing_framebuffer.size.width ||
+                            previous_drawing_size.height != core.drawing_framebuffer.size.height) {
+                            plasma_circular_needs_render = 1;
+                        }
+                    }
+                    if (running) {
+                        if (plasma_circular_needs_render) {
+                            if (fractus_app_render_plasma_circular(
+                                    &platform,
+                                    &core.drawing_framebuffer,
+                                    &fonts,
+                                    &plasma_circular_params,
+                                    &render_save_next_graphic,
+                                    runtime_error_message,
+                                    sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                                fractus_app_log("runtime: circular plasma render failed");
+                                running = 0;
+                            } else {
+                                plasma_circular_needs_render = 0;
+                            }
+                        } else if (render_save_next_graphic &&
+                            fractus_app_save_next_graphic_if_requested(
+                                &platform,
+                                &core.drawing_framebuffer,
+                                &render_save_next_graphic,
+                                runtime_error_message,
+                                sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                            fractus_app_log("runtime: circular plasma save failed");
+                            running = 0;
+                        }
                     }
                 } else if (view == FRACTUS_APP_VIEW_GRAPHIC) {
                     present_framebuffer = &core.drawing_framebuffer;
@@ -1064,6 +1440,18 @@ int fractus_app_run(void)
                 drawing_presented_once = 0;
                 if (view == FRACTUS_APP_VIEW_MANDELBROT) {
                     mandelbrot_needs_render = 1;
+                } else if (view == FRACTUS_APP_VIEW_MANDELBROT_DEM) {
+                    mandelbrot_dem_needs_render = 1;
+                } else if (view == FRACTUS_APP_VIEW_JULIA) {
+                    julia_needs_render = 1;
+                } else if (view == FRACTUS_APP_VIEW_JULIA_DEM) {
+                    julia_dem_needs_render = 1;
+                } else if (view == FRACTUS_APP_VIEW_BIOMORPH) {
+                    biomorph_needs_render = 1;
+                } else if (view == FRACTUS_APP_VIEW_PLASMA_RECTANGULAR) {
+                    plasma_rectangular_needs_render = 1;
+                } else if (view == FRACTUS_APP_VIEW_PLASMA_CIRCULAR) {
+                    plasma_circular_needs_render = 1;
                 }
             } else if (view == FRACTUS_APP_VIEW_GRAPHIC && previous_view != FRACTUS_APP_VIEW_GRAPHIC) {
                 current_drawing_saved = 1;

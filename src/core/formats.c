@@ -221,6 +221,7 @@ fractus_status fractus_legacy_config_init_default(fractus_legacy_config *config)
     config->iterations = 240;
     config->escape_radius_squared = 4;
     config->biomorph_escape_radius_squared = 1000;
+    config->biomorph_cutoff = 1;
 
     if (fractus_palette_init_default(&palette) != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
@@ -239,6 +240,7 @@ fractus_status fractus_legacy_config_load(
 {
     FILE *file;
     uint8_t drawing_video_mode;
+    int16_t biomorph_cutoff;
     uint32_t i;
 
     if (path == NULL || config == NULL) {
@@ -288,6 +290,9 @@ fractus_status fractus_legacy_config_load(
 
     if (fractus_read_u8(file, &drawing_video_mode) == FRACTUS_STATUS_OK) {
         config->drawing_video_mode = fractus_valid_drawing_video_mode(drawing_video_mode);
+        if (fractus_read_i16_le(file, &biomorph_cutoff) == FRACTUS_STATUS_OK) {
+            config->biomorph_cutoff = (biomorph_cutoff > 0) ? biomorph_cutoff : 1;
+        }
     } else if (ferror(file)) {
         fclose(file);
         return FRACTUS_STATUS_ERROR;
@@ -336,7 +341,8 @@ fractus_status fractus_legacy_config_save(
         }
     }
 
-    if (fractus_write_u8(file, fractus_valid_drawing_video_mode(config->drawing_video_mode)) != FRACTUS_STATUS_OK) {
+    if (fractus_write_u8(file, fractus_valid_drawing_video_mode(config->drawing_video_mode)) != FRACTUS_STATUS_OK ||
+        fractus_write_i16_le(file, (config->biomorph_cutoff > 0) ? config->biomorph_cutoff : 1) != FRACTUS_STATUS_OK) {
         fclose(file);
         return FRACTUS_STATUS_ERROR;
     }

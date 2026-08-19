@@ -10,6 +10,12 @@ typedef enum fractus_app_plasma_method {
     FRACTUS_APP_PLASMA_METHOD_CIRCLES = 1
 } fractus_app_plasma_method;
 
+typedef enum fractus_app_mandel_method {
+    FRACTUS_APP_MANDEL_METHOD_NONE = -1,
+    FRACTUS_APP_MANDEL_METHOD_ESCAPE = 0,
+    FRACTUS_APP_MANDEL_METHOD_DEM = 1
+} fractus_app_mandel_method;
+
 typedef enum fractus_app_mandel_dialog_action {
     FRACTUS_APP_MANDEL_XMIN_DEC = 0,
     FRACTUS_APP_MANDEL_XMIN_INC,
@@ -23,11 +29,17 @@ typedef enum fractus_app_mandel_dialog_action {
     FRACTUS_APP_MANDEL_ITER_INC,
     FRACTUS_APP_MANDEL_RADIUS_DEC,
     FRACTUS_APP_MANDEL_RADIUS_INC,
-    FRACTUS_APP_MANDEL_COLOR_CLASSIC,
-    FRACTUS_APP_MANDEL_COLOR_SMOOTH,
+    FRACTUS_APP_MANDEL_COLOR_MODE_0,
+    FRACTUS_APP_MANDEL_COLOR_MODE_1,
     FRACTUS_APP_MANDEL_DRAW,
     FRACTUS_APP_MANDEL_CANCEL
 } fractus_app_mandel_dialog_action;
+
+typedef enum fractus_app_julia_method {
+    FRACTUS_APP_JULIA_METHOD_NONE = -1,
+    FRACTUS_APP_JULIA_METHOD_ESCAPE = 0,
+    FRACTUS_APP_JULIA_METHOD_DEM = 1
+} fractus_app_julia_method;
 
 typedef enum fractus_app_julia_dialog_action {
     FRACTUS_APP_JULIA_XMIN_DEC = 0,
@@ -46,6 +58,8 @@ typedef enum fractus_app_julia_dialog_action {
     FRACTUS_APP_JULIA_ITER_INC,
     FRACTUS_APP_JULIA_RADIUS_DEC,
     FRACTUS_APP_JULIA_RADIUS_INC,
+    FRACTUS_APP_JULIA_COLOR_MODE_0,
+    FRACTUS_APP_JULIA_COLOR_MODE_1,
     FRACTUS_APP_JULIA_DRAW,
     FRACTUS_APP_JULIA_CANCEL
 } fractus_app_julia_dialog_action;
@@ -65,6 +79,18 @@ typedef enum fractus_app_biomorph_dialog_action {
     FRACTUS_APP_BIOMORPH_CIMAG_INC,
     FRACTUS_APP_BIOMORPH_RADIUS_DEC,
     FRACTUS_APP_BIOMORPH_RADIUS_INC,
+    FRACTUS_APP_BIOMORPH_CUTOFF_DEC,
+    FRACTUS_APP_BIOMORPH_CUTOFF_INC,
+    FRACTUS_APP_BIOMORPH_EQ_0,
+    FRACTUS_APP_BIOMORPH_EQ_1,
+    FRACTUS_APP_BIOMORPH_EQ_2,
+    FRACTUS_APP_BIOMORPH_EQ_3,
+    FRACTUS_APP_BIOMORPH_EQ_4,
+    FRACTUS_APP_BIOMORPH_EQ_5,
+    FRACTUS_APP_BIOMORPH_TRAP_0,
+    FRACTUS_APP_BIOMORPH_TRAP_1,
+    FRACTUS_APP_BIOMORPH_TRAP_2,
+    FRACTUS_APP_BIOMORPH_TRAP_3,
     FRACTUS_APP_BIOMORPH_DRAW,
     FRACTUS_APP_BIOMORPH_CANCEL
 } fractus_app_biomorph_dialog_action;
@@ -85,6 +111,16 @@ typedef enum fractus_app_plasma_circular_dialog_action {
     FRACTUS_APP_PLASMA_CIRCULAR_CANCEL
 } fractus_app_plasma_circular_dialog_action;
 
+fractus_status fractus_app_run_mandelbrot_menu_view(
+    fractus_framebuffer *framebuffer,
+    const fractus_font_library *fonts,
+    fractus_ui_context *ui,
+    fractus_mandelbrot_params *mandelbrot_params,
+    fractus_mandelbrot_params *mandelbrot_pending,
+    fractus_mandelbrot_dem_params *mandelbrot_dem_params,
+    fractus_mandelbrot_dem_params *mandelbrot_dem_pending,
+    fractus_app_view *view);
+
 fractus_status fractus_app_run_mandelbrot_config_view(
     fractus_framebuffer *framebuffer,
     const fractus_font_library *fonts,
@@ -93,11 +129,26 @@ fractus_status fractus_app_run_mandelbrot_config_view(
     fractus_mandelbrot_params *pending,
     fractus_app_view *view);
 
+fractus_status fractus_app_run_mandelbrot_dem_config_view(
+    fractus_framebuffer *framebuffer,
+    const fractus_font_library *fonts,
+    fractus_ui_context *ui,
+    fractus_mandelbrot_dem_params *params,
+    fractus_mandelbrot_dem_params *pending,
+    fractus_app_view *view);
+
 int fractus_app_handle_mandelbrot_selection_input(
     const fractus_platform_context *platform,
     const fractus_framebuffer *framebuffer,
     const fractus_ui_context *ui,
     fractus_mandelbrot_params *params,
+    fractus_app_mandelbrot_selection *selection);
+
+int fractus_app_handle_mandelbrot_dem_selection_input(
+    const fractus_platform_context *platform,
+    const fractus_framebuffer *framebuffer,
+    const fractus_ui_context *ui,
+    fractus_mandelbrot_dem_params *params,
     fractus_app_mandelbrot_selection *selection);
 
 fractus_status fractus_app_copy_framebuffer_for_overlay(
@@ -119,6 +170,25 @@ fractus_status fractus_app_render_mandelbrot(
     char *error_message,
     size_t error_message_size);
 
+fractus_status fractus_app_render_mandelbrot_dem(
+    const fractus_platform_context *platform,
+    fractus_framebuffer *framebuffer,
+    const fractus_font_library *fonts,
+    const fractus_mandelbrot_dem_params *params,
+    int *save_next_graphic,
+    char *error_message,
+    size_t error_message_size);
+
+fractus_status fractus_app_run_julia_menu_view(
+    fractus_framebuffer *framebuffer,
+    const fractus_font_library *fonts,
+    fractus_ui_context *ui,
+    fractus_julia_params *julia_params,
+    fractus_julia_params *julia_pending,
+    fractus_julia_dem_params *julia_dem_params,
+    fractus_julia_dem_params *julia_dem_pending,
+    fractus_app_view *view);
+
 fractus_status fractus_app_run_julia_config_view(
     fractus_framebuffer *framebuffer,
     const fractus_font_library *fonts,
@@ -127,11 +197,28 @@ fractus_status fractus_app_run_julia_config_view(
     fractus_julia_params *pending,
     fractus_app_view *view);
 
+fractus_status fractus_app_run_julia_dem_config_view(
+    fractus_framebuffer *framebuffer,
+    const fractus_font_library *fonts,
+    fractus_ui_context *ui,
+    fractus_julia_dem_params *params,
+    fractus_julia_dem_params *pending,
+    fractus_app_view *view);
+
 fractus_status fractus_app_render_julia(
     const fractus_platform_context *platform,
     fractus_framebuffer *framebuffer,
     const fractus_font_library *fonts,
     const fractus_julia_params *params,
+    int *save_next_graphic,
+    char *error_message,
+    size_t error_message_size);
+
+fractus_status fractus_app_render_julia_dem(
+    const fractus_platform_context *platform,
+    fractus_framebuffer *framebuffer,
+    const fractus_font_library *fonts,
+    const fractus_julia_dem_params *params,
     int *save_next_graphic,
     char *error_message,
     size_t error_message_size);

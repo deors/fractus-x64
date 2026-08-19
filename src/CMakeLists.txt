@@ -44,6 +44,11 @@ target_link_libraries(fractus_core PUBLIC
     fractus_platform
 )
 
+find_package(OpenMP)
+if(OpenMP_C_FOUND)
+    target_link_libraries(fractus_core PUBLIC OpenMP::OpenMP_C)
+endif()
+
 add_executable(fractus_x64
     app/main.c
     app/app.c
@@ -60,6 +65,19 @@ target_include_directories(fractus_x64 PRIVATE
 target_link_libraries(fractus_x64 PRIVATE
     fractus_core
 )
+
+if(MINGW)
+    get_filename_component(MINGW_BIN_DIR ${CMAKE_C_COMPILER} DIRECTORY)
+    add_custom_command(TARGET fractus_x64 POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${MINGW_BIN_DIR}/libgomp-1.dll"
+            "${MINGW_BIN_DIR}/libwinpthread-1.dll"
+            "${MINGW_BIN_DIR}/libgcc_s_seh-1.dll"
+            $<TARGET_FILE_DIR:fractus_x64>
+    )
+endif()
+
+
 
 foreach(target fractus_core fractus_ui fractus_platform fractus_x64)
     if(MSVC)
