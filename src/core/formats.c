@@ -29,12 +29,12 @@ static const unsigned char fractus_legacy_graphic_header_latin1[14] = {
 
 static uint8_t fractus_to_legacy_6bit(uint8_t value)
 {
-    return (uint8_t)((value * 63u) / 255u);
+    return (uint8_t)((value * 63u + 127u) / 255u);
 }
 
 static uint8_t fractus_from_legacy_6bit(uint8_t value)
 {
-    return (uint8_t)((value * 255u) / 63u);
+    return (uint8_t)((value * 255u + 31u) / 63u);
 }
 
 static uint8_t fractus_valid_drawing_video_mode(uint8_t value)
@@ -204,9 +204,71 @@ static fractus_status fractus_legacy_video_mode_info(
     return FRACTUS_STATUS_OK;
 }
 
+static const fractus_color_rgba8 fractus_default_fractal_palette[FRACTUS_LEGACY_PALETTE_DATA_COUNT] = {
+    {121,  60, 121, 255u}, {117,  60, 121, 255u}, {117,  64, 129, 255u}, {117,  68, 133, 255u},
+    {113,  68, 137, 255u}, {113,  72, 141, 255u}, {113,  76, 141, 255u}, {109,  76, 145, 255u},
+    {109,  80, 149, 255u}, {109,  85, 153, 255u}, {105,  85, 157, 255u}, {105,  85, 157, 255u},
+    {105,  89, 161, 255u}, {101,  89, 165, 255u}, {101,  93, 170, 255u}, {101,  97, 170, 255u},
+    {101, 101, 174, 255u}, { 97,  97, 174, 255u}, { 97,  97, 178, 255u}, { 93,  93, 178, 255u},
+    { 93,  93, 182, 255u}, { 89,  89, 182, 255u}, { 89,  89, 186, 255u}, { 85,  85, 186, 255u},
+    { 85,  85, 190, 255u}, { 85,  85, 190, 255u}, { 85,  85, 194, 255u}, { 80,  80, 194, 255u},
+    { 80,  80, 198, 255u}, { 76,  76, 198, 255u}, { 76,  76, 202, 255u}, { 72,  72, 202, 255u},
+    { 72,  72, 206, 255u}, { 68,  68, 206, 255u}, { 68,  68, 214, 255u}, { 64,  64, 214, 255u},
+    { 64,  64, 218, 255u}, { 60,  60, 218, 255u}, { 60,  60, 222, 255u}, { 56,  56, 222, 255u},
+    { 56,  56, 226, 255u}, { 52,  52, 226, 255u}, { 52,  52, 230, 255u}, { 48,  48, 230, 255u},
+    { 48,  48, 234, 255u}, { 44,  44, 234, 255u}, { 44,  44, 238, 255u}, { 36,  36, 238, 255u},
+    { 36,  36, 242, 255u}, { 36,  36, 238, 255u}, { 36,  44, 234, 255u}, { 36,  44, 234, 255u},
+    { 36,  48, 230, 255u}, { 36,  48, 230, 255u}, { 36,  52, 226, 255u}, { 36,  52, 226, 255u},
+    { 36,  56, 222, 255u}, { 36,  60, 218, 255u}, { 36,  60, 218, 255u}, { 36,  64, 214, 255u},
+    { 36,  64, 214, 255u}, { 36,  68, 206, 255u}, { 36,  68, 206, 255u}, { 36,  72, 202, 255u},
+    { 36,  76, 202, 255u}, { 36,  76, 198, 255u}, { 36,  80, 194, 255u}, { 36,  80, 194, 255u},
+    { 36,  85, 190, 255u}, { 36,  85, 190, 255u}, { 36,  85, 186, 255u}, { 36,  85, 186, 255u},
+    { 36,  89, 182, 255u}, { 36,  93, 178, 255u}, { 36,  93, 178, 255u}, { 36,  97, 174, 255u},
+    { 36,  97, 174, 255u}, { 36, 101, 170, 255u}, { 36, 101, 170, 255u}, { 36, 105, 170, 255u},
+    { 36, 109, 170, 255u}, { 36, 113, 165, 255u}, { 36, 117, 161, 255u}, { 36, 121, 157, 255u},
+    { 36, 129, 153, 255u}, { 36, 133, 149, 255u}, { 36, 137, 145, 255u}, { 36, 141, 141, 255u},
+    { 36, 145, 137, 255u}, { 36, 149, 133, 255u}, { 36, 153, 129, 255u}, { 36, 157, 121, 255u},
+    { 36, 161, 117, 255u}, { 36, 165, 113, 255u}, { 36, 170, 109, 255u}, { 36, 170, 105, 255u},
+    { 36, 174, 101, 255u}, { 36, 178,  97, 255u}, { 36, 182,  93, 255u}, { 36, 186,  89, 255u},
+    { 36, 190,  85, 255u}, { 36, 194,  85, 255u}, { 36, 198,  80, 255u}, { 36, 202,  76, 255u},
+    { 36, 206,  72, 255u}, { 36, 214,  68, 255u}, { 36, 218,  64, 255u}, { 36, 222,  60, 255u},
+    { 36, 226,  56, 255u}, { 36, 230,  52, 255u}, { 36, 234,  48, 255u}, { 36, 238,  44, 255u},
+    { 36, 242,  36, 255u}, { 44, 242,  36, 255u}, { 52, 242,  36, 255u}, { 56, 242,  36, 255u},
+    { 64, 242,  36, 255u}, { 68, 242,  36, 255u}, { 76, 242,  36, 255u}, { 80, 242,  36, 255u},
+    { 85, 242,  36, 255u}, { 93, 242,  36, 255u}, { 97, 242,  36, 255u}, {105, 242,  36, 255u},
+    {109, 242,  36, 255u}, {117, 242,  36, 255u}, {121, 242,  36, 255u}, {133, 242,  36, 255u},
+    {141, 242,  36, 255u}, {145, 242,  36, 255u}, {153, 242,  36, 255u}, {157, 242,  36, 255u},
+    {165, 242,  36, 255u}, {170, 242,  36, 255u}, {174, 242,  36, 255u}, {178, 242,  36, 255u},
+    {186, 242,  36, 255u}, {194, 242,  36, 255u}, {198, 242,  36, 255u}, {206, 242,  36, 255u},
+    {214, 242,  36, 255u}, {222, 242,  36, 255u}, {226, 242,  36, 255u}, {234, 242,  36, 255u},
+    {242, 242,  36, 255u}, {238, 238,  36, 255u}, {238, 234,  36, 255u}, {238, 234,  36, 255u},
+    {238, 230,  36, 255u}, {238, 230,  44, 255u}, {238, 226,  44, 255u}, {238, 226,  44, 255u},
+    {238, 222,  44, 255u}, {238, 222,  44, 255u}, {238, 218,  48, 255u}, {238, 218,  48, 255u},
+    {238, 214,  48, 255u}, {238, 214,  48, 255u}, {238, 206,  52, 255u}, {238, 206,  52, 255u},
+    {238, 202,  52, 255u}, {238, 198,  52, 255u}, {238, 198,  52, 255u}, {238, 194,  56, 255u},
+    {238, 194,  56, 255u}, {238, 190,  56, 255u}, {238, 190,  56, 255u}, {238, 186,  60, 255u},
+    {238, 186,  60, 255u}, {238, 182,  60, 255u}, {238, 182,  60, 255u}, {238, 178,  60, 255u},
+    {238, 178,  64, 255u}, {238, 174,  64, 255u}, {238, 174,  64, 255u}, {238, 170,  64, 255u},
+    {238, 170,  68, 255u}, {238, 165,  64, 255u}, {238, 161,  64, 255u}, {238, 157,  64, 255u},
+    {238, 153,  64, 255u}, {238, 149,  60, 255u}, {238, 145,  60, 255u}, {238, 141,  60, 255u},
+    {238, 137,  60, 255u}, {238, 133,  60, 255u}, {238, 129,  56, 255u}, {238, 121,  56, 255u},
+    {238, 117,  56, 255u}, {238, 113,  56, 255u}, {238, 109,  52, 255u}, {238, 105,  52, 255u},
+    {238, 101,  52, 255u}, {238,  97,  52, 255u}, {238,  93,  52, 255u}, {238,  89,  48, 255u},
+    {238,  85,  48, 255u}, {238,  85,  48, 255u}, {238,  80,  48, 255u}, {238,  76,  44, 255u},
+    {238,  72,  44, 255u}, {238,  68,  44, 255u}, {238,  64,  44, 255u}, {238,  60,  44, 255u},
+    {238,  56,  36, 255u}, {238,  52,  36, 255u}, {238,  48,  36, 255u}, {238,  44,  36, 255u},
+    {242,  36,  36, 255u}, {242,  44,  44, 255u}, {242,  52,  52, 255u}, {242,  56,  56, 255u},
+    {242,  64,  64, 255u}, {242,  72,  72, 255u}, {242,  76,  76, 255u}, {242,  85,  85, 255u},
+    {242,  85,  85, 255u}, {242,  93,  93, 255u}, {242, 101, 101, 255u}, {242, 105, 105, 255u},
+    {242, 113, 113, 255u}, {242, 117, 117, 255u}, {242, 129, 129, 255u}, {242, 137, 137, 255u},
+    {242, 141, 141, 255u}, {242, 149, 149, 255u}, {242, 157, 157, 255u}, {242, 161, 161, 255u},
+    {242, 170, 170, 255u}, {242, 170, 170, 255u}, {242, 178, 178, 255u}, {242, 186, 186, 255u},
+    {242, 190, 190, 255u}, {242, 198, 198, 255u}, {242, 202, 202, 255u}, {242, 214, 214, 255u},
+    {242, 222, 222, 255u}, {242, 226, 226, 255u}, {242, 234, 234, 255u}, {242, 242, 242, 255u}
+};
+
 fractus_status fractus_legacy_config_init_default(fractus_legacy_config *config)
 {
-    fractus_palette palette;
     uint32_t i;
 
     if (config == NULL) {
@@ -223,12 +285,9 @@ fractus_status fractus_legacy_config_init_default(fractus_legacy_config *config)
     config->biomorph_escape_radius_squared = 1000;
     config->biomorph_cutoff = 1;
 
-    if (fractus_palette_init_default(&palette) != FRACTUS_STATUS_OK) {
-        return FRACTUS_STATUS_ERROR;
-    }
-
     for (i = 0u; i < FRACTUS_LEGACY_PALETTE_DATA_COUNT; ++i) {
-        config->palette[i] = palette.entries[i + 16u];
+        config->palette[i] = fractus_default_fractal_palette[i];
+        config->default_palette[i] = fractus_default_fractal_palette[i];
     }
 
     return FRACTUS_STATUS_OK;
@@ -266,8 +325,8 @@ fractus_status fractus_legacy_config_load(
     if (fractus_read_i16_le(file, &config->iterations) != FRACTUS_STATUS_OK ||
         fractus_read_i16_le(file, &config->escape_radius_squared) != FRACTUS_STATUS_OK ||
         fractus_read_i16_le(file, &config->biomorph_escape_radius_squared) != FRACTUS_STATUS_OK) {
-        fclose(file);
-        return FRACTUS_STATUS_ERROR;
+            fclose(file);
+            return FRACTUS_STATUS_ERROR;
     }
 
     for (i = 0u; i < FRACTUS_LEGACY_PALETTE_DATA_COUNT; ++i) {
@@ -292,6 +351,18 @@ fractus_status fractus_legacy_config_load(
         config->drawing_video_mode = fractus_valid_drawing_video_mode(drawing_video_mode);
         if (fractus_read_i16_le(file, &biomorph_cutoff) == FRACTUS_STATUS_OK) {
             config->biomorph_cutoff = (biomorph_cutoff > 0) ? biomorph_cutoff : 1;
+            for (i = 0u; i < FRACTUS_LEGACY_PALETTE_DATA_COUNT; ++i) {
+                uint8_t r, g, b;
+                if (fractus_read_u8(file, &r) != FRACTUS_STATUS_OK ||
+                    fractus_read_u8(file, &g) != FRACTUS_STATUS_OK ||
+                    fractus_read_u8(file, &b) != FRACTUS_STATUS_OK) {
+                    break;
+                }
+                config->default_palette[i].r = fractus_from_legacy_6bit(r);
+                config->default_palette[i].g = fractus_from_legacy_6bit(g);
+                config->default_palette[i].b = fractus_from_legacy_6bit(b);
+                config->default_palette[i].a = 255u;
+            }
         }
     } else if (ferror(file)) {
         fclose(file);
@@ -345,6 +416,15 @@ fractus_status fractus_legacy_config_save(
         fractus_write_i16_le(file, (config->biomorph_cutoff > 0) ? config->biomorph_cutoff : 1) != FRACTUS_STATUS_OK) {
         fclose(file);
         return FRACTUS_STATUS_ERROR;
+    }
+
+    for (i = 0u; i < FRACTUS_LEGACY_PALETTE_DATA_COUNT; ++i) {
+        if (fractus_write_u8(file, fractus_to_legacy_6bit(config->default_palette[i].r)) != FRACTUS_STATUS_OK ||
+            fractus_write_u8(file, fractus_to_legacy_6bit(config->default_palette[i].g)) != FRACTUS_STATUS_OK ||
+            fractus_write_u8(file, fractus_to_legacy_6bit(config->default_palette[i].b)) != FRACTUS_STATUS_OK) {
+            fclose(file);
+            return FRACTUS_STATUS_ERROR;
+        }
     }
 
     fclose(file);

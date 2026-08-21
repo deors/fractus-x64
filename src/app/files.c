@@ -231,17 +231,19 @@ fractus_status fractus_app_restore_default_palette(
     fractus_legacy_config *config,
     const char *cfg_path)
 {
-    char palette_path[512];
+    uint32_t i;
+    (void)platform;
 
-    if (platform == NULL || framebuffer == NULL || config == NULL) {
+    if (framebuffer == NULL || config == NULL || !framebuffer->initialized) {
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
 
-    if (fractus_formats_resolve_legacy_path(platform, "paletas/defecto.drsp", palette_path, sizeof(palette_path)) != FRACTUS_STATUS_OK) {
-        return FRACTUS_STATUS_ERROR;
+    for (i = 0u; i < FRACTUS_LEGACY_PALETTE_DATA_COUNT; ++i) {
+        framebuffer->palette.entries[i + 16u] = config->default_palette[i];
     }
+    framebuffer->palette_dirty = 1;
 
-    return fractus_app_load_palette_into_state(palette_path, framebuffer, config, cfg_path);
+    return fractus_app_persist_current_palette(cfg_path, framebuffer, config);
 }
 
 fractus_status fractus_app_save_current_palette_file(

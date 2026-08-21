@@ -5,12 +5,23 @@
 static int test_legacy_config_defaults(void)
 {
     fractus_legacy_config config;
+    uint32_t i;
 
     TEST_ASSERT(fractus_legacy_config_init_default(&config) == FRACTUS_STATUS_OK, "Default config init failed");
     TEST_ASSERT_EQUAL_INT(240, config.iterations, "Default iterations mismatch");
     TEST_ASSERT_EQUAL_INT(4, config.escape_radius_squared, "Default escape radius mismatch");
     TEST_ASSERT_EQUAL_INT(1000, config.biomorph_escape_radius_squared, "Default biomorph radius mismatch");
     TEST_ASSERT_EQUAL_INT(1, config.biomorph_cutoff, "Default biomorph cutoff mismatch");
+
+    TEST_ASSERT_EQUAL_INT(121, config.default_palette[0].r, "Default palette entry 0 R mismatch");
+    TEST_ASSERT_EQUAL_INT(60, config.default_palette[0].g, "Default palette entry 0 G mismatch");
+    TEST_ASSERT_EQUAL_INT(121, config.default_palette[0].b, "Default palette entry 0 B mismatch");
+
+    for (i = 0; i < FRACTUS_LEGACY_PALETTE_DATA_COUNT; ++i) {
+        TEST_ASSERT_EQUAL_INT(config.palette[i].r, config.default_palette[i].r, "Palette R mismatch with default");
+        TEST_ASSERT_EQUAL_INT(config.palette[i].g, config.default_palette[i].g, "Palette G mismatch with default");
+        TEST_ASSERT_EQUAL_INT(config.palette[i].b, config.default_palette[i].b, "Palette B mismatch with default");
+    }
 
     return 1;
 }
@@ -34,6 +45,10 @@ static int test_legacy_config_save_and_load(void)
         original.palette[i].g = (uint8_t)((i * 2u) & 0xFF);
         original.palette[i].b = (uint8_t)((i * 3u) & 0xFF);
         original.palette[i].a = 255u;
+        original.default_palette[i].r = (uint8_t)((i * 4u) & 0xFF);
+        original.default_palette[i].g = (uint8_t)((i * 5u) & 0xFF);
+        original.default_palette[i].b = (uint8_t)((i * 6u) & 0xFF);
+        original.default_palette[i].a = 255u;
     }
 
     TEST_ASSERT(fractus_legacy_config_save(test_path, &original) == FRACTUS_STATUS_OK, "Config save failed");
@@ -50,6 +65,9 @@ static int test_legacy_config_save_and_load(void)
         TEST_ASSERT(abs((int)original.palette[i].r - (int)loaded.palette[i].r) <= 5, "Palette R tolerance mismatch");
         TEST_ASSERT(abs((int)original.palette[i].g - (int)loaded.palette[i].g) <= 5, "Palette G tolerance mismatch");
         TEST_ASSERT(abs((int)original.palette[i].b - (int)loaded.palette[i].b) <= 5, "Palette B tolerance mismatch");
+        TEST_ASSERT(abs((int)original.default_palette[i].r - (int)loaded.default_palette[i].r) <= 5, "Default palette R tolerance mismatch");
+        TEST_ASSERT(abs((int)original.default_palette[i].g - (int)loaded.default_palette[i].g) <= 5, "Default palette G tolerance mismatch");
+        TEST_ASSERT(abs((int)original.default_palette[i].b - (int)loaded.default_palette[i].b) <= 5, "Default palette B tolerance mismatch");
     }
 
     remove(test_path);

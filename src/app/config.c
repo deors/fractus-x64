@@ -102,7 +102,6 @@ fractus_status fractus_app_load_legacy_assets(
     char *cfg_path,
     size_t cfg_path_size)
 {
-    fractus_palette palette;
     char path_buffer[512];
     fractus_status status;
 
@@ -136,25 +135,7 @@ fractus_status fractus_app_load_legacy_assets(
 
     fractus_app_log("startup: fractus.cfg not found");
     fractus_app_apply_legacy_numeric_config(legacy_config, mandelbrot_params, julia_params, biomorph_params);
-    if (fractus_app_apply_legacy_config(framebuffer, legacy_config) != FRACTUS_STATUS_OK) {
-        return FRACTUS_STATUS_ERROR;
-    }
-
-    status = fractus_formats_resolve_legacy_path(platform, "paletas/defecto.drsp", path_buffer, sizeof(path_buffer));
-    if (status == FRACTUS_STATUS_OK) {
-        fractus_app_log(path_buffer);
-        if (fractus_legacy_palette_load(path_buffer, &palette) != FRACTUS_STATUS_OK) {
-            fractus_app_log("startup: default .drsp found but load failed");
-            return FRACTUS_STATUS_ERROR;
-        }
-
-        fractus_app_log("startup: legacy palette loaded");
-        return fractus_app_apply_palette(framebuffer, &palette);
-    }
-
-    fractus_app_log("startup: default .drsp not found");
-
-    return FRACTUS_STATUS_OK;
+    return fractus_app_apply_legacy_config(framebuffer, legacy_config);
 }
 
 static size_t fractus_app_build_fractals_config_entries(

@@ -30,6 +30,7 @@ typedef struct fractus_legacy_config {
     int16_t biomorph_escape_radius_squared;
     int16_t biomorph_cutoff;
     fractus_color_rgba8 palette[FRACTUS_LEGACY_PALETTE_DATA_COUNT];
+    fractus_color_rgba8 default_palette[FRACTUS_LEGACY_PALETTE_DATA_COUNT];
 } fractus_legacy_config;
 
 fractus_status fractus_legacy_config_init_default(fractus_legacy_config *config);
