@@ -185,25 +185,25 @@ static fractus_status fractus_app_run_main_menu_view(
             *config_draft = *legacy_config;
             (void)fractus_ui_numeric_field_init_int(
                 iterations_field,
-                (fractus_rect_i32){324, 132, 73, 20},
+                (fractus_rect_i32){324, 169, 73, 20},
                 (int32_t)config_draft->iterations,
                 16,
                 1024);
             (void)fractus_ui_numeric_field_init_int(
                 escape_radius_field,
-                (fractus_rect_i32){324, 158, 73, 20},
+                (fractus_rect_i32){324, 195, 73, 20},
                 (int32_t)config_draft->escape_radius_squared,
                 4,
                 1000);
             (void)fractus_ui_numeric_field_init_int(
                 biomorph_radius_field,
-                (fractus_rect_i32){324, 208, 73, 20},
+                (fractus_rect_i32){324, 245, 73, 20},
                 (int32_t)config_draft->biomorph_escape_radius_squared,
                 4,
                 1000);
             (void)fractus_ui_numeric_field_init_int(
                 biomorph_cutoff_field,
-                (fractus_rect_i32){324, 234, 73, 20},
+                (fractus_rect_i32){324, 271, 73, 20},
                 (int32_t)config_draft->biomorph_cutoff,
                 1,
                 100);
@@ -270,9 +270,9 @@ static fractus_status fractus_app_render_error(
     }
 
     if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_window(framebuffer, 150, 150, 489, 270) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 154, 15u, "Error") != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 320, 195, 0u, message) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_window(framebuffer, 150, 184, 489, 296) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 188, 15u, "Error") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 320, 230, 0u, message) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_button_list(framebuffer, fonts, entries, entry_count, active_index) != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
@@ -288,7 +288,7 @@ static fractus_status fractus_app_run_error_view(
     fractus_app_view *view)
 {
     static const fractus_app_menu_entry dialog_entries[] = {
-        {FRACTUS_APP_RECT(270, 235, 370, 255), 0u, 15u, "Aceptar"}
+        {FRACTUS_APP_RECT(270, 258, 370, 278), 0u, 15u, "Aceptar"}
     };
     fractus_ui_menu_option dialog_options[FRACTUS_APP_ARRAY_COUNT(dialog_entries)];
     int selected_menu = -1;
