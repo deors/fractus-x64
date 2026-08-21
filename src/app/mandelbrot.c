@@ -273,9 +273,9 @@ static fractus_status fractus_app_run_mandelbrot_generic_config_view(
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->ymin) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 247, 0u, "Maximo valor imaginario") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->ymax) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 277, 0u, "Iteraciones maximas") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 277, 0u, "Iteraciones maximas (16-1024)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->max_iterations) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 307, 0u, "Radio de escape al cuadrado") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 307, 0u, "Radio de escape al cuadrado (4-1000)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->escape_radius_squared) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 337, 0u, "Modo de coloreado") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_radio_list(

@@ -131,9 +131,9 @@ fractus_status fractus_app_run_biomorph_config_view(
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->constant_real) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 224, 0u, "Constante imaginaria") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->constant_imag) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 248, 0u, "Radio de escape al cuadrado") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 248, 0u, "Radio de escape al cuadrado (4-1000)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->escape_radius_squared) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 272, 0u, "Umbral de escape") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 272, 0u, "Umbral de escape (1-100)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->cutoff) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 296, 0u, "Ecuacion") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_radio_list(

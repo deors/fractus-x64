@@ -292,9 +292,9 @@ static fractus_status fractus_app_run_julia_generic_config_view(
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->constant_real) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 272, 0u, "Constante imaginaria") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->constant_imag) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 298, 0u, "Iteraciones maximas") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 298, 0u, "Iteraciones maximas (16-1024)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->max_iterations) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 324, 0u, "Radio de escape al cuadrado") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 324, 0u, "Radio de escape al cuadrado (4-1000)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->escape_radius_squared) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 350, 0u, "Modo de coloreado") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_radio_list(
