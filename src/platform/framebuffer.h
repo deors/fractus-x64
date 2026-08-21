@@ -38,6 +38,12 @@ fractus_status fractus_palette_get_entry(
     uint32_t index,
     fractus_color_rgba8 *color);
 
+fractus_status fractus_palette_cycle(
+    fractus_palette *palette,
+    uint32_t offset,
+    uint32_t span,
+    int direction);
+
 fractus_status fractus_framebuffer_init(
     fractus_framebuffer *framebuffer,
     fractus_size_u32 size);
@@ -58,5 +64,10 @@ fractus_status fractus_framebuffer_get_pixel(
     uint8_t *color_index);
 
 fractus_status fractus_framebuffer_sync_rgba(fractus_framebuffer *framebuffer);
+fractus_status fractus_framebuffer_cycle_palette(
+    fractus_framebuffer *framebuffer,
+    uint32_t offset,
+    uint32_t span,
+    int direction);
 
 #endif

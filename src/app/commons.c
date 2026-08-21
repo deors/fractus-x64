@@ -292,7 +292,7 @@ fractus_status fractus_app_resize_drawing_framebuffer(
     }
 
     if (framebuffer->size.width == size.width && framebuffer->size.height == size.height) {
-        return fractus_app_sync_framebuffer_palette(framebuffer, palette_source);
+        return FRACTUS_STATUS_OK;
     }
 
     palette = palette_source->palette;

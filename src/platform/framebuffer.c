@@ -228,3 +228,65 @@ fractus_status fractus_framebuffer_sync_rgba(fractus_framebuffer *framebuffer)
     framebuffer->palette_dirty = 0;
     return FRACTUS_STATUS_OK;
 }
+
+fractus_status fractus_palette_cycle(
+    fractus_palette *palette,
+    uint32_t offset,
+    uint32_t span,
+    int direction)
+{
+    uint32_t start;
+    uint32_t end;
+    uint32_t i;
+    fractus_color_rgba8 temp;
+
+    if (palette == NULL || span < 2u || offset >= FRACTUS_PALETTE_SIZE) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    start = offset;
+    end = start + span - 1u;
+    if (end >= FRACTUS_PALETTE_SIZE) {
+        end = FRACTUS_PALETTE_SIZE - 1u;
+    }
+
+    if (start >= end) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    if (direction >= 0) {
+        temp = palette->entries[end];
+        for (i = end; i > start; --i) {
+            palette->entries[i] = palette->entries[i - 1u];
+        }
+        palette->entries[start] = temp;
+    } else {
+        temp = palette->entries[start];
+        for (i = start; i < end; ++i) {
+            palette->entries[i] = palette->entries[i + 1u];
+        }
+        palette->entries[end] = temp;
+    }
+
+    return FRACTUS_STATUS_OK;
+}
+
+fractus_status fractus_framebuffer_cycle_palette(
+    fractus_framebuffer *framebuffer,
+    uint32_t offset,
+    uint32_t span,
+    int direction)
+{
+    fractus_status status;
+
+    if (framebuffer == NULL || !framebuffer->initialized) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    status = fractus_palette_cycle(&framebuffer->palette, offset, span, direction);
+    if (status == FRACTUS_STATUS_OK) {
+        framebuffer->palette_dirty = 1;
+    }
+
+    return status;
+}

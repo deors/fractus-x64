@@ -722,7 +722,7 @@ fractus_status fractus_app_render_mandelbrot(
         return FRACTUS_STATUS_ERROR;
     }
 
-    return fractus_app_draw_drawing_footer(framebuffer, fonts, "ESC/boton derecho: menu - G: grabar - S: seleccionar zona");
+    return fractus_app_draw_drawing_footer(framebuffer, fonts, "ESC/boton derecho: menu - G: grabar - S: seleccionar zona - F: flujo");
 }
 
 static int fractus_app_apply_mandelbrot_dem_selection(
@@ -831,5 +831,5 @@ fractus_status fractus_app_render_mandelbrot_dem(
         return FRACTUS_STATUS_ERROR;
     }
 
-    return fractus_app_draw_drawing_footer(framebuffer, fonts, "ESC/boton derecho: menu - G: grabar - S: seleccionar zona");
+    return fractus_app_draw_drawing_footer(framebuffer, fonts, "ESC/boton derecho: menu - G: grabar - S: seleccionar zona - F: flujo");
 }

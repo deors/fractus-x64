@@ -127,11 +127,52 @@ static int test_plasma_rendering(void)
     return 1;
 }
 
+static int test_palette_cycling(void)
+{
+    fractus_framebuffer fb;
+    fractus_size_u32 size = {80, 60};
+    fractus_color_rgba8 original_entry_16;
+    fractus_color_rgba8 original_entry_255;
+    fractus_color_rgba8 original_entry_0;
+    fractus_color_rgba8 original_entry_15;
+    uint32_t i;
+
+    TEST_ASSERT(fractus_framebuffer_init(&fb, size) == FRACTUS_STATUS_OK, "Framebuffer init failed");
+
+    original_entry_0 = fb.palette.entries[0];
+    original_entry_15 = fb.palette.entries[15];
+    original_entry_16 = fb.palette.entries[16];
+    original_entry_255 = fb.palette.entries[255];
+
+    /* Cycle forward 1 step */
+    TEST_ASSERT(fractus_framebuffer_cycle_palette(&fb, 16u, 240u, 1) == FRACTUS_STATUS_OK, "Cycle palette forward failed");
+    TEST_ASSERT_EQUAL_INT(original_entry_0.r, fb.palette.entries[0].r, "Entry 0 should be unchanged");
+    TEST_ASSERT_EQUAL_INT(original_entry_15.r, fb.palette.entries[15].r, "Entry 15 should be unchanged");
+    TEST_ASSERT_EQUAL_INT(original_entry_255.r, fb.palette.entries[16].r, "Entry 16 should have old entry 255");
+    TEST_ASSERT_EQUAL_INT(original_entry_16.r, fb.palette.entries[17].r, "Entry 17 should have old entry 16");
+
+    /* Cycle 239 more times to complete a full 240-step loop */
+    for (i = 0; i < 239u; ++i) {
+        TEST_ASSERT(fractus_framebuffer_cycle_palette(&fb, 16u, 240u, 1) == FRACTUS_STATUS_OK, "Cycle palette step failed");
+    }
+    TEST_ASSERT_EQUAL_INT(original_entry_16.r, fb.palette.entries[16].r, "Entry 16 should match original after full loop");
+    TEST_ASSERT_EQUAL_INT(original_entry_255.r, fb.palette.entries[255].r, "Entry 255 should match original after full loop");
+
+    /* Test invalid arguments */
+    TEST_ASSERT(fractus_framebuffer_cycle_palette(NULL, 16u, 240u, 1) == FRACTUS_STATUS_INVALID_ARGUMENT, "Null check failed");
+    TEST_ASSERT(fractus_framebuffer_cycle_palette(&fb, 16u, 1u, 1) == FRACTUS_STATUS_INVALID_ARGUMENT, "Span < 2 check failed");
+    TEST_ASSERT(fractus_palette_cycle(NULL, 16u, 240u, 1) == FRACTUS_STATUS_INVALID_ARGUMENT, "Palette null check failed");
+
+    fractus_framebuffer_shutdown(&fb);
+    return 1;
+}
+
 int main(void)
 {
     printf("=== RUNNING FRACTAL TESTS ===\n");
     TEST_RUN(test_mandelbrot_rendering);
     TEST_RUN(test_julia_rendering);
     TEST_RUN(test_plasma_rendering);
+    TEST_RUN(test_palette_cycling);
     TEST_REPORT();
 }

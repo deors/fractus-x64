@@ -657,7 +657,7 @@ fractus_status fractus_app_render_julia(
         return FRACTUS_STATUS_ERROR;
     }
 
-    return fractus_app_draw_drawing_footer(framebuffer, fonts, "ESC o boton derecho: menu - G: grabar dibujo");
+    return fractus_app_draw_drawing_footer(framebuffer, fonts, "ESC o boton derecho: menu - G: grabar dibujo - F: flujo");
 }
 
 fractus_status fractus_app_render_julia_dem(
@@ -678,5 +678,5 @@ fractus_status fractus_app_render_julia_dem(
         return FRACTUS_STATUS_ERROR;
     }
 
-    return fractus_app_draw_drawing_footer(framebuffer, fonts, "ESC o boton derecho: menu - G: grabar dibujo");
+    return fractus_app_draw_drawing_footer(framebuffer, fonts, "ESC o boton derecho: menu - G: grabar dibujo - F: flujo");
 }
