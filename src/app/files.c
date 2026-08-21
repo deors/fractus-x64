@@ -668,21 +668,17 @@ static size_t fractus_app_build_palette_load_entries(
         visible_count = FRACTUS_APP_PALETTE_FILE_PAGE_SIZE;
     }
 
-    y = 168;
+    y = 124;
     for (i = 0u; i < visible_count; ++i) {
         fractus_app_set_button(&entries[i], 185, y, 455, y + 20, 8u, 0u, files[first_file + i].label);
         y += 24;
     }
 
-    if (visible_count == 0u) {
-        y = 204;
-    }
-
     has_previous = page > 0u;
     has_next = first_file + visible_count < file_count;
-    fractus_app_set_button(&entries[visible_count], 185, y + 10, 225, y + 30, 8u, has_previous ? 0u : 7u, "<");
-    fractus_app_set_button(&entries[visible_count + 1u], 270, y + 10, 370, y + 30, 0u, 15u, "Cancelar");
-    fractus_app_set_button(&entries[visible_count + 2u], 415, y + 10, 455, y + 30, 8u, has_next ? 0u : 7u, ">");
+    fractus_app_set_button(&entries[visible_count], 185, 374, 225, 394, 8u, has_previous ? 0u : 7u, "<");
+    fractus_app_set_button(&entries[visible_count + 1u], 270, 374, 370, 394, 0u, 15u, "Cancelar");
+    fractus_app_set_button(&entries[visible_count + 2u], 415, 374, 455, 394, 8u, has_next ? 0u : 7u, ">");
     *visible_file_count = visible_count;
     return visible_count + 3u;
 }
@@ -716,21 +712,17 @@ static size_t fractus_app_build_graphic_load_entries(
         visible_count = FRACTUS_APP_GRAPHIC_FILE_PAGE_SIZE;
     }
 
-    y = 168;
+    y = 124;
     for (i = 0u; i < visible_count; ++i) {
         fractus_app_set_button(&entries[i], 185, y, 455, y + 20, 8u, 0u, files[first_file + i].label);
         y += 24;
     }
 
-    if (visible_count == 0u) {
-        y = 204;
-    }
-
     has_previous = page > 0u;
     has_next = first_file + visible_count < file_count;
-    fractus_app_set_button(&entries[visible_count], 185, y + 10, 225, y + 30, 8u, has_previous ? 0u : 7u, "<");
-    fractus_app_set_button(&entries[visible_count + 1u], 270, y + 10, 370, y + 30, 0u, 15u, "Cancelar");
-    fractus_app_set_button(&entries[visible_count + 2u], 415, y + 10, 455, y + 30, 8u, has_next ? 0u : 7u, ">");
+    fractus_app_set_button(&entries[visible_count], 185, 374, 225, 394, 8u, has_previous ? 0u : 7u, "<");
+    fractus_app_set_button(&entries[visible_count + 1u], 270, 374, 370, 394, 0u, 15u, "Cancelar");
+    fractus_app_set_button(&entries[visible_count + 2u], 415, 374, 455, 394, 8u, has_next ? 0u : 7u, ">");
     *visible_file_count = visible_count;
     return visible_count + 3u;
 }
@@ -746,23 +738,14 @@ static fractus_status fractus_app_render_file_load(
     size_t file_count,
     int active_index)
 {
-    int32_t window_bottom;
-    int32_t message_y;
-
     if (framebuffer == NULL || fonts == NULL || title == NULL || help == NULL || empty_message == NULL || entries == NULL) {
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
 
-    window_bottom = 212 + (int32_t)file_count * 24;
-    if (window_bottom < 254) {
-        window_bottom = 254;
-    }
-
-    message_y = 146;
     if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_window(framebuffer, 170, 120, 469, window_bottom) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 124, 15u, title) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 320, message_y, 0u, help) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_window(framebuffer, 170, 76, 469, 404) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 80, 15u, title) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 320, 102, 0u, help) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_button_list(framebuffer, fonts, entries, entry_count, active_index) != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
@@ -773,7 +756,7 @@ static fractus_status fractus_app_render_file_load(
             fonts,
             FRACTUS_FONT_SMALL,
             320,
-            178,
+            240,
             0u,
             empty_message);
     }
@@ -1383,7 +1366,7 @@ static int fractus_app_palette_pick(
 
     if (ui->release_pending &&
         ui->release_event.buttons.left &&
-        fractus_ui_point_in_rect(ui->release_event.position, (fractus_rect_i32)FRACTUS_APP_RECT(270, 422, 370, 442))) {
+        fractus_ui_point_in_rect(ui->release_event.position, (fractus_rect_i32)FRACTUS_APP_RECT(270, 401, 370, 420))) {
         if (cancelled != NULL) {
             *cancelled = 1;
         }
@@ -1403,7 +1386,7 @@ static int fractus_app_palette_back_is_pressed(const fractus_ui_context *ui)
 {
     return ui != NULL &&
            ui->buttons_down.left &&
-           fractus_ui_point_in_rect(ui->pointer_position, (fractus_rect_i32)FRACTUS_APP_RECT(270, 422, 370, 442));
+           fractus_ui_point_in_rect(ui->pointer_position, (fractus_rect_i32)FRACTUS_APP_RECT(270, 401, 370, 420));
 }
 
 static int fractus_app_palette_back_was_clicked(const fractus_ui_context *ui)
@@ -1411,7 +1394,7 @@ static int fractus_app_palette_back_was_clicked(const fractus_ui_context *ui)
     return ui != NULL &&
            ui->release_pending &&
            ui->release_event.buttons.left &&
-           fractus_ui_point_in_rect(ui->release_event.position, (fractus_rect_i32)FRACTUS_APP_RECT(270, 422, 370, 442));
+           fractus_ui_point_in_rect(ui->release_event.position, (fractus_rect_i32)FRACTUS_APP_RECT(270, 401, 370, 420));
 }
 
 static fractus_status fractus_app_render_palette_screen(
@@ -1422,21 +1405,22 @@ static fractus_status fractus_app_render_palette_screen(
     int back_pressed)
 {
     const fractus_app_menu_entry back_button = {
-        FRACTUS_APP_RECT(270, 422, 370, 442), 0u, 15u, "Volver"
+        FRACTUS_APP_RECT(270, 401, 370, 420), 0u, 15u, "Volver"
     };
 
     if (framebuffer == NULL || fonts == NULL || title == NULL) {
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
 
-    if (fractus_ui_draw_window(framebuffer, 0, 0, 639, 454) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 6, 15u, title) != FRACTUS_STATUS_OK ||
+    if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_window(framebuffer, 36, 48, 603, 430) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 52, 15u, title) != FRACTUS_STATUS_OK ||
         fractus_app_draw_palette_grid(framebuffer) != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
     if (line1 != NULL &&
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 320, 405, 0u, line1) != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 320, 383, 0u, line1) != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
@@ -1472,7 +1456,7 @@ static fractus_status fractus_app_render_palette_color_edit(
     int active_index)
 {
     char buffer[48];
-    fractus_rect_i32 preview = {364, 152, 72, 80};
+    fractus_rect_i32 preview = {345, 189, 145, 58};
 
     if (framebuffer == NULL || fonts == NULL || red_field == NULL || green_field == NULL ||
         blue_field == NULL || entries == NULL) {
@@ -1487,27 +1471,27 @@ static fractus_status fractus_app_render_palette_color_edit(
             "Modificar un color de la paleta",
             "",
             0) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_window(framebuffer, 120, 112, 599, 335) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 360, 116, 15u, "Modificar color") != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, 125, 142, 594, 270, 8u, 0u, buffer) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 320, 265, 0u, "Ajuste los canales RGB con valores VGA entre 0 y 63 y pulse Guardar.") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_window(framebuffer, 135, 142, 504, 336) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 146, 15u, "Modificar color") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_group_box(framebuffer, fonts, 140, 174, 499, 280, 8u, 0u, buffer) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 320, 288, 0u, "Ajuste los canales RGB con valores VGA entre 0 y 63 y pulse Guardar.") != FRACTUS_STATUS_OK ||
         fractus_graphics_fill_rect(framebuffer, preview, (uint8_t)palette_index) != FRACTUS_STATUS_OK ||
         fractus_graphics_rect(framebuffer, preview, 15u) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 364, 245, 0u, "Previsualizacion") != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 417, 254, 0u, "Previsualizacion") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
-    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 135, 157, 0u, "Rojo") != FRACTUS_STATUS_OK ||
+    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 194, 0u, "Rojo") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, red_field) != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
-    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 135, 187, 0u, "Verde") != FRACTUS_STATUS_OK ||
+    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 221, 0u, "Verde") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, green_field) != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
-    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 135, 217, 0u, "Azul") != FRACTUS_STATUS_OK ||
+    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 248, 0u, "Azul") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, blue_field) != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
@@ -1539,7 +1523,7 @@ fractus_status fractus_app_run_palette_view(
     /* 4. Raton y acciones de botones. */
     if (ui->release_pending &&
         ui->release_event.buttons.left &&
-        fractus_ui_point_in_rect(ui->release_event.position, (fractus_rect_i32)FRACTUS_APP_RECT(270, 422, 370, 442))) {
+        fractus_ui_point_in_rect(ui->release_event.position, (fractus_rect_i32)FRACTUS_APP_RECT(270, 401, 370, 420))) {
         *view = FRACTUS_APP_VIEW_MAIN_MENU;
     }
 
@@ -1551,14 +1535,14 @@ static size_t fractus_app_build_palette_color_entries(
     size_t capacity)
 {
     static const fractus_app_menu_entry controls[] = {
-        {FRACTUS_APP_RECT(249, 152, 289, 172), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(294, 152, 334, 172), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(249, 182, 289, 202), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(294, 182, 334, 202), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(249, 212, 289, 232), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(294, 212, 334, 232), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(210, 300, 310, 320), 8u, 0u, "Guardar"},
-        {FRACTUS_APP_RECT(330, 300, 430, 320), 0u, 15u, "Cancelar"}
+        {FRACTUS_APP_RECT(244, 189, 284, 209), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(289, 189, 329, 209), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(244, 216, 284, 236), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(289, 216, 329, 236), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(244, 243, 284, 263), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(289, 243, 329, 263), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(210, 306, 310, 326), 8u, 0u, "Guardar"},
+        {FRACTUS_APP_RECT(330, 306, 430, 326), 0u, 15u, "Cancelar"}
     };
 
     return fractus_app_copy_control_entries(
@@ -1672,80 +1656,120 @@ fractus_status fractus_app_run_palette_edit_color_view(
         return FRACTUS_STATUS_ERROR;
     }
 
-    /* 3. Teclado en los campos editables. */
+    /* 3. Teclado y raton en los campos editables con foco exclusivo. */
     fractus_app_vga_channels_from_color(*palette_pending_color, &red, &green, &blue);
-    {
-        int edit_accepted = 0;
-        int edit_cancelled = 0;
-        int was_editing = red_field->editing;
 
-        if (fractus_ui_numeric_field_handle_input(red_field, ui, fonts, &edit_accepted, &edit_cancelled) != FRACTUS_STATUS_OK) {
-            fractus_app_log("runtime: palette red inline edit failed");
-            return FRACTUS_STATUS_ERROR;
-        }
-        if (edit_accepted) {
-            int32_t edited_value;
-            if (fractus_ui_numeric_field_get_int(red_field, &edited_value) == FRACTUS_STATUS_OK) {
-                red = edited_value;
+    if (ui->press_pending && ui->press_event.buttons.left) {
+        fractus_point_i32 click_pos = ui->press_event.position;
+        if (fractus_ui_point_in_rect(click_pos, red_field->bounds)) {
+            int32_t val;
+            if (green_field->editing && fractus_ui_numeric_field_get_int(green_field, &val) == FRACTUS_STATUS_OK) {
+                green = val;
+            }
+            if (blue_field->editing && fractus_ui_numeric_field_get_int(blue_field, &val) == FRACTUS_STATUS_OK) {
+                blue = val;
+            }
+            *palette_pending_color = fractus_app_vga_color(red, green, blue);
+            fractus_app_init_palette_color_fields(red_field, green_field, blue_field, *palette_pending_color);
+            (void)fractus_ui_numeric_field_begin_edit(red_field);
+        } else if (fractus_ui_point_in_rect(click_pos, green_field->bounds)) {
+            int32_t val;
+            if (red_field->editing && fractus_ui_numeric_field_get_int(red_field, &val) == FRACTUS_STATUS_OK) {
+                red = val;
+            }
+            if (blue_field->editing && fractus_ui_numeric_field_get_int(blue_field, &val) == FRACTUS_STATUS_OK) {
+                blue = val;
+            }
+            *palette_pending_color = fractus_app_vga_color(red, green, blue);
+            fractus_app_init_palette_color_fields(red_field, green_field, blue_field, *palette_pending_color);
+            (void)fractus_ui_numeric_field_begin_edit(green_field);
+        } else if (fractus_ui_point_in_rect(click_pos, blue_field->bounds)) {
+            int32_t val;
+            if (red_field->editing && fractus_ui_numeric_field_get_int(red_field, &val) == FRACTUS_STATUS_OK) {
+                red = val;
+            }
+            if (green_field->editing && fractus_ui_numeric_field_get_int(green_field, &val) == FRACTUS_STATUS_OK) {
+                green = val;
+            }
+            *palette_pending_color = fractus_app_vga_color(red, green, blue);
+            fractus_app_init_palette_color_fields(red_field, green_field, blue_field, *palette_pending_color);
+            (void)fractus_ui_numeric_field_begin_edit(blue_field);
+        } else {
+            int32_t val;
+            int changed = 0;
+            if (red_field->editing) {
+                if (fractus_ui_numeric_field_get_int(red_field, &val) == FRACTUS_STATUS_OK) {
+                    red = val;
+                    changed = 1;
+                }
+            }
+            if (green_field->editing) {
+                if (fractus_ui_numeric_field_get_int(green_field, &val) == FRACTUS_STATUS_OK) {
+                    green = val;
+                    changed = 1;
+                }
+            }
+            if (blue_field->editing) {
+                if (fractus_ui_numeric_field_get_int(blue_field, &val) == FRACTUS_STATUS_OK) {
+                    blue = val;
+                    changed = 1;
+                }
+            }
+            if (changed) {
                 *palette_pending_color = fractus_app_vga_color(red, green, blue);
             }
             fractus_app_init_palette_color_fields(red_field, green_field, blue_field, *palette_pending_color);
-        } else if (edit_cancelled) {
-            fractus_app_init_palette_color_fields(red_field, green_field, blue_field, *palette_pending_color);
-        }
-        if (was_editing || red_field->editing) {
-            skip_palette_color_menu = 1;
         }
     }
 
-    fractus_app_vga_channels_from_color(*palette_pending_color, &red, &green, &blue);
-    {
+    if (red_field->editing) {
         int edit_accepted = 0;
         int edit_cancelled = 0;
-        int was_editing = green_field->editing;
-
-        if (fractus_ui_numeric_field_handle_input(green_field, ui, fonts, &edit_accepted, &edit_cancelled) != FRACTUS_STATUS_OK) {
-            fractus_app_log("runtime: palette green inline edit failed");
-            return FRACTUS_STATUS_ERROR;
-        }
-        if (edit_accepted) {
-            int32_t edited_value;
-            if (fractus_ui_numeric_field_get_int(green_field, &edited_value) == FRACTUS_STATUS_OK) {
-                green = edited_value;
-                *palette_pending_color = fractus_app_vga_color(red, green, blue);
+        if (fractus_ui_numeric_field_handle_input(red_field, ui, fonts, &edit_accepted, &edit_cancelled) == FRACTUS_STATUS_OK) {
+            if (edit_accepted) {
+                int32_t val;
+                if (fractus_ui_numeric_field_get_int(red_field, &val) == FRACTUS_STATUS_OK) {
+                    red = val;
+                    *palette_pending_color = fractus_app_vga_color(red, green, blue);
+                }
+                fractus_app_init_palette_color_fields(red_field, green_field, blue_field, *palette_pending_color);
+            } else if (edit_cancelled) {
+                fractus_app_init_palette_color_fields(red_field, green_field, blue_field, *palette_pending_color);
             }
-            fractus_app_init_palette_color_fields(red_field, green_field, blue_field, *palette_pending_color);
-        } else if (edit_cancelled) {
-            fractus_app_init_palette_color_fields(red_field, green_field, blue_field, *palette_pending_color);
         }
-        if (was_editing || green_field->editing) {
-            skip_palette_color_menu = 1;
-        }
-    }
-
-    fractus_app_vga_channels_from_color(*palette_pending_color, &red, &green, &blue);
-    {
+        skip_palette_color_menu = 1;
+    } else if (green_field->editing) {
         int edit_accepted = 0;
         int edit_cancelled = 0;
-        int was_editing = blue_field->editing;
-
-        if (fractus_ui_numeric_field_handle_input(blue_field, ui, fonts, &edit_accepted, &edit_cancelled) != FRACTUS_STATUS_OK) {
-            fractus_app_log("runtime: palette blue inline edit failed");
-            return FRACTUS_STATUS_ERROR;
-        }
-        if (edit_accepted) {
-            int32_t edited_value;
-            if (fractus_ui_numeric_field_get_int(blue_field, &edited_value) == FRACTUS_STATUS_OK) {
-                blue = edited_value;
-                *palette_pending_color = fractus_app_vga_color(red, green, blue);
+        if (fractus_ui_numeric_field_handle_input(green_field, ui, fonts, &edit_accepted, &edit_cancelled) == FRACTUS_STATUS_OK) {
+            if (edit_accepted) {
+                int32_t val;
+                if (fractus_ui_numeric_field_get_int(green_field, &val) == FRACTUS_STATUS_OK) {
+                    green = val;
+                    *palette_pending_color = fractus_app_vga_color(red, green, blue);
+                }
+                fractus_app_init_palette_color_fields(red_field, green_field, blue_field, *palette_pending_color);
+            } else if (edit_cancelled) {
+                fractus_app_init_palette_color_fields(red_field, green_field, blue_field, *palette_pending_color);
             }
-            fractus_app_init_palette_color_fields(red_field, green_field, blue_field, *palette_pending_color);
-        } else if (edit_cancelled) {
-            fractus_app_init_palette_color_fields(red_field, green_field, blue_field, *palette_pending_color);
         }
-        if (was_editing || blue_field->editing) {
-            skip_palette_color_menu = 1;
+        skip_palette_color_menu = 1;
+    } else if (blue_field->editing) {
+        int edit_accepted = 0;
+        int edit_cancelled = 0;
+        if (fractus_ui_numeric_field_handle_input(blue_field, ui, fonts, &edit_accepted, &edit_cancelled) == FRACTUS_STATUS_OK) {
+            if (edit_accepted) {
+                int32_t val;
+                if (fractus_ui_numeric_field_get_int(blue_field, &val) == FRACTUS_STATUS_OK) {
+                    blue = val;
+                    *palette_pending_color = fractus_app_vga_color(red, green, blue);
+                }
+                fractus_app_init_palette_color_fields(red_field, green_field, blue_field, *palette_pending_color);
+            } else if (edit_cancelled) {
+                fractus_app_init_palette_color_fields(red_field, green_field, blue_field, *palette_pending_color);
+            }
         }
+        skip_palette_color_menu = 1;
     }
 
     /* 4. Raton y acciones de botones. */

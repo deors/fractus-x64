@@ -162,16 +162,16 @@ static size_t fractus_app_build_fractals_config_entries(
     size_t capacity)
 {
     static const fractus_app_menu_entry controls[] = {
-        {FRACTUS_APP_RECT(404, 132, 444, 152), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(449, 132, 489, 152), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(404, 158, 444, 178), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(449, 158, 489, 178), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(404, 208, 444, 228), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(449, 208, 489, 228), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(404, 234, 444, 254), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(449, 234, 489, 254), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(210, 288, 310, 308), 8u, 0u, "Guardar"},
-        {FRACTUS_APP_RECT(330, 288, 430, 308), 0u, 15u, "Cancelar"}
+        {FRACTUS_APP_RECT(404, 169, 444, 189), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(449, 169, 489, 189), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(404, 195, 444, 215), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(449, 195, 489, 215), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(404, 245, 444, 265), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(449, 245, 489, 265), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(404, 271, 444, 291), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(449, 271, 489, 291), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(210, 325, 310, 345), 8u, 0u, "Guardar"},
+        {FRACTUS_APP_RECT(330, 325, 430, 345), 0u, 15u, "Cancelar"}
     };
 
     return fractus_app_copy_control_entries(
@@ -221,23 +221,23 @@ fractus_status fractus_app_run_fractals_default_config_view(
 
     /* 1. Contenedor exterior y paneles por tipo de conjunto fractal */
     if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_window(framebuffer, 135, 90, 504, 318) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 94, 15u, "Parametros por defecto de conjuntos fractales") != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, 140, 118, 499, 186, 8u, 0u, "Mandelbrot y Julia") != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, 140, 194, 499, 262, 8u, 0u, "Biomorfos de Pickover") != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_window(framebuffer, 135, 123, 504, 355) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 127, 15u, "Parametros por defecto de conjuntos fractales") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_group_box(framebuffer, fonts, 140, 155, 499, 223, 8u, 0u, "Mandelbrot y Julia") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_group_box(framebuffer, fonts, 140, 231, 499, 299, 8u, 0u, "Biomorfos de Pickover") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
     /* 2. Textos de etiquetas, campos numericos, tip y botones */
-    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 137, 0u, "Iteraciones maximas (16-1024)") != FRACTUS_STATUS_OK ||
+    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 174, 0u, "Iteraciones maximas (16-1024)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, iterations_field) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 163, 0u, "Radio de escape al cuadrado (4-1000)") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 200, 0u, "Radio de escape al cuadrado (4-1000)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, escape_radius_field) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 213, 0u, "Radio de escape al cuadrado (4-1000)") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 250, 0u, "Radio de escape al cuadrado (4-1000)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, biomorph_radius_field) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 239, 0u, "Umbral de escape (1-100)") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 276, 0u, "Umbral de escape (1-100)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, biomorph_cutoff_field) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 320, 270, 0u, "Los valores por defecto de los parametros clave se guardan en fractus.cfg.") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 320, 307, 0u, "Los valores por defecto de los parametros clave se guardan en fractus.cfg.") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_button_list(
             framebuffer,
             fonts,
@@ -266,9 +266,9 @@ fractus_status fractus_app_run_fractals_default_config_view(
                 if (biomorph_cutoff_field->editing && fractus_ui_numeric_field_get_int(biomorph_cutoff_field, &val) == FRACTUS_STATUS_OK) {
                     config_draft->biomorph_cutoff = (int16_t)val;
                 }
-                (void)fractus_ui_numeric_field_init_int(escape_radius_field, (fractus_rect_i32){324, 158, 73, 20}, (int32_t)config_draft->escape_radius_squared, 4, 1000);
-                (void)fractus_ui_numeric_field_init_int(biomorph_radius_field, (fractus_rect_i32){324, 208, 73, 20}, (int32_t)config_draft->biomorph_escape_radius_squared, 4, 1000);
-                (void)fractus_ui_numeric_field_init_int(biomorph_cutoff_field, (fractus_rect_i32){324, 234, 73, 20}, (int32_t)config_draft->biomorph_cutoff, 1, 100);
+                (void)fractus_ui_numeric_field_init_int(escape_radius_field, (fractus_rect_i32){324, 195, 73, 20}, (int32_t)config_draft->escape_radius_squared, 4, 1000);
+                (void)fractus_ui_numeric_field_init_int(biomorph_radius_field, (fractus_rect_i32){324, 245, 73, 20}, (int32_t)config_draft->biomorph_escape_radius_squared, 4, 1000);
+                (void)fractus_ui_numeric_field_init_int(biomorph_cutoff_field, (fractus_rect_i32){324, 271, 73, 20}, (int32_t)config_draft->biomorph_cutoff, 1, 100);
                 if (!iterations_field->editing) {
                     (void)fractus_ui_numeric_field_begin_edit(iterations_field);
                 }
@@ -283,9 +283,9 @@ fractus_status fractus_app_run_fractals_default_config_view(
                 if (biomorph_cutoff_field->editing && fractus_ui_numeric_field_get_int(biomorph_cutoff_field, &val) == FRACTUS_STATUS_OK) {
                     config_draft->biomorph_cutoff = (int16_t)val;
                 }
-                (void)fractus_ui_numeric_field_init_int(iterations_field, (fractus_rect_i32){324, 132, 73, 20}, (int32_t)config_draft->iterations, 16, 1024);
-                (void)fractus_ui_numeric_field_init_int(biomorph_radius_field, (fractus_rect_i32){324, 208, 73, 20}, (int32_t)config_draft->biomorph_escape_radius_squared, 4, 1000);
-                (void)fractus_ui_numeric_field_init_int(biomorph_cutoff_field, (fractus_rect_i32){324, 234, 73, 20}, (int32_t)config_draft->biomorph_cutoff, 1, 100);
+                (void)fractus_ui_numeric_field_init_int(iterations_field, (fractus_rect_i32){324, 169, 73, 20}, (int32_t)config_draft->iterations, 16, 1024);
+                (void)fractus_ui_numeric_field_init_int(biomorph_radius_field, (fractus_rect_i32){324, 245, 73, 20}, (int32_t)config_draft->biomorph_escape_radius_squared, 4, 1000);
+                (void)fractus_ui_numeric_field_init_int(biomorph_cutoff_field, (fractus_rect_i32){324, 271, 73, 20}, (int32_t)config_draft->biomorph_cutoff, 1, 100);
                 if (!escape_radius_field->editing) {
                     (void)fractus_ui_numeric_field_begin_edit(escape_radius_field);
                 }
@@ -300,9 +300,9 @@ fractus_status fractus_app_run_fractals_default_config_view(
                 if (biomorph_cutoff_field->editing && fractus_ui_numeric_field_get_int(biomorph_cutoff_field, &val) == FRACTUS_STATUS_OK) {
                     config_draft->biomorph_cutoff = (int16_t)val;
                 }
-                (void)fractus_ui_numeric_field_init_int(iterations_field, (fractus_rect_i32){324, 132, 73, 20}, (int32_t)config_draft->iterations, 16, 1024);
-                (void)fractus_ui_numeric_field_init_int(escape_radius_field, (fractus_rect_i32){324, 158, 73, 20}, (int32_t)config_draft->escape_radius_squared, 4, 1000);
-                (void)fractus_ui_numeric_field_init_int(biomorph_cutoff_field, (fractus_rect_i32){324, 234, 73, 20}, (int32_t)config_draft->biomorph_cutoff, 1, 100);
+                (void)fractus_ui_numeric_field_init_int(iterations_field, (fractus_rect_i32){324, 169, 73, 20}, (int32_t)config_draft->iterations, 16, 1024);
+                (void)fractus_ui_numeric_field_init_int(escape_radius_field, (fractus_rect_i32){324, 195, 73, 20}, (int32_t)config_draft->escape_radius_squared, 4, 1000);
+                (void)fractus_ui_numeric_field_init_int(biomorph_cutoff_field, (fractus_rect_i32){324, 271, 73, 20}, (int32_t)config_draft->biomorph_cutoff, 1, 100);
                 if (!biomorph_radius_field->editing) {
                     (void)fractus_ui_numeric_field_begin_edit(biomorph_radius_field);
                 }
@@ -317,9 +317,9 @@ fractus_status fractus_app_run_fractals_default_config_view(
                 if (biomorph_radius_field->editing && fractus_ui_numeric_field_get_int(biomorph_radius_field, &val) == FRACTUS_STATUS_OK) {
                     config_draft->biomorph_escape_radius_squared = (int16_t)val;
                 }
-                (void)fractus_ui_numeric_field_init_int(iterations_field, (fractus_rect_i32){324, 132, 73, 20}, (int32_t)config_draft->iterations, 16, 1024);
-                (void)fractus_ui_numeric_field_init_int(escape_radius_field, (fractus_rect_i32){324, 158, 73, 20}, (int32_t)config_draft->escape_radius_squared, 4, 1000);
-                (void)fractus_ui_numeric_field_init_int(biomorph_radius_field, (fractus_rect_i32){324, 208, 73, 20}, (int32_t)config_draft->biomorph_escape_radius_squared, 4, 1000);
+                (void)fractus_ui_numeric_field_init_int(iterations_field, (fractus_rect_i32){324, 169, 73, 20}, (int32_t)config_draft->iterations, 16, 1024);
+                (void)fractus_ui_numeric_field_init_int(escape_radius_field, (fractus_rect_i32){324, 195, 73, 20}, (int32_t)config_draft->escape_radius_squared, 4, 1000);
+                (void)fractus_ui_numeric_field_init_int(biomorph_radius_field, (fractus_rect_i32){324, 245, 73, 20}, (int32_t)config_draft->biomorph_escape_radius_squared, 4, 1000);
                 if (!biomorph_cutoff_field->editing) {
                     (void)fractus_ui_numeric_field_begin_edit(biomorph_cutoff_field);
                 }
@@ -329,25 +329,25 @@ fractus_status fractus_app_run_fractals_default_config_view(
                     if (fractus_ui_numeric_field_get_int(iterations_field, &val) == FRACTUS_STATUS_OK) {
                         config_draft->iterations = (int16_t)val;
                     }
-                    (void)fractus_ui_numeric_field_init_int(iterations_field, (fractus_rect_i32){324, 132, 73, 20}, (int32_t)config_draft->iterations, 16, 1024);
+                    (void)fractus_ui_numeric_field_init_int(iterations_field, (fractus_rect_i32){324, 169, 73, 20}, (int32_t)config_draft->iterations, 16, 1024);
                 }
                 if (escape_radius_field->editing) {
                     if (fractus_ui_numeric_field_get_int(escape_radius_field, &val) == FRACTUS_STATUS_OK) {
                         config_draft->escape_radius_squared = (int16_t)val;
                     }
-                    (void)fractus_ui_numeric_field_init_int(escape_radius_field, (fractus_rect_i32){324, 158, 73, 20}, (int32_t)config_draft->escape_radius_squared, 4, 1000);
+                    (void)fractus_ui_numeric_field_init_int(escape_radius_field, (fractus_rect_i32){324, 195, 73, 20}, (int32_t)config_draft->escape_radius_squared, 4, 1000);
                 }
                 if (biomorph_radius_field->editing) {
                     if (fractus_ui_numeric_field_get_int(biomorph_radius_field, &val) == FRACTUS_STATUS_OK) {
                         config_draft->biomorph_escape_radius_squared = (int16_t)val;
                     }
-                    (void)fractus_ui_numeric_field_init_int(biomorph_radius_field, (fractus_rect_i32){324, 208, 73, 20}, (int32_t)config_draft->biomorph_escape_radius_squared, 4, 1000);
+                    (void)fractus_ui_numeric_field_init_int(biomorph_radius_field, (fractus_rect_i32){324, 245, 73, 20}, (int32_t)config_draft->biomorph_escape_radius_squared, 4, 1000);
                 }
                 if (biomorph_cutoff_field->editing) {
                     if (fractus_ui_numeric_field_get_int(biomorph_cutoff_field, &val) == FRACTUS_STATUS_OK) {
                         config_draft->biomorph_cutoff = (int16_t)val;
                     }
-                    (void)fractus_ui_numeric_field_init_int(biomorph_cutoff_field, (fractus_rect_i32){324, 234, 73, 20}, (int32_t)config_draft->biomorph_cutoff, 1, 100);
+                    (void)fractus_ui_numeric_field_init_int(biomorph_cutoff_field, (fractus_rect_i32){324, 271, 73, 20}, (int32_t)config_draft->biomorph_cutoff, 1, 100);
                 }
             }
         }
@@ -359,9 +359,9 @@ fractus_status fractus_app_run_fractals_default_config_view(
                     if (fractus_ui_numeric_field_get_int(iterations_field, &val) == FRACTUS_STATUS_OK) {
                         config_draft->iterations = (int16_t)val;
                     }
-                    (void)fractus_ui_numeric_field_init_int(iterations_field, (fractus_rect_i32){324, 132, 73, 20}, (int32_t)config_draft->iterations, 16, 1024);
+                    (void)fractus_ui_numeric_field_init_int(iterations_field, (fractus_rect_i32){324, 169, 73, 20}, (int32_t)config_draft->iterations, 16, 1024);
                 } else if (edit_cancelled) {
-                    (void)fractus_ui_numeric_field_init_int(iterations_field, (fractus_rect_i32){324, 132, 73, 20}, (int32_t)config_draft->iterations, 16, 1024);
+                    (void)fractus_ui_numeric_field_init_int(iterations_field, (fractus_rect_i32){324, 169, 73, 20}, (int32_t)config_draft->iterations, 16, 1024);
                 }
             }
             skip_mouse_input = 1;
@@ -372,9 +372,9 @@ fractus_status fractus_app_run_fractals_default_config_view(
                     if (fractus_ui_numeric_field_get_int(escape_radius_field, &val) == FRACTUS_STATUS_OK) {
                         config_draft->escape_radius_squared = (int16_t)val;
                     }
-                    (void)fractus_ui_numeric_field_init_int(escape_radius_field, (fractus_rect_i32){324, 158, 73, 20}, (int32_t)config_draft->escape_radius_squared, 4, 1000);
+                    (void)fractus_ui_numeric_field_init_int(escape_radius_field, (fractus_rect_i32){324, 195, 73, 20}, (int32_t)config_draft->escape_radius_squared, 4, 1000);
                 } else if (edit_cancelled) {
-                    (void)fractus_ui_numeric_field_init_int(escape_radius_field, (fractus_rect_i32){324, 158, 73, 20}, (int32_t)config_draft->escape_radius_squared, 4, 1000);
+                    (void)fractus_ui_numeric_field_init_int(escape_radius_field, (fractus_rect_i32){324, 195, 73, 20}, (int32_t)config_draft->escape_radius_squared, 4, 1000);
                 }
             }
             skip_mouse_input = 1;
@@ -385,9 +385,9 @@ fractus_status fractus_app_run_fractals_default_config_view(
                     if (fractus_ui_numeric_field_get_int(biomorph_radius_field, &val) == FRACTUS_STATUS_OK) {
                         config_draft->biomorph_escape_radius_squared = (int16_t)val;
                     }
-                    (void)fractus_ui_numeric_field_init_int(biomorph_radius_field, (fractus_rect_i32){324, 208, 73, 20}, (int32_t)config_draft->biomorph_escape_radius_squared, 4, 1000);
+                    (void)fractus_ui_numeric_field_init_int(biomorph_radius_field, (fractus_rect_i32){324, 245, 73, 20}, (int32_t)config_draft->biomorph_escape_radius_squared, 4, 1000);
                 } else if (edit_cancelled) {
-                    (void)fractus_ui_numeric_field_init_int(biomorph_radius_field, (fractus_rect_i32){324, 208, 73, 20}, (int32_t)config_draft->biomorph_escape_radius_squared, 4, 1000);
+                    (void)fractus_ui_numeric_field_init_int(biomorph_radius_field, (fractus_rect_i32){324, 245, 73, 20}, (int32_t)config_draft->biomorph_escape_radius_squared, 4, 1000);
                 }
             }
             skip_mouse_input = 1;
@@ -398,9 +398,9 @@ fractus_status fractus_app_run_fractals_default_config_view(
                     if (fractus_ui_numeric_field_get_int(biomorph_cutoff_field, &val) == FRACTUS_STATUS_OK) {
                         config_draft->biomorph_cutoff = (int16_t)val;
                     }
-                    (void)fractus_ui_numeric_field_init_int(biomorph_cutoff_field, (fractus_rect_i32){324, 234, 73, 20}, (int32_t)config_draft->biomorph_cutoff, 1, 100);
+                    (void)fractus_ui_numeric_field_init_int(biomorph_cutoff_field, (fractus_rect_i32){324, 271, 73, 20}, (int32_t)config_draft->biomorph_cutoff, 1, 100);
                 } else if (edit_cancelled) {
-                    (void)fractus_ui_numeric_field_init_int(biomorph_cutoff_field, (fractus_rect_i32){324, 234, 73, 20}, (int32_t)config_draft->biomorph_cutoff, 1, 100);
+                    (void)fractus_ui_numeric_field_init_int(biomorph_cutoff_field, (fractus_rect_i32){324, 271, 73, 20}, (int32_t)config_draft->biomorph_cutoff, 1, 100);
                 }
             }
             skip_mouse_input = 1;
@@ -426,28 +426,28 @@ fractus_status fractus_app_run_fractals_default_config_view(
             *view = FRACTUS_APP_VIEW_MAIN_MENU;
         } else if (selected_menu == FRACTUS_APP_FRACTALS_CONFIG_ITER_DEC) {
             config_draft->iterations = (int16_t)fractus_app_clamp_i32((int32_t)config_draft->iterations - 4, 16, 1024);
-            (void)fractus_ui_numeric_field_init_int(iterations_field, (fractus_rect_i32){324, 132, 73, 20}, (int32_t)config_draft->iterations, 16, 1024);
+            (void)fractus_ui_numeric_field_init_int(iterations_field, (fractus_rect_i32){324, 169, 73, 20}, (int32_t)config_draft->iterations, 16, 1024);
         } else if (selected_menu == FRACTUS_APP_FRACTALS_CONFIG_ITER_INC) {
             config_draft->iterations = (int16_t)fractus_app_clamp_i32((int32_t)config_draft->iterations + 4, 16, 1024);
-            (void)fractus_ui_numeric_field_init_int(iterations_field, (fractus_rect_i32){324, 132, 73, 20}, (int32_t)config_draft->iterations, 16, 1024);
+            (void)fractus_ui_numeric_field_init_int(iterations_field, (fractus_rect_i32){324, 169, 73, 20}, (int32_t)config_draft->iterations, 16, 1024);
         } else if (selected_menu == FRACTUS_APP_FRACTALS_CONFIG_ESCAPE_DEC) {
             config_draft->escape_radius_squared = (int16_t)fractus_app_clamp_i32((int32_t)config_draft->escape_radius_squared - 2, 4, 1000);
-            (void)fractus_ui_numeric_field_init_int(escape_radius_field, (fractus_rect_i32){324, 158, 73, 20}, (int32_t)config_draft->escape_radius_squared, 4, 1000);
+            (void)fractus_ui_numeric_field_init_int(escape_radius_field, (fractus_rect_i32){324, 195, 73, 20}, (int32_t)config_draft->escape_radius_squared, 4, 1000);
         } else if (selected_menu == FRACTUS_APP_FRACTALS_CONFIG_ESCAPE_INC) {
             config_draft->escape_radius_squared = (int16_t)fractus_app_clamp_i32((int32_t)config_draft->escape_radius_squared + 2, 4, 1000);
-            (void)fractus_ui_numeric_field_init_int(escape_radius_field, (fractus_rect_i32){324, 158, 73, 20}, (int32_t)config_draft->escape_radius_squared, 4, 1000);
+            (void)fractus_ui_numeric_field_init_int(escape_radius_field, (fractus_rect_i32){324, 195, 73, 20}, (int32_t)config_draft->escape_radius_squared, 4, 1000);
         } else if (selected_menu == FRACTUS_APP_FRACTALS_CONFIG_BIO_RADIUS_DEC) {
             config_draft->biomorph_escape_radius_squared = (int16_t)fractus_app_clamp_i32((int32_t)config_draft->biomorph_escape_radius_squared - 2, 4, 1000);
-            (void)fractus_ui_numeric_field_init_int(biomorph_radius_field, (fractus_rect_i32){324, 208, 73, 20}, (int32_t)config_draft->biomorph_escape_radius_squared, 4, 1000);
+            (void)fractus_ui_numeric_field_init_int(biomorph_radius_field, (fractus_rect_i32){324, 245, 73, 20}, (int32_t)config_draft->biomorph_escape_radius_squared, 4, 1000);
         } else if (selected_menu == FRACTUS_APP_FRACTALS_CONFIG_BIO_RADIUS_INC) {
             config_draft->biomorph_escape_radius_squared = (int16_t)fractus_app_clamp_i32((int32_t)config_draft->biomorph_escape_radius_squared + 2, 4, 1000);
-            (void)fractus_ui_numeric_field_init_int(biomorph_radius_field, (fractus_rect_i32){324, 208, 73, 20}, (int32_t)config_draft->biomorph_escape_radius_squared, 4, 1000);
+            (void)fractus_ui_numeric_field_init_int(biomorph_radius_field, (fractus_rect_i32){324, 245, 73, 20}, (int32_t)config_draft->biomorph_escape_radius_squared, 4, 1000);
         } else if (selected_menu == FRACTUS_APP_FRACTALS_CONFIG_BIO_CUTOFF_DEC) {
             config_draft->biomorph_cutoff = (int16_t)fractus_app_clamp_i32((int32_t)config_draft->biomorph_cutoff - 1, 1, 100);
-            (void)fractus_ui_numeric_field_init_int(biomorph_cutoff_field, (fractus_rect_i32){324, 234, 73, 20}, (int32_t)config_draft->biomorph_cutoff, 1, 100);
+            (void)fractus_ui_numeric_field_init_int(biomorph_cutoff_field, (fractus_rect_i32){324, 271, 73, 20}, (int32_t)config_draft->biomorph_cutoff, 1, 100);
         } else if (selected_menu == FRACTUS_APP_FRACTALS_CONFIG_BIO_CUTOFF_INC) {
             config_draft->biomorph_cutoff = (int16_t)fractus_app_clamp_i32((int32_t)config_draft->biomorph_cutoff + 1, 1, 100);
-            (void)fractus_ui_numeric_field_init_int(biomorph_cutoff_field, (fractus_rect_i32){324, 234, 73, 20}, (int32_t)config_draft->biomorph_cutoff, 1, 100);
+            (void)fractus_ui_numeric_field_init_int(biomorph_cutoff_field, (fractus_rect_i32){324, 271, 73, 20}, (int32_t)config_draft->biomorph_cutoff, 1, 100);
         }
     }
 
@@ -467,16 +467,16 @@ fractus_status fractus_app_run_video_config_view(
     fractus_app_view *view)
 {
     const fractus_app_menu_entry dialog_entries[] = {
-        {FRACTUS_APP_RECT(175, 135, 460, 150), 8u, 0u, "Ventana 640x480"},
-        {FRACTUS_APP_RECT(175, 155, 460, 170), 8u, 0u, "Ventana 800x600"},
-        {FRACTUS_APP_RECT(175, 175, 460, 190), 8u, 0u, "Ventana 1024x768"},
-        {FRACTUS_APP_RECT(175, 195, 460, 210), 8u, 0u, "Ventana 1280x960 (Quad VGA)"},
-        {FRACTUS_APP_RECT(175, 215, 460, 230), 8u, 0u, "Pantalla completa 1280x720 (HD)"},
-        {FRACTUS_APP_RECT(175, 235, 460, 250), 8u, 0u, "Pantalla completa 1920x1080 (Full HD)"},
-        {FRACTUS_APP_RECT(175, 255, 460, 270), 8u, 0u, "Pantalla completa 2560x1440 (Quad HD)"},
-        {FRACTUS_APP_RECT(175, 275, 460, 290), 8u, 0u, "Pantalla completa 3840x2160 (4K / Quad Full HD)"},
-        {FRACTUS_APP_RECT(210, 324, 310, 344), 8u, 0u, "Guardar"},
-        {FRACTUS_APP_RECT(330, 324, 430, 344), 0u, 15u, "Cancelar"}
+        {FRACTUS_APP_RECT(175, 152, 460, 167), 8u, 0u, "Ventana 640x480"},
+        {FRACTUS_APP_RECT(175, 172, 460, 187), 8u, 0u, "Ventana 800x600"},
+        {FRACTUS_APP_RECT(175, 192, 460, 207), 8u, 0u, "Ventana 1024x768"},
+        {FRACTUS_APP_RECT(175, 212, 460, 227), 8u, 0u, "Ventana 1280x960 (Quad VGA)"},
+        {FRACTUS_APP_RECT(175, 232, 460, 247), 8u, 0u, "Pantalla completa 1280x720 (HD)"},
+        {FRACTUS_APP_RECT(175, 252, 460, 267), 8u, 0u, "Pantalla completa 1920x1080 (Full HD)"},
+        {FRACTUS_APP_RECT(175, 272, 460, 287), 8u, 0u, "Pantalla completa 2560x1440 (Quad HD)"},
+        {FRACTUS_APP_RECT(175, 292, 460, 307), 8u, 0u, "Pantalla completa 3840x2160 (4K / Quad Full HD)"},
+        {FRACTUS_APP_RECT(210, 341, 310, 361), 8u, 0u, "Guardar"},
+        {FRACTUS_APP_RECT(330, 341, 430, 361), 0u, 15u, "Cancelar"}
     };
     fractus_ui_menu_option dialog_options[FRACTUS_APP_ARRAY_COUNT(dialog_entries)];
     fractus_ui_radio_option video_options[FRACTUS_DRAWING_VIDEO_MODE_COUNT];
@@ -504,13 +504,13 @@ fractus_status fractus_app_run_video_config_view(
 
     /* 1. Contenedor exterior. */
     if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_window(framebuffer, 165, 92, 474, 354) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 96, 15u, "Resolucion de los dibujos") != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_window(framebuffer, 165, 107, 474, 371) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 111, 15u, "Resolucion de los dibujos") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
     /* 2. Textos y controles. */
-    if (fractus_ui_draw_group_box(framebuffer, fonts, 170, 122, 469, 298, 8u, 0u, "Seleccione la resolucion") != FRACTUS_STATUS_OK ||
+    if (fractus_ui_draw_group_box(framebuffer, fonts, 170, 139, 469, 315, 8u, 0u, "Seleccione la resolucion") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_radio_list(
             framebuffer,
             fonts,
@@ -528,7 +528,7 @@ fractus_status fractus_app_run_video_config_view(
             fonts,
             FRACTUS_FONT_SMALL,
             320,
-            306,
+            323,
             0u,
             "La resolucion seleccionada para los dibujos se guarda en fractus.cfg.") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
