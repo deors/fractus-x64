@@ -115,6 +115,7 @@ static fractus_status fractus_app_run_main_menu_view(
     fractus_julia_params *julia_pending,
     fractus_biomorph_params *biomorph_params,
     fractus_biomorph_params *biomorph_pending,
+    fractus_app_biomorph_fields *biomorph_fields,
     fractus_ui_numeric_field *iterations_field,
     fractus_ui_numeric_field *escape_radius_field,
     fractus_ui_numeric_field *biomorph_radius_field,
@@ -139,6 +140,7 @@ static fractus_status fractus_app_run_main_menu_view(
         view == NULL || running == NULL || legacy_config == NULL || config_draft == NULL ||
         mandelbrot_params == NULL || mandelbrot_pending == NULL || julia_params == NULL ||
         julia_pending == NULL || biomorph_params == NULL || biomorph_pending == NULL ||
+        biomorph_fields == NULL ||
         iterations_field == NULL || escape_radius_field == NULL || biomorph_radius_field == NULL ||
         biomorph_cutoff_field == NULL ||
         graphic_files == NULL || graphic_file_count == NULL || graphic_file_page == NULL || palette_files == NULL ||
@@ -175,6 +177,16 @@ static fractus_status fractus_app_run_main_menu_view(
             *view = FRACTUS_APP_VIEW_JULIA_MENU;
         } else if (selected_menu == 2) {
             *biomorph_pending = *biomorph_params;
+            fractus_app_init_biomorph_fields(
+                biomorph_fields,
+                biomorph_pending->xmin,
+                biomorph_pending->xmax,
+                biomorph_pending->ymin,
+                biomorph_pending->ymax,
+                biomorph_pending->constant_real,
+                biomorph_pending->constant_imag,
+                biomorph_pending->escape_radius_squared,
+                biomorph_pending->cutoff);
             *view = FRACTUS_APP_VIEW_BIOMORPH_CONFIG;
         } else if (selected_menu == 5) {
             *view = FRACTUS_APP_VIEW_PLASMA_MENU;
@@ -365,6 +377,12 @@ int fractus_app_run(void)
     fractus_ui_numeric_field palette_red_field;
     fractus_ui_numeric_field palette_green_field;
     fractus_ui_numeric_field palette_blue_field;
+    fractus_app_mandelbrot_fields mandelbrot_fields;
+    fractus_app_mandelbrot_fields mandelbrot_dem_fields;
+    fractus_app_julia_fields julia_fields;
+    fractus_app_julia_fields julia_dem_fields;
+    fractus_app_biomorph_fields biomorph_fields;
+    fractus_app_plasma_fields plasma_fields;
     fractus_app_view view;
     char font_path[512];
     char cfg_path[512];
@@ -408,6 +426,12 @@ int fractus_app_run(void)
     memset(&palette_red_field, 0, sizeof(palette_red_field));
     memset(&palette_green_field, 0, sizeof(palette_green_field));
     memset(&palette_blue_field, 0, sizeof(palette_blue_field));
+    memset(&mandelbrot_fields, 0, sizeof(mandelbrot_fields));
+    memset(&mandelbrot_dem_fields, 0, sizeof(mandelbrot_dem_fields));
+    memset(&julia_fields, 0, sizeof(julia_fields));
+    memset(&julia_dem_fields, 0, sizeof(julia_dem_fields));
+    memset(&biomorph_fields, 0, sizeof(biomorph_fields));
+    memset(&plasma_fields, 0, sizeof(plasma_fields));
     memset(&mandelbrot_selection, 0, sizeof(mandelbrot_selection));
     memset(&mandelbrot_dem_selection, 0, sizeof(mandelbrot_dem_selection));
     memset(graphic_files, 0, sizeof(graphic_files));
@@ -627,6 +651,7 @@ int fractus_app_run(void)
                         &julia_pending,
                         &biomorph_params,
                         &biomorph_pending,
+                        &biomorph_fields,
                         &iterations_field,
                         &escape_radius_field,
                         &biomorph_radius_field,
@@ -651,8 +676,10 @@ int fractus_app_run(void)
                         &ui,
                         &mandelbrot_params,
                         &mandelbrot_pending,
+                        &mandelbrot_fields,
                         &mandelbrot_dem_params,
                         &mandelbrot_dem_pending,
+                        &mandelbrot_dem_fields,
                         &view) != FRACTUS_STATUS_OK) {
                     fractus_app_log("runtime: mandelbrot menu failed");
                     running = 0;
@@ -664,6 +691,7 @@ int fractus_app_run(void)
                         &ui,
                         &mandelbrot_params,
                         &mandelbrot_pending,
+                        &mandelbrot_fields,
                         &view) != FRACTUS_STATUS_OK) {
                     fractus_app_log("runtime: mandelbrot config failed");
                     running = 0;
@@ -675,6 +703,7 @@ int fractus_app_run(void)
                         &ui,
                         &mandelbrot_dem_params,
                         &mandelbrot_dem_pending,
+                        &mandelbrot_dem_fields,
                         &view) != FRACTUS_STATUS_OK) {
                     fractus_app_log("runtime: mandelbrot dem config failed");
                     running = 0;
@@ -686,8 +715,10 @@ int fractus_app_run(void)
                         &ui,
                         &julia_params,
                         &julia_pending,
+                        &julia_fields,
                         &julia_dem_params,
                         &julia_dem_pending,
+                        &julia_dem_fields,
                         &view) != FRACTUS_STATUS_OK) {
                     fractus_app_log("runtime: julia menu failed");
                     running = 0;
@@ -699,6 +730,7 @@ int fractus_app_run(void)
                         &ui,
                         &julia_params,
                         &julia_pending,
+                        &julia_fields,
                         &view) != FRACTUS_STATUS_OK) {
                     fractus_app_log("runtime: julia config failed");
                     running = 0;
@@ -710,6 +742,7 @@ int fractus_app_run(void)
                         &ui,
                         &julia_dem_params,
                         &julia_dem_pending,
+                        &julia_dem_fields,
                         &view) != FRACTUS_STATUS_OK) {
                     fractus_app_log("runtime: julia dem config failed");
                     running = 0;
@@ -721,6 +754,7 @@ int fractus_app_run(void)
                         &ui,
                         &biomorph_params,
                         &biomorph_pending,
+                        &biomorph_fields,
                         &view) != FRACTUS_STATUS_OK) {
                     fractus_app_log("runtime: biomorph config failed");
                     running = 0;
@@ -734,6 +768,7 @@ int fractus_app_run(void)
                         &plasma_rectangular_pending,
                         &plasma_circular_params,
                         &plasma_circular_pending,
+                        &plasma_fields,
                         &view) != FRACTUS_STATUS_OK) {
                     fractus_app_log("runtime: plasma menu failed");
                     running = 0;
@@ -745,6 +780,7 @@ int fractus_app_run(void)
                         &ui,
                         &plasma_rectangular_params,
                         &plasma_rectangular_pending,
+                        &plasma_fields,
                         &view) != FRACTUS_STATUS_OK) {
                     fractus_app_log("runtime: plasma rectangular config failed");
                     running = 0;
@@ -756,6 +792,7 @@ int fractus_app_run(void)
                         &ui,
                         &plasma_circular_params,
                         &plasma_circular_pending,
+                        &plasma_fields,
                         &view) != FRACTUS_STATUS_OK) {
                     fractus_app_log("runtime: plasma circular config failed");
                     running = 0;

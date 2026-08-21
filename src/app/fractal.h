@@ -111,14 +111,90 @@ typedef enum fractus_app_plasma_circular_dialog_action {
     FRACTUS_APP_PLASMA_CIRCULAR_CANCEL
 } fractus_app_plasma_circular_dialog_action;
 
+typedef struct fractus_app_mandelbrot_fields {
+    fractus_ui_numeric_field xmin;
+    fractus_ui_numeric_field xmax;
+    fractus_ui_numeric_field ymin;
+    fractus_ui_numeric_field ymax;
+    fractus_ui_numeric_field max_iterations;
+    fractus_ui_numeric_field escape_radius_squared;
+} fractus_app_mandelbrot_fields;
+
+typedef struct fractus_app_julia_fields {
+    fractus_ui_numeric_field xmin;
+    fractus_ui_numeric_field xmax;
+    fractus_ui_numeric_field ymin;
+    fractus_ui_numeric_field ymax;
+    fractus_ui_numeric_field constant_real;
+    fractus_ui_numeric_field constant_imag;
+    fractus_ui_numeric_field max_iterations;
+    fractus_ui_numeric_field escape_radius_squared;
+} fractus_app_julia_fields;
+
+typedef struct fractus_app_biomorph_fields {
+    fractus_ui_numeric_field xmin;
+    fractus_ui_numeric_field xmax;
+    fractus_ui_numeric_field ymin;
+    fractus_ui_numeric_field ymax;
+    fractus_ui_numeric_field constant_real;
+    fractus_ui_numeric_field constant_imag;
+    fractus_ui_numeric_field escape_radius_squared;
+    fractus_ui_numeric_field cutoff;
+} fractus_app_biomorph_fields;
+
+typedef struct fractus_app_plasma_fields {
+    fractus_ui_numeric_field rectangular_dispersion;
+    fractus_ui_numeric_field circular_circles;
+    fractus_ui_numeric_field circular_radius;
+} fractus_app_plasma_fields;
+
+void fractus_app_init_mandelbrot_fields(
+    fractus_app_mandelbrot_fields *fields,
+    double xmin,
+    double xmax,
+    double ymin,
+    double ymax,
+    uint32_t max_iterations,
+    double escape_radius_squared);
+
+void fractus_app_init_julia_fields(
+    fractus_app_julia_fields *fields,
+    double xmin,
+    double xmax,
+    double ymin,
+    double ymax,
+    double constant_real,
+    double constant_imag,
+    uint32_t max_iterations,
+    double escape_radius_squared);
+
+void fractus_app_init_biomorph_fields(
+    fractus_app_biomorph_fields *fields,
+    double xmin,
+    double xmax,
+    double ymin,
+    double ymax,
+    double constant_real,
+    double constant_imag,
+    double escape_radius_squared,
+    double cutoff);
+
+void fractus_app_init_plasma_fields(
+    fractus_app_plasma_fields *fields,
+    int32_t dispersion,
+    int32_t circle_count,
+    int32_t max_radius);
+
 fractus_status fractus_app_run_mandelbrot_menu_view(
     fractus_framebuffer *framebuffer,
     const fractus_font_library *fonts,
     fractus_ui_context *ui,
     fractus_mandelbrot_params *mandelbrot_params,
     fractus_mandelbrot_params *mandelbrot_pending,
+    fractus_app_mandelbrot_fields *mandelbrot_fields,
     fractus_mandelbrot_dem_params *mandelbrot_dem_params,
     fractus_mandelbrot_dem_params *mandelbrot_dem_pending,
+    fractus_app_mandelbrot_fields *mandelbrot_dem_fields,
     fractus_app_view *view);
 
 fractus_status fractus_app_run_mandelbrot_config_view(
@@ -127,6 +203,7 @@ fractus_status fractus_app_run_mandelbrot_config_view(
     fractus_ui_context *ui,
     fractus_mandelbrot_params *params,
     fractus_mandelbrot_params *pending,
+    fractus_app_mandelbrot_fields *fields,
     fractus_app_view *view);
 
 fractus_status fractus_app_run_mandelbrot_dem_config_view(
@@ -135,6 +212,7 @@ fractus_status fractus_app_run_mandelbrot_dem_config_view(
     fractus_ui_context *ui,
     fractus_mandelbrot_dem_params *params,
     fractus_mandelbrot_dem_params *pending,
+    fractus_app_mandelbrot_fields *fields,
     fractus_app_view *view);
 
 int fractus_app_handle_mandelbrot_selection_input(
@@ -185,8 +263,10 @@ fractus_status fractus_app_run_julia_menu_view(
     fractus_ui_context *ui,
     fractus_julia_params *julia_params,
     fractus_julia_params *julia_pending,
+    fractus_app_julia_fields *julia_fields,
     fractus_julia_dem_params *julia_dem_params,
     fractus_julia_dem_params *julia_dem_pending,
+    fractus_app_julia_fields *julia_dem_fields,
     fractus_app_view *view);
 
 fractus_status fractus_app_run_julia_config_view(
@@ -195,6 +275,7 @@ fractus_status fractus_app_run_julia_config_view(
     fractus_ui_context *ui,
     fractus_julia_params *params,
     fractus_julia_params *pending,
+    fractus_app_julia_fields *fields,
     fractus_app_view *view);
 
 fractus_status fractus_app_run_julia_dem_config_view(
@@ -203,6 +284,7 @@ fractus_status fractus_app_run_julia_dem_config_view(
     fractus_ui_context *ui,
     fractus_julia_dem_params *params,
     fractus_julia_dem_params *pending,
+    fractus_app_julia_fields *fields,
     fractus_app_view *view);
 
 fractus_status fractus_app_render_julia(
@@ -229,6 +311,7 @@ fractus_status fractus_app_run_biomorph_config_view(
     fractus_ui_context *ui,
     fractus_biomorph_params *params,
     fractus_biomorph_params *pending,
+    fractus_app_biomorph_fields *fields,
     fractus_app_view *view);
 
 fractus_status fractus_app_render_biomorph(
@@ -248,6 +331,7 @@ fractus_status fractus_app_run_plasma_menu_view(
     fractus_plasma_params *plasma_rectangular_pending,
     fractus_plasma_circular_params *plasma_circular_params,
     fractus_plasma_circular_params *plasma_circular_pending,
+    fractus_app_plasma_fields *plasma_fields,
     fractus_app_view *view);
 
 fractus_status fractus_app_run_plasma_rectangular_config_view(
@@ -256,6 +340,7 @@ fractus_status fractus_app_run_plasma_rectangular_config_view(
     fractus_ui_context *ui,
     fractus_plasma_params *params,
     fractus_plasma_params *pending,
+    fractus_app_plasma_fields *fields,
     fractus_app_view *view);
 
 fractus_status fractus_app_render_plasma_rectangular(
@@ -273,6 +358,7 @@ fractus_status fractus_app_run_plasma_circular_config_view(
     fractus_ui_context *ui,
     fractus_plasma_circular_params *params,
     fractus_plasma_circular_params *pending,
+    fractus_app_plasma_fields *fields,
     fractus_app_view *view);
 
 fractus_status fractus_app_render_plasma_circular(
