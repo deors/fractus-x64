@@ -265,6 +265,10 @@ int fractus_ui_menu_is_active(
         return 0;
     }
 
+    if (!ui->buttons_down.left && !(ui->release_pending && ui->release_event.buttons.left)) {
+        return 0;
+    }
+
     return ui->active_menu_index == (int)option_index;
 }
 
@@ -276,13 +280,20 @@ int fractus_ui_active_menu_index(
     if (ui == NULL ||
         options == NULL ||
         !ui->active_menu_valid ||
-        !ui->buttons_down.left ||
         ui->active_menu_index < 0 ||
         (size_t)ui->active_menu_index >= option_count) {
         return -1;
     }
 
-    if (!fractus_ui_point_in_rect(ui->pointer_position, options[ui->active_menu_index].bounds)) {
+    if (ui->buttons_down.left) {
+        if (!fractus_ui_point_in_rect(ui->pointer_position, options[ui->active_menu_index].bounds)) {
+            return -1;
+        }
+    } else if (ui->release_pending && ui->release_event.buttons.left) {
+        if (!fractus_ui_point_in_rect(ui->release_event.position, options[ui->active_menu_index].bounds)) {
+            return -1;
+        }
+    } else {
         return -1;
     }
 

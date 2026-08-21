@@ -302,6 +302,11 @@ static fractus_status fractus_app_run_mandelbrot_generic_config_view(
         fractus_point_i32 click_pos = ui->release_event.position;
         fractus_ui_numeric_field *clicked_field = NULL;
 
+        if (fractus_ui_point_in_rect(click_pos, mandel_menu_controls[(size_t)method].bounds)) {
+            *view = FRACTUS_APP_VIEW_MANDELBROT_MENU;
+            return FRACTUS_STATUS_OK;
+        }
+
         if (fractus_ui_point_in_rect(click_pos, fields->xmin.bounds)) {
             clicked_field = &fields->xmin;
         } else if (fractus_ui_point_in_rect(click_pos, fields->xmax.bounds)) {
@@ -498,7 +503,7 @@ fractus_status fractus_app_run_mandelbrot_config_view(
         fonts,
         ui,
         FRACTUS_APP_MANDEL_METHOD_ESCAPE,
-        "Parametros del conjunto",
+        "Parametros del conjunto mediante tiempo de escape",
         "Clasico",
         "Suave",
         &pending->xmin,
@@ -546,7 +551,7 @@ fractus_status fractus_app_run_mandelbrot_dem_config_view(
         fonts,
         ui,
         FRACTUS_APP_MANDEL_METHOD_DEM,
-        "Parametros de estimacion",
+        "Parametros del conjunto mediante estimacion de distancias",
         "Contorno",
         "Gradiente",
         &pending->xmin,

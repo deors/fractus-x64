@@ -53,9 +53,15 @@ static fractus_status fractus_app_render_plasma_menu(
         }
 
         if (i < 2u && !method_enabled) {
-            entry.fill_color = 8u;
-            entry.text_color = 7u;
-            draw_active = 0;
+            if (i == (uint32_t)selected_method) {
+                entry.fill_color = 8u;
+                entry.text_color = 0u;
+                draw_active = 1;
+            } else {
+                entry.fill_color = 8u;
+                entry.text_color = 7u;
+                draw_active = 0;
+            }
         } else if (i == 2u && selected_method == FRACTUS_APP_PLASMA_METHOD_NONE) {
             entry.fill_color = 8u;
             entry.text_color = 7u;
@@ -200,7 +206,7 @@ fractus_status fractus_app_run_plasma_rectangular_config_view(
             FRACTUS_APP_ARRAY_COUNT(plasma_menu_controls),
             FRACTUS_APP_PLASMA_METHOD_RECTANGLES,
             0) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, 140, 203, 499, 299, 8u, 0u, "Rectangulos") != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_group_box(framebuffer, fonts, 140, 203, 499, 299, 8u, 0u, "Parametros del conjunto mediante rectangulos") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
@@ -223,6 +229,11 @@ fractus_status fractus_app_run_plasma_rectangular_config_view(
     if (ui->release_pending && ui->release_event.buttons.left) {
         fractus_point_i32 click_pos = ui->release_event.position;
         fractus_ui_numeric_field *clicked_field = NULL;
+
+        if (fractus_ui_point_in_rect(click_pos, plasma_menu_controls[0].bounds)) {
+            *view = FRACTUS_APP_VIEW_PLASMA_MENU;
+            return FRACTUS_STATUS_OK;
+        }
 
         if (fractus_ui_point_in_rect(click_pos, fields->rectangular_seed.bounds)) {
             clicked_field = &fields->rectangular_seed;
@@ -392,7 +403,7 @@ fractus_status fractus_app_run_plasma_circular_config_view(
             FRACTUS_APP_ARRAY_COUNT(plasma_menu_controls),
             FRACTUS_APP_PLASMA_METHOD_CIRCLES,
             0) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, 140, 203, 499, 299, 8u, 0u, "Circulos") != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_group_box(framebuffer, fonts, 140, 203, 499, 299, 8u, 0u, "Parametros del conjunto mediante circulos") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
@@ -417,6 +428,11 @@ fractus_status fractus_app_run_plasma_circular_config_view(
     if (ui->release_pending && ui->release_event.buttons.left) {
         fractus_point_i32 click_pos = ui->release_event.position;
         fractus_ui_numeric_field *clicked_field = NULL;
+
+        if (fractus_ui_point_in_rect(click_pos, plasma_menu_controls[1].bounds)) {
+            *view = FRACTUS_APP_VIEW_PLASMA_MENU;
+            return FRACTUS_STATUS_OK;
+        }
 
         if (fractus_ui_point_in_rect(click_pos, fields->circular_seed.bounds)) {
             clicked_field = &fields->circular_seed;
