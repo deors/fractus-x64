@@ -530,7 +530,7 @@ int fractus_app_run(void)
     };
     plasma_rectangular_params = (fractus_plasma_params){
         1337u,
-        25,
+        5,
         16u,
         240u
     };
