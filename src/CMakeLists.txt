@@ -4,8 +4,11 @@ fractus_resolve_sdl2(FRACTUS_SDL2_TARGET)
 
 add_library(fractus_core
     core/core.c
-    core/fractal.c
     core/formats.c
+    core/mandelbrot.c
+    core/julia.c
+    core/biomorphs.c
+    core/plasma.c
 )
 
 target_include_directories(fractus_core PUBLIC
@@ -55,7 +58,10 @@ add_executable(fractus_x64
     app/commons.c
     app/files.c
     app/config.c
-    app/fractal.c
+    app/mandelbrot.c
+    app/julia.c
+    app/biomorphs.c
+    app/plasma.c
 )
 
 target_include_directories(fractus_x64 PRIVATE

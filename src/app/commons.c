@@ -379,3 +379,187 @@ size_t fractus_app_copy_control_entries(
     memcpy(entries, controls, control_count * sizeof(*entries));
     return control_count;
 }
+
+fractus_status fractus_app_copy_framebuffer_for_overlay(
+    fractus_framebuffer *target,
+    const fractus_framebuffer *source)
+{
+    size_t pixel_count;
+
+    if (target == NULL || source == NULL || !source->initialized) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    if (!target->initialized ||
+        target->size.width != source->size.width ||
+        target->size.height != source->size.height) {
+        if (target->initialized) {
+            fractus_framebuffer_shutdown(target);
+        }
+        if (fractus_framebuffer_init(target, source->size) != FRACTUS_STATUS_OK) {
+            return FRACTUS_STATUS_ERROR;
+        }
+    }
+
+    pixel_count = (size_t)source->size.width * (size_t)source->size.height;
+    memcpy(target->index_pixels, source->index_pixels, pixel_count);
+    target->palette = source->palette;
+    target->pixels_dirty = 1;
+    target->palette_dirty = 1;
+    return FRACTUS_STATUS_OK;
+}
+
+fractus_status fractus_app_draw_drawing_footer(
+    fractus_framebuffer *framebuffer,
+    const fractus_font_library *fonts,
+    const char *text)
+{
+    uint32_t scale;
+    int32_t text_width;
+    int32_t text_height;
+    int32_t footer_height;
+    int32_t footer_y;
+    int32_t text_y;
+    int32_t text_x;
+
+    if (framebuffer == NULL || fonts == NULL || text == NULL || framebuffer->size.height < 24u) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    scale = 1u;
+    if (framebuffer->size.height >= 2000u) {
+        scale = 4u;
+    } else if (framebuffer->size.height >= 1200u) {
+        scale = 3u;
+    } else if (framebuffer->size.height >= 720u) {
+        scale = 2u;
+    }
+
+    if (fractus_font_measure_text(fonts, FRACTUS_FONT_ARIAL, text, &text_width, &text_height) != FRACTUS_STATUS_OK) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    text_width *= (int32_t)scale;
+    text_height *= (int32_t)scale;
+    footer_height = text_height + (int32_t)(12u * scale);
+    if (footer_height < 24) {
+        footer_height = 24;
+    }
+    if ((uint32_t)footer_height > framebuffer->size.height) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    footer_y = (int32_t)framebuffer->size.height - footer_height;
+    text_y = footer_y + (footer_height - text_height) / 2;
+    text_x = ((int32_t)framebuffer->size.width - text_width) / 2;
+    if (text_x < 0) {
+        text_x = 0;
+    }
+
+    if (fractus_graphics_fill_rect(
+            framebuffer,
+            (fractus_rect_i32){0, footer_y, (int32_t)framebuffer->size.width, footer_height},
+            7u) != FRACTUS_STATUS_OK) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    return fractus_font_draw_text_scaled(
+        framebuffer,
+        fonts,
+        FRACTUS_FONT_ARIAL,
+        text_x,
+        text_y,
+        15u,
+        text,
+        scale);
+}
+
+fractus_status fractus_app_draw_save_feedback(
+    fractus_framebuffer *framebuffer,
+    uint32_t frame)
+{
+    int32_t thickness;
+    int32_t i;
+
+    if (framebuffer == NULL || !framebuffer->initialized) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    if (frame >= 3u) {
+        return fractus_graphics_fill_rect(
+            framebuffer,
+            (fractus_rect_i32){0, 0, (int32_t)framebuffer->size.width, (int32_t)framebuffer->size.height},
+            15u);
+    }
+
+    thickness = (int32_t)(framebuffer->size.height / 120u);
+    if (thickness < 4) {
+        thickness = 4;
+    }
+
+    for (i = 0; i < thickness; ++i) {
+        if (fractus_graphics_rect(
+                framebuffer,
+                (fractus_rect_i32){
+                    i,
+                    i,
+                    (int32_t)framebuffer->size.width - i * 2,
+                    (int32_t)framebuffer->size.height - i * 2},
+                15u) != FRACTUS_STATUS_OK) {
+            return FRACTUS_STATUS_ERROR;
+        }
+    }
+
+    return FRACTUS_STATUS_OK;
+}
+
+int fractus_app_map_drawing_window_point(
+    const fractus_platform_context *platform,
+    const fractus_framebuffer *framebuffer,
+    fractus_point_i32 window_point,
+    fractus_point_i32 *framebuffer_point)
+{
+    fractus_size_u32 output_size;
+    double scale_x;
+    double scale_y;
+    double scale;
+    int32_t destination_x;
+    int32_t destination_y;
+    int32_t destination_width;
+    int32_t destination_height;
+
+    if (platform == NULL || framebuffer == NULL || framebuffer_point == NULL ||
+        !framebuffer->initialized || framebuffer->size.width == 0u || framebuffer->size.height == 0u) {
+        return 0;
+    }
+
+    if (fractus_platform_get_output_size(platform, &output_size) != FRACTUS_STATUS_OK ||
+        output_size.width == 0u || output_size.height == 0u) {
+        return 0;
+    }
+
+    scale_x = (double)output_size.width / (double)framebuffer->size.width;
+    scale_y = (double)output_size.height / (double)framebuffer->size.height;
+    scale = (scale_x < scale_y) ? scale_x : scale_y;
+    if (scale <= 0.0) {
+        return 0;
+    }
+
+    destination_width = (int32_t)((double)framebuffer->size.width * scale);
+    destination_height = (int32_t)((double)framebuffer->size.height * scale);
+    destination_x = ((int32_t)output_size.width - destination_width) / 2;
+    destination_y = ((int32_t)output_size.height - destination_height) / 2;
+
+    if (window_point.x < destination_x ||
+        window_point.y < destination_y ||
+        window_point.x >= destination_x + destination_width ||
+        window_point.y >= destination_y + destination_height) {
+        return 0;
+    }
+
+    framebuffer_point->x = (int32_t)((double)(window_point.x - destination_x) / scale);
+    framebuffer_point->y = (int32_t)((double)(window_point.y - destination_y) / scale);
+    framebuffer_point->x = fractus_app_clamp_i32(framebuffer_point->x, 0, (int32_t)framebuffer->size.width - 1);
+    framebuffer_point->y = fractus_app_clamp_i32(framebuffer_point->y, 0, (int32_t)framebuffer->size.height - 1);
+    return 1;
+}

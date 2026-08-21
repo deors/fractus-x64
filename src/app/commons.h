@@ -190,4 +190,23 @@ size_t fractus_app_copy_control_entries(
     const fractus_app_menu_entry *controls,
     size_t control_count);
 
+fractus_status fractus_app_copy_framebuffer_for_overlay(
+    fractus_framebuffer *target,
+    const fractus_framebuffer *source);
+
+fractus_status fractus_app_draw_drawing_footer(
+    fractus_framebuffer *framebuffer,
+    const fractus_font_library *fonts,
+    const char *text);
+
+fractus_status fractus_app_draw_save_feedback(
+    fractus_framebuffer *framebuffer,
+    uint32_t frame);
+
+int fractus_app_map_drawing_window_point(
+    const fractus_platform_context *platform,
+    const fractus_framebuffer *framebuffer,
+    fractus_point_i32 window_point,
+    fractus_point_i32 *framebuffer_point);
+
 #endif
