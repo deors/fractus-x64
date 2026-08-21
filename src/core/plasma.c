@@ -1,6 +1,11 @@
 #include "core/plasma.h"
 
+#include <math.h>
 #include <stdlib.h>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 static uint8_t fractus_plasma_random_color(const fractus_plasma_params *params)
 {
@@ -140,6 +145,129 @@ fractus_status fractus_fractal_render_plasma(
 }
 
 fractus_status fractus_fractal_render_plasma_circular(
+    fractus_framebuffer *framebuffer,
+    const fractus_plasma_circular_params *params)
+{
+    int32_t x;
+    int32_t y;
+    int32_t n;
+    double *center_x;
+    double *center_y;
+    double *inv_wavelength;
+    double *phase;
+    double *weight;
+    double *sum_buffer;
+    double base_radius;
+    double s_min = 1e30;
+    double s_max = -1e30;
+    double range;
+    size_t total_pixels;
+
+    if (framebuffer == NULL || params == NULL || !framebuffer->initialized ||
+        params->palette_span == 0u || params->circle_count <= 0 || params->max_radius <= 0) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    total_pixels = (size_t)framebuffer->size.width * (size_t)framebuffer->size.height;
+    center_x = (double *)malloc((size_t)params->circle_count * sizeof(*center_x));
+    center_y = (double *)malloc((size_t)params->circle_count * sizeof(*center_y));
+    inv_wavelength = (double *)malloc((size_t)params->circle_count * sizeof(*inv_wavelength));
+    phase = (double *)malloc((size_t)params->circle_count * sizeof(*phase));
+    weight = (double *)malloc((size_t)params->circle_count * sizeof(*weight));
+    sum_buffer = (double *)malloc(total_pixels * sizeof(*sum_buffer));
+
+    if (center_x == NULL || center_y == NULL || inv_wavelength == NULL || phase == NULL || weight == NULL || sum_buffer == NULL) {
+        free(center_x);
+        free(center_y);
+        free(inv_wavelength);
+        free(phase);
+        free(weight);
+        free(sum_buffer);
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    srand(params->seed);
+    base_radius = (double)params->max_radius;
+    if (base_radius < 2.0) {
+        base_radius = 2.0;
+    }
+
+    for (n = 0; n < params->circle_count; ++n) {
+        double radius_factor;
+        double wavelength;
+
+        center_x[n] = ((double)rand() / (double)RAND_MAX) * (double)framebuffer->size.width;
+        center_y[n] = ((double)rand() / (double)RAND_MAX) * (double)framebuffer->size.height;
+
+        radius_factor = 0.4 + (((double)rand() / (double)RAND_MAX) * 1.2);
+        wavelength = base_radius * radius_factor;
+        if (wavelength < 2.0) {
+            wavelength = 2.0;
+        }
+
+        inv_wavelength[n] = (2.0 * M_PI) / wavelength;
+        phase[n] = ((double)rand() / (double)RAND_MAX) * 2.0 * M_PI;
+        weight[n] = 0.5 + (((double)rand() / (double)RAND_MAX) * 0.5);
+    }
+
+    #pragma omp parallel for schedule(dynamic, 8) private(x, n) reduction(min:s_min) reduction(max:s_max)
+    for (y = 0; y < (int32_t)framebuffer->size.height; ++y) {
+        for (x = 0; x < (int32_t)framebuffer->size.width; ++x) {
+            double sum = 0.0;
+            size_t idx = (size_t)y * (size_t)framebuffer->size.width + (size_t)x;
+
+            for (n = 0; n < params->circle_count; ++n) {
+                double dx = (double)x - center_x[n];
+                double dy = (double)y - center_y[n];
+                double dist = sqrt((dx * dx) + (dy * dy));
+                sum += weight[n] * sin((dist * inv_wavelength[n]) + phase[n]);
+            }
+
+            sum_buffer[idx] = sum;
+            if (sum < s_min) {
+                s_min = sum;
+            }
+            if (sum > s_max) {
+                s_max = sum;
+            }
+        }
+    }
+
+    range = s_max - s_min;
+    if (range <= 0.0) {
+        range = 1.0;
+    }
+
+    #pragma omp parallel for schedule(dynamic, 8) private(x)
+    for (y = 0; y < (int32_t)framebuffer->size.height; ++y) {
+        for (x = 0; x < (int32_t)framebuffer->size.width; ++x) {
+            size_t idx = (size_t)y * (size_t)framebuffer->size.width + (size_t)x;
+            double normalized = (sum_buffer[idx] - s_min) / range;
+            uint8_t color_index;
+
+            if (normalized < 0.0) {
+                normalized = 0.0;
+            } else if (normalized > 1.0) {
+                normalized = 1.0;
+            }
+
+            color_index = (uint8_t)(params->palette_offset + (uint32_t)(normalized * (double)(params->palette_span - 1u)));
+            framebuffer->index_pixels[(size_t)y * framebuffer->pitch_pixels + (size_t)x] = color_index;
+        }
+    }
+
+    free(center_x);
+    free(center_y);
+    free(inv_wavelength);
+    free(phase);
+    free(weight);
+    free(sum_buffer);
+
+    framebuffer->pixels_dirty = 1;
+    return FRACTUS_STATUS_OK;
+}
+
+fractus_status fractus_fractal_render_plasma_circular_legacy(
     fractus_framebuffer *framebuffer,
     const fractus_plasma_circular_params *params)
 {

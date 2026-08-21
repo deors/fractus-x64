@@ -12,14 +12,18 @@ typedef enum fractus_app_plasma_method {
 } fractus_app_plasma_method;
 
 typedef enum fractus_app_plasma_rectangular_dialog_action {
-    FRACTUS_APP_PLASMA_RECTANGULAR_DISPERSION_DEC = 0,
+    FRACTUS_APP_PLASMA_RECTANGULAR_SEED_DEC = 0,
+    FRACTUS_APP_PLASMA_RECTANGULAR_SEED_INC,
+    FRACTUS_APP_PLASMA_RECTANGULAR_DISPERSION_DEC,
     FRACTUS_APP_PLASMA_RECTANGULAR_DISPERSION_INC,
     FRACTUS_APP_PLASMA_RECTANGULAR_DRAW,
     FRACTUS_APP_PLASMA_RECTANGULAR_CANCEL
 } fractus_app_plasma_rectangular_dialog_action;
 
 typedef enum fractus_app_plasma_circular_dialog_action {
-    FRACTUS_APP_PLASMA_CIRCLES_DEC = 0,
+    FRACTUS_APP_PLASMA_CIRCULAR_SEED_DEC = 0,
+    FRACTUS_APP_PLASMA_CIRCULAR_SEED_INC,
+    FRACTUS_APP_PLASMA_CIRCLES_DEC,
     FRACTUS_APP_PLASMA_CIRCLES_INC,
     FRACTUS_APP_PLASMA_RADIUS_DEC,
     FRACTUS_APP_PLASMA_RADIUS_INC,
@@ -28,14 +32,18 @@ typedef enum fractus_app_plasma_circular_dialog_action {
 } fractus_app_plasma_circular_dialog_action;
 
 typedef struct fractus_app_plasma_fields {
+    fractus_ui_numeric_field rectangular_seed;
     fractus_ui_numeric_field rectangular_dispersion;
+    fractus_ui_numeric_field circular_seed;
     fractus_ui_numeric_field circular_circles;
     fractus_ui_numeric_field circular_radius;
 } fractus_app_plasma_fields;
 
 void fractus_app_init_plasma_fields(
     fractus_app_plasma_fields *fields,
+    uint32_t rectangular_seed,
     int32_t dispersion,
+    uint32_t circular_seed,
     int32_t circle_count,
     int32_t max_radius);
 

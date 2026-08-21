@@ -120,6 +120,41 @@ static fractus_status fractus_write_u16_le(FILE *file, uint16_t value)
     return (fwrite(bytes, sizeof(bytes), 1u, file) == 1u) ? FRACTUS_STATUS_OK : FRACTUS_STATUS_ERROR;
 }
 
+static fractus_status fractus_read_u32_le(FILE *file, uint32_t *value)
+{
+    uint8_t bytes[4];
+
+    if (file == NULL || value == NULL) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    if (fread(bytes, sizeof(bytes), 1u, file) != 1u) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    *value = (uint32_t)bytes[0] |
+             ((uint32_t)bytes[1] << 8u) |
+             ((uint32_t)bytes[2] << 16u) |
+             ((uint32_t)bytes[3] << 24u);
+    return FRACTUS_STATUS_OK;
+}
+
+static fractus_status fractus_write_u32_le(FILE *file, uint32_t value)
+{
+    uint8_t bytes[4];
+
+    if (file == NULL) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    bytes[0] = (uint8_t)(value & 0xffu);
+    bytes[1] = (uint8_t)((value >> 8u) & 0xffu);
+    bytes[2] = (uint8_t)((value >> 16u) & 0xffu);
+    bytes[3] = (uint8_t)((value >> 24u) & 0xffu);
+
+    return (fwrite(bytes, sizeof(bytes), 1u, file) == 1u) ? FRACTUS_STATUS_OK : FRACTUS_STATUS_ERROR;
+}
+
 static fractus_status fractus_legacy_video_mode_info(
     uint16_t video_mode,
     fractus_size_u32 *size,
@@ -284,6 +319,8 @@ fractus_status fractus_legacy_config_init_default(fractus_legacy_config *config)
     config->escape_radius_squared = 4;
     config->biomorph_escape_radius_squared = 1000;
     config->biomorph_cutoff = 1;
+    config->plasma_rectangular_seed = 1337u;
+    config->plasma_circular_seed = 7331u;
 
     for (i = 0u; i < FRACTUS_LEGACY_PALETTE_DATA_COUNT; ++i) {
         config->palette[i] = fractus_default_fractal_palette[i];
@@ -300,6 +337,8 @@ fractus_status fractus_legacy_config_load(
     FILE *file;
     uint8_t drawing_video_mode;
     int16_t biomorph_cutoff;
+    uint32_t rect_seed;
+    uint32_t circ_seed;
     uint32_t i;
 
     if (path == NULL || config == NULL) {
@@ -363,6 +402,12 @@ fractus_status fractus_legacy_config_load(
                 config->default_palette[i].b = fractus_from_legacy_6bit(b);
                 config->default_palette[i].a = 255u;
             }
+            if (fractus_read_u32_le(file, &rect_seed) == FRACTUS_STATUS_OK) {
+                config->plasma_rectangular_seed = (rect_seed > 0u) ? rect_seed : 1337u;
+                if (fractus_read_u32_le(file, &circ_seed) == FRACTUS_STATUS_OK) {
+                    config->plasma_circular_seed = (circ_seed > 0u) ? circ_seed : 7331u;
+                }
+            }
         }
     } else if (ferror(file)) {
         fclose(file);
@@ -425,6 +470,12 @@ fractus_status fractus_legacy_config_save(
             fclose(file);
             return FRACTUS_STATUS_ERROR;
         }
+    }
+
+    if (fractus_write_u32_le(file, config->plasma_rectangular_seed > 0u ? config->plasma_rectangular_seed : 1337u) != FRACTUS_STATUS_OK ||
+        fractus_write_u32_le(file, config->plasma_circular_seed > 0u ? config->plasma_circular_seed : 7331u) != FRACTUS_STATUS_OK) {
+        fclose(file);
+        return FRACTUS_STATUS_ERROR;
     }
 
     fclose(file);

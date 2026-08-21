@@ -12,6 +12,8 @@ static int test_legacy_config_defaults(void)
     TEST_ASSERT_EQUAL_INT(4, config.escape_radius_squared, "Default escape radius mismatch");
     TEST_ASSERT_EQUAL_INT(1000, config.biomorph_escape_radius_squared, "Default biomorph radius mismatch");
     TEST_ASSERT_EQUAL_INT(1, config.biomorph_cutoff, "Default biomorph cutoff mismatch");
+    TEST_ASSERT_EQUAL_INT(1337, (int)config.plasma_rectangular_seed, "Default rectangular plasma seed mismatch");
+    TEST_ASSERT_EQUAL_INT(7331, (int)config.plasma_circular_seed, "Default circular plasma seed mismatch");
 
     TEST_ASSERT_EQUAL_INT(121, config.default_palette[0].r, "Default palette entry 0 R mismatch");
     TEST_ASSERT_EQUAL_INT(60, config.default_palette[0].g, "Default palette entry 0 G mismatch");
@@ -38,6 +40,8 @@ static int test_legacy_config_save_and_load(void)
     original.escape_radius_squared = 250;
     original.biomorph_escape_radius_squared = 2000;
     original.biomorph_cutoff = 5;
+    original.plasma_rectangular_seed = 4242u;
+    original.plasma_circular_seed = 9999u;
     original.drawing_video_mode = 2;
 
     for (i = 0; i < FRACTUS_LEGACY_PALETTE_DATA_COUNT; ++i) {
@@ -58,6 +62,8 @@ static int test_legacy_config_save_and_load(void)
     TEST_ASSERT_EQUAL_INT(original.escape_radius_squared, loaded.escape_radius_squared, "Saved radius mismatch");
     TEST_ASSERT_EQUAL_INT(original.biomorph_escape_radius_squared, loaded.biomorph_escape_radius_squared, "Saved biomorph radius mismatch");
     TEST_ASSERT_EQUAL_INT(original.biomorph_cutoff, loaded.biomorph_cutoff, "Saved biomorph cutoff mismatch");
+    TEST_ASSERT_EQUAL_INT((int)original.plasma_rectangular_seed, (int)loaded.plasma_rectangular_seed, "Saved rectangular seed mismatch");
+    TEST_ASSERT_EQUAL_INT((int)original.plasma_circular_seed, (int)loaded.plasma_circular_seed, "Saved circular seed mismatch");
     TEST_ASSERT_EQUAL_INT(original.drawing_video_mode, loaded.drawing_video_mode, "Saved video mode mismatch");
 
     /* Palette round-trip within 6-bit VGA DAC quantization tolerance (+-5 levels) */

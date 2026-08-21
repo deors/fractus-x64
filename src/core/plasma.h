@@ -27,4 +27,8 @@ fractus_status fractus_fractal_render_plasma_circular(
     fractus_framebuffer *framebuffer,
     const fractus_plasma_circular_params *params);
 
+fractus_status fractus_fractal_render_plasma_circular_legacy(
+    fractus_framebuffer *framebuffer,
+    const fractus_plasma_circular_params *params);
+
 #endif

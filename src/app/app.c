@@ -123,6 +123,8 @@ static fractus_status fractus_app_run_main_menu_view(
     fractus_ui_numeric_field *escape_radius_field,
     fractus_ui_numeric_field *biomorph_radius_field,
     fractus_ui_numeric_field *biomorph_cutoff_field,
+    fractus_ui_numeric_field *plasma_rect_seed_field,
+    fractus_ui_numeric_field *plasma_circ_seed_field,
     fractus_app_graphic_file *graphic_files,
     size_t *graphic_file_count,
     size_t *graphic_file_page,
@@ -147,7 +149,7 @@ static fractus_status fractus_app_run_main_menu_view(
         plasma_rectangular_params == NULL || plasma_circular_params == NULL ||
         biomorph_fields == NULL ||
         iterations_field == NULL || escape_radius_field == NULL || biomorph_radius_field == NULL ||
-        biomorph_cutoff_field == NULL ||
+        biomorph_cutoff_field == NULL || plasma_rect_seed_field == NULL || plasma_circ_seed_field == NULL ||
         graphic_files == NULL || graphic_file_count == NULL || graphic_file_page == NULL || palette_files == NULL ||
         palette_file_count == NULL || palette_file_page == NULL || runtime_error_message == NULL || cfg_path == NULL ||
         save_next_graphic == NULL) {
@@ -202,28 +204,40 @@ static fractus_status fractus_app_run_main_menu_view(
             *config_draft = *legacy_config;
             (void)fractus_ui_numeric_field_init_int(
                 iterations_field,
-                (fractus_rect_i32){324, 169, 73, 20},
+                (fractus_rect_i32){324, 131, 73, 20},
                 (int32_t)config_draft->iterations,
                 16,
                 1024);
             (void)fractus_ui_numeric_field_init_int(
                 escape_radius_field,
-                (fractus_rect_i32){324, 195, 73, 20},
+                (fractus_rect_i32){324, 157, 73, 20},
                 (int32_t)config_draft->escape_radius_squared,
                 4,
                 1000);
             (void)fractus_ui_numeric_field_init_int(
                 biomorph_radius_field,
-                (fractus_rect_i32){324, 245, 73, 20},
+                (fractus_rect_i32){324, 207, 73, 20},
                 (int32_t)config_draft->biomorph_escape_radius_squared,
                 4,
                 1000);
             (void)fractus_ui_numeric_field_init_int(
                 biomorph_cutoff_field,
-                (fractus_rect_i32){324, 271, 73, 20},
+                (fractus_rect_i32){324, 233, 73, 20},
                 (int32_t)config_draft->biomorph_cutoff,
                 1,
                 100);
+            (void)fractus_ui_numeric_field_init_int(
+                plasma_rect_seed_field,
+                (fractus_rect_i32){324, 283, 73, 20},
+                (int32_t)config_draft->plasma_rectangular_seed,
+                1,
+                999999);
+            (void)fractus_ui_numeric_field_init_int(
+                plasma_circ_seed_field,
+                (fractus_rect_i32){324, 309, 73, 20},
+                (int32_t)config_draft->plasma_circular_seed,
+                1,
+                999999);
             *view = FRACTUS_APP_VIEW_FRACTALS_DEFAULT_CONFIG;
         } else if (selected_menu == FRACTUS_APP_MENU_LOAD_GRAPHIC_INDEX) {
             *graphic_file_count = fractus_app_list_graphic_files(platform, graphic_files, FRACTUS_APP_GRAPHIC_FILE_CAPACITY);
@@ -403,6 +417,8 @@ int fractus_app_run(void)
     fractus_ui_numeric_field escape_radius_field;
     fractus_ui_numeric_field biomorph_radius_field;
     fractus_ui_numeric_field biomorph_cutoff_field;
+    fractus_ui_numeric_field plasma_rect_seed_field;
+    fractus_ui_numeric_field plasma_circ_seed_field;
     fractus_ui_numeric_field palette_red_field;
     fractus_ui_numeric_field palette_green_field;
     fractus_ui_numeric_field palette_blue_field;
@@ -452,6 +468,8 @@ int fractus_app_run(void)
     memset(&escape_radius_field, 0, sizeof(escape_radius_field));
     memset(&biomorph_radius_field, 0, sizeof(biomorph_radius_field));
     memset(&biomorph_cutoff_field, 0, sizeof(biomorph_cutoff_field));
+    memset(&plasma_rect_seed_field, 0, sizeof(plasma_rect_seed_field));
+    memset(&plasma_circ_seed_field, 0, sizeof(plasma_circ_seed_field));
     memset(&palette_red_field, 0, sizeof(palette_red_field));
     memset(&palette_green_field, 0, sizeof(palette_green_field));
     memset(&palette_blue_field, 0, sizeof(palette_blue_field));
@@ -519,6 +537,8 @@ int fractus_app_run(void)
             &mandelbrot_params,
             &julia_params,
             &biomorph_params,
+            &plasma_rectangular_params,
+            &plasma_circular_params,
             &legacy_config,
             cfg_path,
             sizeof(cfg_path)) != FRACTUS_STATUS_OK) {
@@ -607,6 +627,8 @@ int fractus_app_run(void)
                         &escape_radius_field,
                         &biomorph_radius_field,
                         &biomorph_cutoff_field,
+                        &plasma_rect_seed_field,
+                        &plasma_circ_seed_field,
                         graphic_files,
                         &graphic_file_count,
                         &graphic_file_page,
@@ -775,11 +797,15 @@ int fractus_app_run(void)
                         &julia_params,
                         &julia_dem_params,
                         &biomorph_params,
+                        &plasma_rectangular_params,
+                        &plasma_circular_params,
                         cfg_path,
                         &iterations_field,
                         &escape_radius_field,
                         &biomorph_radius_field,
                         &biomorph_cutoff_field,
+                        &plasma_rect_seed_field,
+                        &plasma_circ_seed_field,
                         &view) != FRACTUS_STATUS_OK) {
                     fractus_app_log("runtime: fractals default config failed");
                     running = 0;

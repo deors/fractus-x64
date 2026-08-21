@@ -108,6 +108,19 @@ static int test_plasma_rendering(void)
         1337u, 50, 40, 16u, 240u
     };
     TEST_ASSERT(fractus_fractal_render_plasma_circular(&fb1, &circ_params) == FRACTUS_STATUS_OK, "Plasma circular render failed");
+    TEST_ASSERT(fractus_fractal_render_plasma_circular(&fb2, &circ_params) == FRACTUS_STATUS_OK, "Plasma circular render 2 failed");
+
+    for (y = 0; y < size.height; ++y) {
+        for (x = 0; x < size.width; ++x) {
+            uint8_t p1 = 0, p2 = 0;
+            TEST_ASSERT(fractus_framebuffer_get_pixel(&fb1, x, y, &p1) == FRACTUS_STATUS_OK, "Get pixel fb1 failed");
+            TEST_ASSERT(fractus_framebuffer_get_pixel(&fb2, x, y, &p2) == FRACTUS_STATUS_OK, "Get pixel fb2 failed");
+            TEST_ASSERT_EQUAL_INT(p1, p2, "Plasma circular deterministic pixel mismatch");
+        }
+    }
+
+    /* Legacy circular plasma */
+    TEST_ASSERT(fractus_fractal_render_plasma_circular_legacy(&fb1, &circ_params) == FRACTUS_STATUS_OK, "Plasma circular legacy render failed");
 
     fractus_framebuffer_shutdown(&fb1);
     fractus_framebuffer_shutdown(&fb2);
