@@ -11,9 +11,9 @@ static const fractus_app_menu_entry fractus_app_main_menu_controls[] = {
     {FRACTUS_APP_RECT(10, 70, 312, 90), 11u, 0u, "Conjunto de Benoit B. Mandelbrot"},
     {FRACTUS_APP_RECT(10, 90, 312, 110), 11u, 0u, "Conjuntos de Gaston Julia"},
     {FRACTUS_APP_RECT(10, 110, 312, 130), 11u, 0u, "Biomorfos de Clifford Pickover"},
-    {FRACTUS_APP_RECT(10, 130, 312, 150), 11u, 0u, "Atractores dinamicos"},
-    {FRACTUS_APP_RECT(10, 150, 312, 170), 11u, 0u, "Curvas fractales sencillas"},
-    {FRACTUS_APP_RECT(10, 170, 312, 190), 11u, 0u, "Fractales por el metodo de plasma"},
+    {FRACTUS_APP_RECT(10, 130, 312, 150), 11u, 0u, "Fractales por el metodo de plasma"},
+    {FRACTUS_APP_RECT(10, 150, 312, 170), 11u, 0u, "Atractores dinamicos"},
+    {FRACTUS_APP_RECT(10, 170, 312, 190), 11u, 0u, "Curvas fractales sencillas"},
     {FRACTUS_APP_RECT(10, 190, 312, 210), 11u, 0u, "Otros conjuntos fractales"},
     {FRACTUS_APP_RECT(10, 210, 312, 230), 11u, 0u, "Modelos fractales naturales"},
     {FRACTUS_APP_RECT(10, 230, 312, 250), 11u, 0u, "Lenguajes 0-L"},
@@ -31,6 +31,7 @@ static const fractus_app_menu_entry fractus_app_main_menu_controls[] = {
     {FRACTUS_APP_RECT(327, 290, 629, 310), 3u, 15u, "Restaurar la paleta por defecto"},
     {FRACTUS_APP_RECT(327, 334, 629, 354), 5u, 15u, "Resolucion de los dibujos"},
     {FRACTUS_APP_RECT(327, 354, 629, 374), 5u, 15u, "Parametros por defecto de conjuntos fractales"},
+    {FRACTUS_APP_RECT(327, 374, 629, 394), 5u, 15u, "Restaurar parametros de los conjuntos"},
     {FRACTUS_APP_RECT(10, 430, 130, 450), 8u, 0u, "Ayuda"},
     {FRACTUS_APP_RECT(509, 430, 629, 450), 8u, 0u, "Acerca de..."},
     {FRACTUS_APP_RECT(260, 430, 380, 450), 0u, 15u, "Salir del programa"}
@@ -51,7 +52,7 @@ static fractus_status fractus_app_draw_main_menu_frame(
         fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 30, 0u, "Dibujo de conjuntos fractales") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_group_box(framebuffer, fonts, 5, 60, 318, 275, 8u, 0u, "Tipos de conjuntos") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_group_box(framebuffer, fonts, 322, 60, 635, 316, 8u, 0u, "Graficos y colores") != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, 322, 324, 635, 380, 8u, 0u, "Configuracion por defecto") != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_group_box(framebuffer, fonts, 322, 324, 635, 400, 8u, 0u, "Configuracion por defecto") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
@@ -109,10 +110,14 @@ static fractus_status fractus_app_run_main_menu_view(
     fractus_legacy_config *config_draft,
     fractus_mandelbrot_params *mandelbrot_params,
     fractus_mandelbrot_params *mandelbrot_pending,
+    fractus_mandelbrot_dem_params *mandelbrot_dem_params,
     fractus_julia_params *julia_params,
     fractus_julia_params *julia_pending,
+    fractus_julia_dem_params *julia_dem_params,
     fractus_biomorph_params *biomorph_params,
     fractus_biomorph_params *biomorph_pending,
+    fractus_plasma_params *plasma_rectangular_params,
+    fractus_plasma_circular_params *plasma_circular_params,
     fractus_app_biomorph_fields *biomorph_fields,
     fractus_ui_numeric_field *iterations_field,
     fractus_ui_numeric_field *escape_radius_field,
@@ -136,8 +141,10 @@ static fractus_status fractus_app_run_main_menu_view(
 
     if (platform == NULL || framebuffer == NULL || fonts == NULL || ui == NULL ||
         view == NULL || running == NULL || legacy_config == NULL || config_draft == NULL ||
-        mandelbrot_params == NULL || mandelbrot_pending == NULL || julia_params == NULL ||
-        julia_pending == NULL || biomorph_params == NULL || biomorph_pending == NULL ||
+        mandelbrot_params == NULL || mandelbrot_pending == NULL || mandelbrot_dem_params == NULL ||
+        julia_params == NULL || julia_pending == NULL || julia_dem_params == NULL ||
+        biomorph_params == NULL || biomorph_pending == NULL ||
+        plasma_rectangular_params == NULL || plasma_circular_params == NULL ||
         biomorph_fields == NULL ||
         iterations_field == NULL || escape_radius_field == NULL || biomorph_radius_field == NULL ||
         biomorph_cutoff_field == NULL ||
@@ -186,7 +193,7 @@ static fractus_status fractus_app_run_main_menu_view(
                 biomorph_pending->escape_radius_squared,
                 biomorph_pending->cutoff);
             *view = FRACTUS_APP_VIEW_BIOMORPH_CONFIG;
-        } else if (selected_menu == 5) {
+        } else if (selected_menu == 3) {
             *view = FRACTUS_APP_VIEW_PLASMA_MENU;
         } else if (selected_menu == FRACTUS_APP_MENU_VIDEO_INDEX) {
             *config_draft = *legacy_config;
@@ -261,6 +268,30 @@ static fractus_status fractus_app_run_main_menu_view(
             if (fractus_app_restore_default_palette(platform, framebuffer, legacy_config, cfg_path) != FRACTUS_STATUS_OK) {
                 fractus_app_log("runtime: restoring default palette failed");
             }
+        } else if (selected_menu == FRACTUS_APP_MENU_RESTORE_FRACTALS_CONFIG_INDEX) {
+            fractus_app_reset_fractal_parameters(
+                mandelbrot_params,
+                mandelbrot_dem_params,
+                julia_params,
+                julia_dem_params,
+                biomorph_params,
+                plasma_rectangular_params,
+                plasma_circular_params,
+                legacy_config);
+            *mandelbrot_pending = *mandelbrot_params;
+            *julia_pending = *julia_params;
+            *biomorph_pending = *biomorph_params;
+            fractus_app_init_biomorph_fields(
+                biomorph_fields,
+                biomorph_pending->xmin,
+                biomorph_pending->xmax,
+                biomorph_pending->ymin,
+                biomorph_pending->ymax,
+                biomorph_pending->constant_real,
+                biomorph_pending->constant_imag,
+                biomorph_pending->escape_radius_squared,
+                biomorph_pending->cutoff);
+            fractus_app_log("runtime: default fractal parameters restored");
         }
     }
 
@@ -482,88 +513,6 @@ int fractus_app_run(void)
         fractus_app_log("startup: legacy fonts loaded");
     }
 
-    mandelbrot_params = (fractus_mandelbrot_params){
-        -2.4,
-        1.2,
-        -1.2,
-        1.2,
-        240u,
-        4.0,
-        0u,
-        16u,
-        240u,
-        FRACTUS_MANDELBROT_COLOR_ESCAPE
-    };
-    mandelbrot_dem_params = (fractus_mandelbrot_dem_params){
-        -2.4,
-        1.2,
-        -1.2,
-        1.2,
-        240u,
-        1000.0,
-        0u,
-        16u,
-        240u,
-        FRACTUS_MANDELBROT_DEM_COLOR_BOUNDARY
-    };
-    julia_params = (fractus_julia_params){
-        -1.8,
-        1.8,
-        -1.2,
-        1.2,
-        -0.745,
-        0.113,
-        240u,
-        4.0,
-        0u,
-        16u,
-        240u,
-        FRACTUS_JULIA_COLOR_ESCAPE
-    };
-    julia_dem_params = (fractus_julia_dem_params){
-        -1.8,
-        1.8,
-        -1.2,
-        1.2,
-        -0.745,
-        0.113,
-        240u,
-        100.0,
-        0u,
-        16u,
-        240u,
-        FRACTUS_JULIA_DEM_COLOR_BOUNDARY
-    };
-    biomorph_params = (fractus_biomorph_params){
-        -2.0,
-        2.0,
-        -1.5,
-        1.5,
-        -0.6,
-        0.55,
-        240u,
-        1000.0,
-        1.0,
-        0u,
-        16u,
-        240u,
-        FRACTUS_BIOMORPH_EQ_Z2,
-        FRACTUS_BIOMORPH_TRAP_RE_OR_IM
-    };
-    plasma_rectangular_params = (fractus_plasma_params){
-        1337u,
-        5,
-        16u,
-        240u
-    };
-    plasma_circular_params = (fractus_plasma_circular_params){
-        7331u,
-        320,
-        90,
-        16u,
-        240u
-    };
-
     if (fractus_app_load_legacy_assets(
             &platform,
             &core.ui_framebuffer,
@@ -575,21 +524,21 @@ int fractus_app_run(void)
             sizeof(cfg_path)) != FRACTUS_STATUS_OK) {
         fractus_app_log("startup: failed loading legacy config/palette, using defaults");
         if (fractus_legacy_config_init_default(&legacy_config) == FRACTUS_STATUS_OK) {
-            fractus_app_apply_legacy_numeric_config(&legacy_config, &mandelbrot_params, &julia_params, &biomorph_params);
             (void)fractus_app_apply_legacy_config(&core.ui_framebuffer, &legacy_config);
         }
         if (fractus_formats_resolve_legacy_write_path(&platform, "fractus.cfg", cfg_path, sizeof(cfg_path)) != FRACTUS_STATUS_OK) {
             cfg_path[0] = '\0';
         }
     }
-    mandelbrot_dem_params.max_iterations = mandelbrot_params.max_iterations;
-    mandelbrot_dem_params.escape_radius_squared = (legacy_config.escape_radius_squared > 0)
-        ? (double)legacy_config.escape_radius_squared
-        : mandelbrot_dem_params.escape_radius_squared;
-    julia_dem_params.max_iterations = julia_params.max_iterations;
-    julia_dem_params.escape_radius_squared = (legacy_config.escape_radius_squared > 0)
-        ? (double)legacy_config.escape_radius_squared
-        : julia_dem_params.escape_radius_squared;
+    fractus_app_reset_fractal_parameters(
+        &mandelbrot_params,
+        &mandelbrot_dem_params,
+        &julia_params,
+        &julia_dem_params,
+        &biomorph_params,
+        &plasma_rectangular_params,
+        &plasma_circular_params,
+        &legacy_config);
     if (fractus_app_sync_framebuffer_palette(&core.drawing_framebuffer, &core.ui_framebuffer) != FRACTUS_STATUS_OK) {
         fractus_app_log("startup: drawing palette sync failed");
         fractus_ui_shutdown(&ui);
@@ -645,10 +594,14 @@ int fractus_app_run(void)
                         &config_draft,
                         &mandelbrot_params,
                         &mandelbrot_pending,
+                        &mandelbrot_dem_params,
                         &julia_params,
                         &julia_pending,
+                        &julia_dem_params,
                         &biomorph_params,
                         &biomorph_pending,
+                        &plasma_rectangular_params,
+                        &plasma_circular_params,
                         &biomorph_fields,
                         &iterations_field,
                         &escape_radius_field,

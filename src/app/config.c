@@ -47,6 +47,116 @@ void fractus_app_apply_legacy_numeric_config(
         : biomorph_params->cutoff;
 }
 
+void fractus_app_reset_fractal_parameters(
+    fractus_mandelbrot_params *mandelbrot_params,
+    fractus_mandelbrot_dem_params *mandelbrot_dem_params,
+    fractus_julia_params *julia_params,
+    fractus_julia_dem_params *julia_dem_params,
+    fractus_biomorph_params *biomorph_params,
+    fractus_plasma_params *plasma_rectangular_params,
+    fractus_plasma_circular_params *plasma_circular_params,
+    const fractus_legacy_config *legacy_config)
+{
+    if (mandelbrot_params == NULL || mandelbrot_dem_params == NULL ||
+        julia_params == NULL || julia_dem_params == NULL ||
+        biomorph_params == NULL || plasma_rectangular_params == NULL ||
+        plasma_circular_params == NULL || legacy_config == NULL) {
+        return;
+    }
+
+    *mandelbrot_params = (fractus_mandelbrot_params){
+        -2.4,
+        1.2,
+        -1.2,
+        1.2,
+        240u,
+        4.0,
+        0u,
+        16u,
+        240u,
+        FRACTUS_MANDELBROT_COLOR_ESCAPE
+    };
+    *mandelbrot_dem_params = (fractus_mandelbrot_dem_params){
+        -2.4,
+        1.2,
+        -1.2,
+        1.2,
+        240u,
+        1000.0,
+        0u,
+        16u,
+        240u,
+        FRACTUS_MANDELBROT_DEM_COLOR_BOUNDARY
+    };
+    *julia_params = (fractus_julia_params){
+        -1.8,
+        1.8,
+        -1.2,
+        1.2,
+        -0.745,
+        0.113,
+        240u,
+        4.0,
+        0u,
+        16u,
+        240u,
+        FRACTUS_JULIA_COLOR_ESCAPE
+    };
+    *julia_dem_params = (fractus_julia_dem_params){
+        -1.8,
+        1.8,
+        -1.2,
+        1.2,
+        -0.745,
+        0.113,
+        240u,
+        100.0,
+        0u,
+        16u,
+        240u,
+        FRACTUS_JULIA_DEM_COLOR_BOUNDARY
+    };
+    *biomorph_params = (fractus_biomorph_params){
+        -2.0,
+        2.0,
+        -1.5,
+        1.5,
+        -0.6,
+        0.55,
+        240u,
+        1000.0,
+        1.0,
+        0u,
+        16u,
+        240u,
+        FRACTUS_BIOMORPH_EQ_Z2,
+        FRACTUS_BIOMORPH_TRAP_RE_OR_IM
+    };
+    *plasma_rectangular_params = (fractus_plasma_params){
+        1337u,
+        5,
+        16u,
+        240u
+    };
+    *plasma_circular_params = (fractus_plasma_circular_params){
+        7331u,
+        320,
+        90,
+        16u,
+        240u
+    };
+
+    fractus_app_apply_legacy_numeric_config(legacy_config, mandelbrot_params, julia_params, biomorph_params);
+    mandelbrot_dem_params->max_iterations = mandelbrot_params->max_iterations;
+    mandelbrot_dem_params->escape_radius_squared = (legacy_config->escape_radius_squared > 0)
+        ? (double)legacy_config->escape_radius_squared
+        : mandelbrot_dem_params->escape_radius_squared;
+    julia_dem_params->max_iterations = julia_params->max_iterations;
+    julia_dem_params->escape_radius_squared = (legacy_config->escape_radius_squared > 0)
+        ? (double)legacy_config->escape_radius_squared
+        : julia_dem_params->escape_radius_squared;
+}
+
 void fractus_app_capture_palette_to_config(
     const fractus_framebuffer *framebuffer,
     fractus_legacy_config *config)

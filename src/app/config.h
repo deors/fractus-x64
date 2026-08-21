@@ -27,6 +27,16 @@ void fractus_app_apply_legacy_numeric_config(
     fractus_julia_params *julia_params,
     fractus_biomorph_params *biomorph_params);
 
+void fractus_app_reset_fractal_parameters(
+    fractus_mandelbrot_params *mandelbrot_params,
+    fractus_mandelbrot_dem_params *mandelbrot_dem_params,
+    fractus_julia_params *julia_params,
+    fractus_julia_dem_params *julia_dem_params,
+    fractus_biomorph_params *biomorph_params,
+    fractus_plasma_params *plasma_rectangular_params,
+    fractus_plasma_circular_params *plasma_circular_params,
+    const fractus_legacy_config *legacy_config);
+
 void fractus_app_capture_palette_to_config(
     const fractus_framebuffer *framebuffer,
     fractus_legacy_config *config);
