@@ -29,10 +29,8 @@ static const fractus_app_menu_entry fractus_app_main_menu_controls[] = {
     {FRACTUS_APP_RECT(327, 250, 629, 270), 3u, 15u, "Copiar un color de la paleta"},
     {FRACTUS_APP_RECT(327, 270, 629, 290), 3u, 15u, "Crear un gradiente"},
     {FRACTUS_APP_RECT(327, 290, 629, 310), 3u, 15u, "Restaurar la paleta por defecto"},
-    {FRACTUS_APP_RECT(327, 330, 629, 350), 3u, 15u, "Borrar un fichero del disco"},
-    {FRACTUS_APP_RECT(327, 350, 629, 370), 3u, 15u, "Renombrar un fichero del disco"},
-    {FRACTUS_APP_RECT(10, 290, 312, 310), 5u, 15u, "Resolucion de los dibujos"},
-    {FRACTUS_APP_RECT(10, 310, 312, 330), 5u, 15u, "Parametros por defecto de conjuntos fractales"},
+    {FRACTUS_APP_RECT(327, 334, 629, 354), 5u, 15u, "Resolucion de los dibujos"},
+    {FRACTUS_APP_RECT(327, 354, 629, 374), 5u, 15u, "Parametros por defecto de conjuntos fractales"},
     {FRACTUS_APP_RECT(10, 430, 130, 450), 8u, 0u, "Ayuda"},
     {FRACTUS_APP_RECT(509, 430, 629, 450), 8u, 0u, "Acerca de..."},
     {FRACTUS_APP_RECT(260, 430, 380, 450), 0u, 15u, "Salir del programa"}
@@ -52,8 +50,8 @@ static fractus_status fractus_app_draw_main_menu_frame(
         fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_FRANCE, 320, 5, 0u, "Fractus I") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 30, 0u, "Dibujo de conjuntos fractales") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_group_box(framebuffer, fonts, 5, 60, 318, 275, 8u, 0u, "Tipos de conjuntos") != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, 322, 60, 635, 375, 8u, 0u, "Graficos y colores") != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, 5, 280, 318, 336, 8u, 0u, "Configuracion por defecto") != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_group_box(framebuffer, fonts, 322, 60, 635, 316, 8u, 0u, "Graficos y colores") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_group_box(framebuffer, fonts, 322, 324, 635, 380, 8u, 0u, "Configuracion por defecto") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
