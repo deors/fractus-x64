@@ -10,7 +10,7 @@
 static const fractus_app_menu_entry fractus_app_main_menu_controls[] = {
     {FRACTUS_APP_RECT(10, 70, 312, 90), 11u, 0u, "Conjunto de Benoit B. Mandelbrot"},
     {FRACTUS_APP_RECT(10, 90, 312, 110), 11u, 0u, "Conjuntos de Gaston Julia"},
-    {FRACTUS_APP_RECT(10, 110, 312, 130), 11u, 0u, "Biomorfos de Clifford Pickover"},
+    {FRACTUS_APP_RECT(10, 110, 312, 130), 11u, 0u, "Biomorfos de Clifford A. Pickover"},
     {FRACTUS_APP_RECT(10, 130, 312, 150), 11u, 0u, "Fractales por el metodo de plasma"},
     {FRACTUS_APP_RECT(10, 150, 312, 170), 11u, 0u, "Atractores dinamicos"},
     {FRACTUS_APP_RECT(10, 170, 312, 190), 11u, 0u, "Curvas fractales sencillas"},

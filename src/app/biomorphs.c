@@ -113,7 +113,7 @@ fractus_status fractus_app_run_biomorph_config_view(
     /* 1. Contenedor exterior. */
     if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_window(framebuffer, 135, 57, 504, 423) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 61, 15u, "Biomorfos de Clifford Pickover") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 61, 15u, "Biomorfos de Clifford A. Pickover") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_group_box(framebuffer, fonts, 140, 89, 499, 367, 8u, 0u, "Parametros del biomorfo") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
