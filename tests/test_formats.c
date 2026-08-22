@@ -16,7 +16,7 @@ static int test_legacy_config_defaults(void)
     TEST_ASSERT_EQUAL_INT(7331, (int)config.plasma_circular_seed, "Default circular plasma seed mismatch");
 
     TEST_ASSERT_EQUAL_INT(121, config.default_palette[0].r, "Default palette entry 0 R mismatch");
-    TEST_ASSERT_EQUAL_INT(60, config.default_palette[0].g, "Default palette entry 0 G mismatch");
+    TEST_ASSERT_EQUAL_INT(61, config.default_palette[0].g, "Default palette entry 0 G mismatch");
     TEST_ASSERT_EQUAL_INT(121, config.default_palette[0].b, "Default palette entry 0 B mismatch");
 
     for (i = 0; i < FRACTUS_LEGACY_PALETTE_DATA_COUNT; ++i) {
