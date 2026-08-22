@@ -93,7 +93,9 @@ fractus_status fractus_app_render_julia(
     const fractus_julia_params *params,
     int *save_next_graphic,
     char *error_message,
-    size_t error_message_size);
+    size_t error_message_size,
+    char *saved_filename,
+    size_t saved_filename_size);
 
 fractus_status fractus_app_render_julia_dem(
     const fractus_platform_context *platform,
@@ -102,6 +104,8 @@ fractus_status fractus_app_render_julia_dem(
     const fractus_julia_dem_params *params,
     int *save_next_graphic,
     char *error_message,
-    size_t error_message_size);
+    size_t error_message_size,
+    char *saved_filename,
+    size_t saved_filename_size);
 
 #endif

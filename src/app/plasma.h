@@ -74,7 +74,9 @@ fractus_status fractus_app_render_plasma_rectangular(
     const fractus_plasma_params *params,
     int *save_next_graphic,
     char *error_message,
-    size_t error_message_size);
+    size_t error_message_size,
+    char *saved_filename,
+    size_t saved_filename_size);
 
 fractus_status fractus_app_run_plasma_circular_config_view(
     fractus_framebuffer *framebuffer,
@@ -92,6 +94,8 @@ fractus_status fractus_app_render_plasma_circular(
     const fractus_plasma_circular_params *params,
     int *save_next_graphic,
     char *error_message,
-    size_t error_message_size);
+    size_t error_message_size,
+    char *saved_filename,
+    size_t saved_filename_size);
 
 #endif

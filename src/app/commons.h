@@ -72,6 +72,7 @@ typedef enum fractus_app_view {
     FRACTUS_APP_VIEW_PLASMA_CIRCULAR,
     FRACTUS_APP_VIEW_ATTRACTORS_MENU,
     FRACTUS_APP_VIEW_ATTRACTORS_CONFIG,
+    FRACTUS_APP_VIEW_LORENZ,
     FRACTUS_APP_VIEW_VIDEO_CONFIG,
     FRACTUS_APP_VIEW_FRACTALS_DEFAULT_CONFIG,
     FRACTUS_APP_VIEW_LOAD_GRAPHIC,
@@ -200,6 +201,13 @@ fractus_status fractus_app_draw_drawing_footer(
     fractus_framebuffer *framebuffer,
     const fractus_font_library *fonts,
     const char *text);
+
+fractus_status fractus_app_draw_drawing_footer_ex(
+    fractus_framebuffer *framebuffer,
+    const fractus_font_library *fonts,
+    const char *default_text,
+    const char *saved_filename,
+    int allow_selection);
 
 fractus_status fractus_app_draw_save_feedback(
     fractus_framebuffer *framebuffer,

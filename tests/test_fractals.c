@@ -167,6 +167,43 @@ static int test_palette_cycling(void)
     return 1;
 }
 
+static int test_lorenz_rendering(void)
+{
+    fractus_framebuffer fb;
+    fractus_size_u32 size = {80, 60};
+    fractus_lorenz_params params;
+    uint32_t i;
+    int has_non_zero_pixel = 0;
+
+    TEST_ASSERT(fractus_framebuffer_init(&fb, size) == FRACTUS_STATUS_OK, "Framebuffer init failed");
+
+    params = (fractus_lorenz_params){
+        10.0, 28.0, 8.0 / 3.0, 0.01,
+        1000u, FRACTUS_LORENZ_PROJECTION_XZ, 16u, 240u
+    };
+
+    TEST_ASSERT(fractus_fractal_render_lorenz(&fb, &params) == FRACTUS_STATUS_OK, "Lorenz XZ rendering failed");
+    params.projection = FRACTUS_LORENZ_PROJECTION_XY;
+    TEST_ASSERT(fractus_fractal_render_lorenz(&fb, &params) == FRACTUS_STATUS_OK, "Lorenz XY rendering failed");
+    params.projection = FRACTUS_LORENZ_PROJECTION_YZ;
+    TEST_ASSERT(fractus_fractal_render_lorenz(&fb, &params) == FRACTUS_STATUS_OK, "Lorenz YZ rendering failed");
+
+    for (i = 0; i < (uint32_t)(fb.size.height * fb.pitch_pixels); ++i) {
+        if (fb.index_pixels[i] >= 16u) {
+            has_non_zero_pixel = 1;
+            break;
+        }
+    }
+    TEST_ASSERT(has_non_zero_pixel == 1, "Lorenz rendering should plot points in palette range 16-255");
+
+    /* Invalid arguments checks */
+    TEST_ASSERT(fractus_fractal_render_lorenz(NULL, &params) == FRACTUS_STATUS_INVALID_ARGUMENT, "Null framebuffer check failed");
+    TEST_ASSERT(fractus_fractal_render_lorenz(&fb, NULL) == FRACTUS_STATUS_INVALID_ARGUMENT, "Null params check failed");
+
+    fractus_framebuffer_shutdown(&fb);
+    return 1;
+}
+
 int main(void)
 {
     printf("=== RUNNING FRACTAL TESTS ===\n");
@@ -174,5 +211,6 @@ int main(void)
     TEST_RUN(test_julia_rendering);
     TEST_RUN(test_plasma_rendering);
     TEST_RUN(test_palette_cycling);
+    TEST_RUN(test_lorenz_rendering);
     TEST_REPORT();
 }

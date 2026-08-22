@@ -440,6 +440,7 @@ int fractus_app_run(void)
     char cfg_path[512];
     char runtime_error_message[160];
     char selected_graphic_path[512];
+    char last_saved_filename[64];
     int running;
     int has_event;
     int save_next_graphic;
@@ -452,8 +453,12 @@ int fractus_app_run(void)
     int biomorph_needs_render;
     int plasma_rectangular_needs_render;
     int plasma_circular_needs_render;
+    int lorenz_needs_render;
     int palette_flow_active;
     int present_is_drawing;
+    fractus_lorenz_params lorenz_params;
+    fractus_lorenz_params lorenz_pending;
+    fractus_app_attractor_fields attractor_fields;
     fractus_app_attractor_method attractor_selected_method;
     uint32_t save_feedback_frames;
     uint32_t palette_selected_index;
@@ -488,6 +493,7 @@ int fractus_app_run(void)
     memset(&julia_dem_fields, 0, sizeof(julia_dem_fields));
     memset(&biomorph_fields, 0, sizeof(biomorph_fields));
     memset(&plasma_fields, 0, sizeof(plasma_fields));
+    memset(&attractor_fields, 0, sizeof(attractor_fields));
     memset(&mandelbrot_selection, 0, sizeof(mandelbrot_selection));
     memset(&mandelbrot_dem_selection, 0, sizeof(mandelbrot_dem_selection));
     memset(graphic_files, 0, sizeof(graphic_files));
@@ -496,6 +502,15 @@ int fractus_app_run(void)
     memset(runtime_error_message, 0, sizeof(runtime_error_message));
     memset(selected_graphic_path, 0, sizeof(selected_graphic_path));
     attractor_selected_method = FRACTUS_APP_ATTRACTOR_METHOD_NONE;
+    lorenz_params.sigma = 10.0;
+    lorenz_params.rho = 28.0;
+    lorenz_params.beta = 8.0 / 3.0;
+    lorenz_params.dt = 0.01;
+    lorenz_params.iterations = 10000u;
+    lorenz_params.projection = FRACTUS_LORENZ_PROJECTION_XZ;
+    lorenz_params.palette_offset = 16u;
+    lorenz_params.palette_span = 240u;
+    lorenz_pending = lorenz_params;
     palette_original_color = fractus_app_rgb8(0u, 0u, 0u);
     palette_pending_color = fractus_app_rgb8(0u, 0u, 0u);
     palette_copy_color = fractus_app_rgb8(0u, 0u, 0u);
@@ -505,6 +520,7 @@ int fractus_app_run(void)
     save_next_graphic = 0;
     current_drawing_saved = 1;
     drawing_presented_once = 0;
+    memset(last_saved_filename, 0, sizeof(last_saved_filename));
     mandelbrot_needs_render = 1;
     mandelbrot_dem_needs_render = 1;
     julia_needs_render = 1;
@@ -512,6 +528,7 @@ int fractus_app_run(void)
     biomorph_needs_render = 1;
     plasma_rectangular_needs_render = 1;
     plasma_circular_needs_render = 1;
+    lorenz_needs_render = 1;
     palette_flow_active = 0;
     save_feedback_frames = 0u;
     fractus_app_log("startup: begin");
@@ -787,6 +804,9 @@ int fractus_app_run(void)
                         &core.ui_framebuffer,
                         &fonts,
                         &ui,
+                        &lorenz_params,
+                        &lorenz_pending,
+                        &attractor_fields,
                         &attractor_selected_method,
                         &view) != FRACTUS_STATUS_OK) {
                     fractus_app_log("runtime: attractors menu failed");
@@ -797,6 +817,9 @@ int fractus_app_run(void)
                         &core.ui_framebuffer,
                         &fonts,
                         &ui,
+                        &lorenz_params,
+                        &lorenz_pending,
+                        &attractor_fields,
                         &attractor_selected_method,
                         &view) != FRACTUS_STATUS_OK) {
                     fractus_app_log("runtime: attractors config failed");
@@ -1070,10 +1093,28 @@ int fractus_app_run(void)
                      view == FRACTUS_APP_VIEW_BIOMORPH ||
                      view == FRACTUS_APP_VIEW_PLASMA_RECTANGULAR ||
                      view == FRACTUS_APP_VIEW_PLASMA_CIRCULAR ||
+                     view == FRACTUS_APP_VIEW_LORENZ ||
                      view == FRACTUS_APP_VIEW_GRAPHIC)) {
                     save_next_graphic = 1;
-                    render_save_next_graphic = drawing_presented_once ? 1 : 0;
-                    save_requested_this_frame = drawing_presented_once ? 1 : 0;
+                    render_save_next_graphic = 1;
+                    save_requested_this_frame = 1;
+                    if (view == FRACTUS_APP_VIEW_MANDELBROT) {
+                        mandelbrot_needs_render = 1;
+                    } else if (view == FRACTUS_APP_VIEW_MANDELBROT_DEM) {
+                        mandelbrot_dem_needs_render = 1;
+                    } else if (view == FRACTUS_APP_VIEW_JULIA) {
+                        julia_needs_render = 1;
+                    } else if (view == FRACTUS_APP_VIEW_JULIA_DEM) {
+                        julia_dem_needs_render = 1;
+                    } else if (view == FRACTUS_APP_VIEW_BIOMORPH) {
+                        biomorph_needs_render = 1;
+                    } else if (view == FRACTUS_APP_VIEW_PLASMA_RECTANGULAR) {
+                        plasma_rectangular_needs_render = 1;
+                    } else if (view == FRACTUS_APP_VIEW_PLASMA_CIRCULAR) {
+                        plasma_circular_needs_render = 1;
+                    } else if (view == FRACTUS_APP_VIEW_LORENZ) {
+                        lorenz_needs_render = 1;
+                    }
                 }
 
                 if (view == FRACTUS_APP_VIEW_MANDELBROT) {
@@ -1111,19 +1152,23 @@ int fractus_app_run(void)
                                     &mandelbrot_params,
                                     &render_save_next_graphic,
                                     runtime_error_message,
-                                    sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                                    sizeof(runtime_error_message),
+                                    last_saved_filename,
+                                    sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
                                 fractus_app_log("runtime: mandelbrot render failed");
                                 running = 0;
                             } else {
                                 mandelbrot_needs_render = 0;
                             }
                         } else if (render_save_next_graphic &&
-                            fractus_app_save_next_graphic_if_requested(
+                            fractus_app_save_next_graphic_if_requested_ex(
                                 &platform,
                                 &core.drawing_framebuffer,
                                 &render_save_next_graphic,
                                 runtime_error_message,
-                                sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                                sizeof(runtime_error_message),
+                                last_saved_filename,
+                                sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
                             fractus_app_log("runtime: mandelbrot save failed");
                             running = 0;
                         }
@@ -1173,19 +1218,23 @@ int fractus_app_run(void)
                                     &mandelbrot_dem_params,
                                     &render_save_next_graphic,
                                     runtime_error_message,
-                                    sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                                    sizeof(runtime_error_message),
+                                    last_saved_filename,
+                                    sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
                                 fractus_app_log("runtime: mandelbrot dem render failed");
                                 running = 0;
                             } else {
                                 mandelbrot_dem_needs_render = 0;
                             }
                         } else if (render_save_next_graphic &&
-                            fractus_app_save_next_graphic_if_requested(
+                            fractus_app_save_next_graphic_if_requested_ex(
                                 &platform,
                                 &core.drawing_framebuffer,
                                 &render_save_next_graphic,
                                 runtime_error_message,
-                                sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                                sizeof(runtime_error_message),
+                                last_saved_filename,
+                                sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
                             fractus_app_log("runtime: mandelbrot dem save failed");
                             running = 0;
                         }
@@ -1226,19 +1275,23 @@ int fractus_app_run(void)
                                     &julia_params,
                                     &render_save_next_graphic,
                                     runtime_error_message,
-                                    sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                                    sizeof(runtime_error_message),
+                                    last_saved_filename,
+                                    sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
                                 fractus_app_log("runtime: julia render failed");
                                 running = 0;
                             } else {
                                 julia_needs_render = 0;
                             }
                         } else if (render_save_next_graphic &&
-                            fractus_app_save_next_graphic_if_requested(
+                            fractus_app_save_next_graphic_if_requested_ex(
                                 &platform,
                                 &core.drawing_framebuffer,
                                 &render_save_next_graphic,
                                 runtime_error_message,
-                                sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                                sizeof(runtime_error_message),
+                                last_saved_filename,
+                                sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
                             fractus_app_log("runtime: julia save failed");
                             running = 0;
                         }
@@ -1269,19 +1322,23 @@ int fractus_app_run(void)
                                     &julia_dem_params,
                                     &render_save_next_graphic,
                                     runtime_error_message,
-                                    sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                                    sizeof(runtime_error_message),
+                                    last_saved_filename,
+                                    sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
                                 fractus_app_log("runtime: julia dem render failed");
                                 running = 0;
                             } else {
                                 julia_dem_needs_render = 0;
                             }
                         } else if (render_save_next_graphic &&
-                            fractus_app_save_next_graphic_if_requested(
+                            fractus_app_save_next_graphic_if_requested_ex(
                                 &platform,
                                 &core.drawing_framebuffer,
                                 &render_save_next_graphic,
                                 runtime_error_message,
-                                sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                                sizeof(runtime_error_message),
+                                last_saved_filename,
+                                sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
                             fractus_app_log("runtime: julia dem save failed");
                             running = 0;
                         }
@@ -1310,19 +1367,23 @@ int fractus_app_run(void)
                                     &biomorph_params,
                                     &render_save_next_graphic,
                                     runtime_error_message,
-                                    sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                                    sizeof(runtime_error_message),
+                                    last_saved_filename,
+                                    sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
                                 fractus_app_log("runtime: biomorph render failed");
                                 running = 0;
                             } else {
                                 biomorph_needs_render = 0;
                             }
                         } else if (render_save_next_graphic &&
-                            fractus_app_save_next_graphic_if_requested(
+                            fractus_app_save_next_graphic_if_requested_ex(
                                 &platform,
                                 &core.drawing_framebuffer,
                                 &render_save_next_graphic,
                                 runtime_error_message,
-                                sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                                sizeof(runtime_error_message),
+                                last_saved_filename,
+                                sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
                             fractus_app_log("runtime: biomorph save failed");
                             running = 0;
                         }
@@ -1351,19 +1412,23 @@ int fractus_app_run(void)
                                     &plasma_rectangular_params,
                                     &render_save_next_graphic,
                                     runtime_error_message,
-                                    sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                                    sizeof(runtime_error_message),
+                                    last_saved_filename,
+                                    sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
                                 fractus_app_log("runtime: plasma rectangular render failed");
                                 running = 0;
                             } else {
                                 plasma_rectangular_needs_render = 0;
                             }
                         } else if (render_save_next_graphic &&
-                            fractus_app_save_next_graphic_if_requested(
+                            fractus_app_save_next_graphic_if_requested_ex(
                                 &platform,
                                 &core.drawing_framebuffer,
                                 &render_save_next_graphic,
                                 runtime_error_message,
-                                sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                                sizeof(runtime_error_message),
+                                last_saved_filename,
+                                sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
                             fractus_app_log("runtime: plasma rectangular save failed");
                             running = 0;
                         }
@@ -1392,20 +1457,69 @@ int fractus_app_run(void)
                                     &plasma_circular_params,
                                     &render_save_next_graphic,
                                     runtime_error_message,
-                                    sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                                    sizeof(runtime_error_message),
+                                    last_saved_filename,
+                                    sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
                                 fractus_app_log("runtime: circular plasma render failed");
                                 running = 0;
                             } else {
                                 plasma_circular_needs_render = 0;
                             }
                         } else if (render_save_next_graphic &&
-                            fractus_app_save_next_graphic_if_requested(
+                            fractus_app_save_next_graphic_if_requested_ex(
                                 &platform,
                                 &core.drawing_framebuffer,
                                 &render_save_next_graphic,
                                 runtime_error_message,
-                                sizeof(runtime_error_message)) != FRACTUS_STATUS_OK) {
+                                sizeof(runtime_error_message),
+                                last_saved_filename,
+                                sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
                             fractus_app_log("runtime: circular plasma save failed");
+                            running = 0;
+                        }
+                    }
+                } else if (view == FRACTUS_APP_VIEW_LORENZ) {
+                    fractus_size_u32 previous_drawing_size = core.drawing_framebuffer.size;
+                    mandelbrot_dem_selection.active = 0;
+                    mandelbrot_dem_selection.has_first_corner = 0;
+                    present_framebuffer = &core.drawing_framebuffer;
+                    present_is_drawing = 1;
+                    if (fractus_app_ensure_drawing_framebuffer_size(&legacy_config, &core.drawing_framebuffer, &core.ui_framebuffer) != FRACTUS_STATUS_OK) {
+                        fractus_app_log("runtime: drawing framebuffer resize failed");
+                        running = 0;
+                    } else {
+                        if (previous_drawing_size.width != core.drawing_framebuffer.size.width ||
+                            previous_drawing_size.height != core.drawing_framebuffer.size.height) {
+                            lorenz_needs_render = 1;
+                        }
+                    }
+                    if (running) {
+                        if (lorenz_needs_render) {
+                            if (fractus_app_render_lorenz(
+                                    &platform,
+                                    &core.drawing_framebuffer,
+                                    &fonts,
+                                    &lorenz_params,
+                                    &render_save_next_graphic,
+                                    runtime_error_message,
+                                    sizeof(runtime_error_message),
+                                    last_saved_filename,
+                                    sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
+                                fractus_app_log("runtime: lorenz render failed");
+                                running = 0;
+                            } else {
+                                lorenz_needs_render = 0;
+                            }
+                        } else if (render_save_next_graphic &&
+                            fractus_app_save_next_graphic_if_requested_ex(
+                                &platform,
+                                &core.drawing_framebuffer,
+                                &render_save_next_graphic,
+                                runtime_error_message,
+                                sizeof(runtime_error_message),
+                                last_saved_filename,
+                                sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
+                            fractus_app_log("runtime: lorenz save failed");
                             running = 0;
                         }
                     }
@@ -1428,13 +1542,14 @@ int fractus_app_run(void)
                 } else if (save_requested_this_frame && render_save_next_graphic == 0) {
                     save_next_graphic = 0;
                     current_drawing_saved = 1;
-                    save_feedback_frames = 5u;
+                    save_feedback_frames = 8u;
                 }
             }
 
             if (fractus_app_view_is_generated_drawing(previous_view) &&
                 !fractus_app_view_is_generated_drawing(view)) {
                 palette_flow_active = 0;
+                last_saved_filename[0] = '\0';
                 (void)fractus_app_sync_framebuffer_palette(&core.drawing_framebuffer, &core.ui_framebuffer);
             }
 
@@ -1443,6 +1558,7 @@ int fractus_app_run(void)
                 current_drawing_saved = 0;
                 drawing_presented_once = 0;
                 palette_flow_active = 0;
+                last_saved_filename[0] = '\0';
                 (void)fractus_app_sync_framebuffer_palette(&core.drawing_framebuffer, &core.ui_framebuffer);
                 if (view == FRACTUS_APP_VIEW_MANDELBROT) {
                     mandelbrot_needs_render = 1;
@@ -1458,6 +1574,8 @@ int fractus_app_run(void)
                     plasma_rectangular_needs_render = 1;
                 } else if (view == FRACTUS_APP_VIEW_PLASMA_CIRCULAR) {
                     plasma_circular_needs_render = 1;
+                } else if (view == FRACTUS_APP_VIEW_LORENZ) {
+                    lorenz_needs_render = 1;
                 }
             } else if (view == FRACTUS_APP_VIEW_GRAPHIC && previous_view != FRACTUS_APP_VIEW_GRAPHIC) {
                 current_drawing_saved = 1;
@@ -1476,6 +1594,25 @@ int fractus_app_run(void)
                 break;
             }
             --save_feedback_frames;
+            if (save_feedback_frames == 0u) {
+                if (view == FRACTUS_APP_VIEW_MANDELBROT) {
+                    mandelbrot_needs_render = 1;
+                } else if (view == FRACTUS_APP_VIEW_MANDELBROT_DEM) {
+                    mandelbrot_dem_needs_render = 1;
+                } else if (view == FRACTUS_APP_VIEW_JULIA) {
+                    julia_needs_render = 1;
+                } else if (view == FRACTUS_APP_VIEW_JULIA_DEM) {
+                    julia_dem_needs_render = 1;
+                } else if (view == FRACTUS_APP_VIEW_BIOMORPH) {
+                    biomorph_needs_render = 1;
+                } else if (view == FRACTUS_APP_VIEW_PLASMA_RECTANGULAR) {
+                    plasma_rectangular_needs_render = 1;
+                } else if (view == FRACTUS_APP_VIEW_PLASMA_CIRCULAR) {
+                    plasma_circular_needs_render = 1;
+                } else if (view == FRACTUS_APP_VIEW_LORENZ) {
+                    lorenz_needs_render = 1;
+                }
+            }
         }
 
         if (present_is_drawing && palette_flow_active) {

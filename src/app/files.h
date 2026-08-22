@@ -75,12 +75,27 @@ fractus_status fractus_app_save_current_graphic_file(
     const fractus_platform_context *platform,
     const fractus_framebuffer *framebuffer);
 
+fractus_status fractus_app_save_current_graphic_file_ex(
+    const fractus_platform_context *platform,
+    const fractus_framebuffer *framebuffer,
+    char *out_saved_name,
+    size_t out_saved_name_size);
+
 fractus_status fractus_app_save_next_graphic_if_requested(
     const fractus_platform_context *platform,
     const fractus_framebuffer *framebuffer,
     int *save_next_graphic,
     char *error_message,
     size_t error_message_size);
+
+fractus_status fractus_app_save_next_graphic_if_requested_ex(
+    const fractus_platform_context *platform,
+    const fractus_framebuffer *framebuffer,
+    int *save_next_graphic,
+    char *error_message,
+    size_t error_message_size,
+    char *out_saved_name,
+    size_t out_saved_name_size);
 
 fractus_status fractus_app_run_load_graphic_view(
     fractus_framebuffer *ui_framebuffer,

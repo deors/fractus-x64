@@ -376,9 +376,11 @@ fractus_status fractus_app_change_graphic_palette_into_state(
     return fractus_app_persist_current_palette(cfg_path, framebuffer, config);
 }
 
-fractus_status fractus_app_save_current_graphic_file(
+fractus_status fractus_app_save_current_graphic_file_ex(
     const fractus_platform_context *platform,
-    const fractus_framebuffer *framebuffer)
+    const fractus_framebuffer *framebuffer,
+    char *out_saved_name,
+    size_t out_saved_name_size)
 {
     fractus_indexed_image image;
     char graphic_path[512];
@@ -392,6 +394,19 @@ fractus_status fractus_app_save_current_graphic_file(
     if (fractus_app_resolve_numbered_write_path(platform, "dibujos", ".drsg", graphic_path, sizeof(graphic_path)) != FRACTUS_STATUS_OK) {
         fractus_app_log("graphic: could not resolve a free numbered .drsg write path");
         return FRACTUS_STATUS_UNSUPPORTED;
+    }
+
+    if (out_saved_name != NULL && out_saved_name_size > 0u) {
+        const char *slash1 = strrchr(graphic_path, '/');
+        const char *slash2 = strrchr(graphic_path, '\\');
+        const char *base = graphic_path;
+        if (slash1 != NULL && slash1 + 1 > base) {
+            base = slash1 + 1;
+        }
+        if (slash2 != NULL && slash2 + 1 > base) {
+            base = slash2 + 1;
+        }
+        (void)snprintf(out_saved_name, out_saved_name_size, "%s", base);
     }
 
     if (fractus_graphics_capture_region(
@@ -413,12 +428,21 @@ fractus_status fractus_app_save_current_graphic_file(
     return FRACTUS_STATUS_OK;
 }
 
-fractus_status fractus_app_save_next_graphic_if_requested(
+fractus_status fractus_app_save_current_graphic_file(
+    const fractus_platform_context *platform,
+    const fractus_framebuffer *framebuffer)
+{
+    return fractus_app_save_current_graphic_file_ex(platform, framebuffer, NULL, 0u);
+}
+
+fractus_status fractus_app_save_next_graphic_if_requested_ex(
     const fractus_platform_context *platform,
     const fractus_framebuffer *framebuffer,
     int *save_next_graphic,
     char *error_message,
-    size_t error_message_size)
+    size_t error_message_size,
+    char *out_saved_name,
+    size_t out_saved_name_size)
 {
     fractus_status status;
 
@@ -427,7 +451,7 @@ fractus_status fractus_app_save_next_graphic_if_requested(
     }
 
     *save_next_graphic = 0;
-    status = fractus_app_save_current_graphic_file(platform, framebuffer);
+    status = fractus_app_save_current_graphic_file_ex(platform, framebuffer, out_saved_name, out_saved_name_size);
     if (status != FRACTUS_STATUS_OK) {
         fractus_app_log("runtime: saving next graphic failed");
         if (status == FRACTUS_STATUS_UNSUPPORTED) {
@@ -439,6 +463,23 @@ fractus_status fractus_app_save_next_graphic_if_requested(
     }
 
     return FRACTUS_STATUS_OK;
+}
+
+fractus_status fractus_app_save_next_graphic_if_requested(
+    const fractus_platform_context *platform,
+    const fractus_framebuffer *framebuffer,
+    int *save_next_graphic,
+    char *error_message,
+    size_t error_message_size)
+{
+    return fractus_app_save_next_graphic_if_requested_ex(
+        platform,
+        framebuffer,
+        save_next_graphic,
+        error_message,
+        error_message_size,
+        NULL,
+        0u);
 }
 
 size_t fractus_app_list_graphic_files(

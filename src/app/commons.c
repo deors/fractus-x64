@@ -158,7 +158,8 @@ int fractus_app_view_is_generated_drawing(fractus_app_view view)
            view == FRACTUS_APP_VIEW_JULIA_DEM ||
            view == FRACTUS_APP_VIEW_BIOMORPH ||
            view == FRACTUS_APP_VIEW_PLASMA_RECTANGULAR ||
-           view == FRACTUS_APP_VIEW_PLASMA_CIRCULAR;
+           view == FRACTUS_APP_VIEW_PLASMA_CIRCULAR ||
+           view == FRACTUS_APP_VIEW_LORENZ;
 }
 
 fractus_status fractus_app_resolve_numbered_write_path(
@@ -474,40 +475,58 @@ fractus_status fractus_app_draw_drawing_footer(
         scale);
 }
 
+fractus_status fractus_app_draw_drawing_footer_ex(
+    fractus_framebuffer *framebuffer,
+    const fractus_font_library *fonts,
+    const char *default_text,
+    const char *saved_filename,
+    int allow_selection)
+{
+    char footer_buf[160];
+    const char *text = default_text;
+
+    if (saved_filename != NULL && saved_filename[0] != '\0') {
+        if (allow_selection) {
+            (void)snprintf(footer_buf, sizeof(footer_buf), "Grabado %s - ESC/boton derecho: menu - S: seleccionar zona - F: flujo", saved_filename);
+        } else {
+            (void)snprintf(footer_buf, sizeof(footer_buf), "Grabado %s - ESC o boton derecho: menu - F: flujo", saved_filename);
+        }
+        text = footer_buf;
+    }
+
+    return fractus_app_draw_drawing_footer(framebuffer, fonts, text);
+}
+
 fractus_status fractus_app_draw_save_feedback(
     fractus_framebuffer *framebuffer,
     uint32_t frame)
 {
-    int32_t thickness;
-    int32_t i;
+    int32_t h;
+    int32_t w;
+    const int32_t total_frames = 8;
+    int32_t step;
+    int32_t y0, y1;
 
     if (framebuffer == NULL || !framebuffer->initialized) {
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
 
-    if (frame >= 3u) {
-        return fractus_graphics_fill_rect(
+    h = (int32_t)framebuffer->size.height;
+    w = (int32_t)framebuffer->size.width;
+
+    if (frame > (uint32_t)total_frames) {
+        frame = (uint32_t)total_frames;
+    }
+
+    step = total_frames - (int32_t)frame;
+    y0 = (step * h) / total_frames;
+    y1 = ((step + 1) * h) / total_frames;
+
+    if (fractus_graphics_fill_rect(
             framebuffer,
-            (fractus_rect_i32){0, 0, (int32_t)framebuffer->size.width, (int32_t)framebuffer->size.height},
-            15u);
-    }
-
-    thickness = (int32_t)(framebuffer->size.height / 120u);
-    if (thickness < 4) {
-        thickness = 4;
-    }
-
-    for (i = 0; i < thickness; ++i) {
-        if (fractus_graphics_rect(
-                framebuffer,
-                (fractus_rect_i32){
-                    i,
-                    i,
-                    (int32_t)framebuffer->size.width - i * 2,
-                    (int32_t)framebuffer->size.height - i * 2},
-                15u) != FRACTUS_STATUS_OK) {
-            return FRACTUS_STATUS_ERROR;
-        }
+            (fractus_rect_i32){0, y0, w, y1 - y0},
+            15u) != FRACTUS_STATUS_OK) {
+        return FRACTUS_STATUS_ERROR;
     }
 
     return FRACTUS_STATUS_OK;

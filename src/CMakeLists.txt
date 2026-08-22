@@ -9,6 +9,7 @@ add_library(fractus_core
     core/julia.c
     core/biomorphs.c
     core/plasma.c
+    core/attractors.c
 )
 
 target_include_directories(fractus_core PUBLIC

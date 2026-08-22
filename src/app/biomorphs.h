@@ -74,6 +74,8 @@ fractus_status fractus_app_render_biomorph(
     const fractus_biomorph_params *params,
     int *save_next_graphic,
     char *error_message,
-    size_t error_message_size);
+    size_t error_message_size,
+    char *saved_filename,
+    size_t saved_filename_size);
 
 #endif

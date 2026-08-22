@@ -646,18 +646,32 @@ fractus_status fractus_app_render_julia(
     const fractus_julia_params *params,
     int *save_next_graphic,
     char *error_message,
-    size_t error_message_size)
+    size_t error_message_size,
+    char *saved_filename,
+    size_t saved_filename_size)
 {
     if (platform == NULL || framebuffer == NULL || fonts == NULL || params == NULL) {
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
 
     if (fractus_fractal_render_julia(framebuffer, params) != FRACTUS_STATUS_OK ||
-        fractus_app_save_next_graphic_if_requested(platform, framebuffer, save_next_graphic, error_message, error_message_size) != FRACTUS_STATUS_OK) {
+        fractus_app_save_next_graphic_if_requested_ex(
+            platform,
+            framebuffer,
+            save_next_graphic,
+            error_message,
+            error_message_size,
+            saved_filename,
+            saved_filename_size) != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
-    return fractus_app_draw_drawing_footer(framebuffer, fonts, "ESC o boton derecho: menu - G: grabar dibujo - F: flujo");
+    return fractus_app_draw_drawing_footer_ex(
+        framebuffer,
+        fonts,
+        "ESC o boton derecho: menu - G: grabar dibujo - F: flujo",
+        saved_filename,
+        0);
 }
 
 fractus_status fractus_app_render_julia_dem(
@@ -667,16 +681,30 @@ fractus_status fractus_app_render_julia_dem(
     const fractus_julia_dem_params *params,
     int *save_next_graphic,
     char *error_message,
-    size_t error_message_size)
+    size_t error_message_size,
+    char *saved_filename,
+    size_t saved_filename_size)
 {
     if (platform == NULL || framebuffer == NULL || fonts == NULL || params == NULL) {
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
 
     if (fractus_fractal_render_julia_dem(framebuffer, params) != FRACTUS_STATUS_OK ||
-        fractus_app_save_next_graphic_if_requested(platform, framebuffer, save_next_graphic, error_message, error_message_size) != FRACTUS_STATUS_OK) {
+        fractus_app_save_next_graphic_if_requested_ex(
+            platform,
+            framebuffer,
+            save_next_graphic,
+            error_message,
+            error_message_size,
+            saved_filename,
+            saved_filename_size) != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
-    return fractus_app_draw_drawing_footer(framebuffer, fonts, "ESC o boton derecho: menu - G: grabar dibujo - F: flujo");
+    return fractus_app_draw_drawing_footer_ex(
+        framebuffer,
+        fonts,
+        "ESC o boton derecho: menu - G: grabar dibujo - F: flujo",
+        saved_filename,
+        0);
 }
