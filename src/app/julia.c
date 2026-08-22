@@ -669,9 +669,9 @@ fractus_status fractus_app_render_julia(
     return fractus_app_draw_drawing_footer_ex(
         framebuffer,
         fonts,
-        "ESC o boton derecho: menu - G: grabar dibujo - F: flujo",
+        "ESC/boton derecho: menu - G: grabar - S: seleccionar zona - F: flujo",
         saved_filename,
-        0);
+        1);
 }
 
 fractus_status fractus_app_render_julia_dem(
@@ -704,7 +704,7 @@ fractus_status fractus_app_render_julia_dem(
     return fractus_app_draw_drawing_footer_ex(
         framebuffer,
         fonts,
-        "ESC o boton derecho: menu - G: grabar dibujo - F: flujo",
+        "ESC/boton derecho: menu - G: grabar - S: seleccionar zona - F: flujo",
         saved_filename,
-        0);
+        1);
 }

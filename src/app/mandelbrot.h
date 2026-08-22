@@ -78,26 +78,6 @@ fractus_status fractus_app_run_mandelbrot_dem_config_view(
     fractus_app_mandelbrot_fields *fields,
     fractus_app_view *view);
 
-int fractus_app_handle_mandelbrot_selection_input(
-    const fractus_platform_context *platform,
-    const fractus_framebuffer *framebuffer,
-    const fractus_ui_context *ui,
-    fractus_mandelbrot_params *params,
-    fractus_app_mandelbrot_selection *selection);
-
-int fractus_app_handle_mandelbrot_dem_selection_input(
-    const fractus_platform_context *platform,
-    const fractus_framebuffer *framebuffer,
-    const fractus_ui_context *ui,
-    fractus_mandelbrot_dem_params *params,
-    fractus_app_mandelbrot_selection *selection);
-
-fractus_status fractus_app_draw_mandelbrot_selection_overlay(
-    const fractus_platform_context *platform,
-    fractus_framebuffer *framebuffer,
-    const fractus_ui_context *ui,
-    const fractus_app_mandelbrot_selection *selection);
-
 fractus_status fractus_app_render_mandelbrot(
     const fractus_platform_context *platform,
     fractus_framebuffer *framebuffer,

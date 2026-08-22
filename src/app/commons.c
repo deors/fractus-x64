@@ -1,5 +1,8 @@
 #include "app/commons.h"
 
+#include <math.h>
+#include <stdlib.h>
+
 void fractus_app_set_button(
     fractus_app_menu_entry *entry,
     int32_t x1,
@@ -160,6 +163,14 @@ int fractus_app_view_is_generated_drawing(fractus_app_view view)
            view == FRACTUS_APP_VIEW_PLASMA_RECTANGULAR ||
            view == FRACTUS_APP_VIEW_PLASMA_CIRCULAR ||
            view == FRACTUS_APP_VIEW_LORENZ;
+}
+
+int fractus_app_view_supports_zone_selection(fractus_app_view view)
+{
+    return view == FRACTUS_APP_VIEW_MANDELBROT ||
+           view == FRACTUS_APP_VIEW_MANDELBROT_DEM ||
+           view == FRACTUS_APP_VIEW_JULIA ||
+           view == FRACTUS_APP_VIEW_JULIA_DEM;
 }
 
 fractus_status fractus_app_resolve_numbered_write_path(
@@ -581,4 +592,209 @@ int fractus_app_map_drawing_window_point(
     framebuffer_point->x = fractus_app_clamp_i32(framebuffer_point->x, 0, (int32_t)framebuffer->size.width - 1);
     framebuffer_point->y = fractus_app_clamp_i32(framebuffer_point->y, 0, (int32_t)framebuffer->size.height - 1);
     return 1;
+}
+
+fractus_point_i32 fractus_app_constrain_selection_aspect_ratio(
+    const fractus_framebuffer *framebuffer,
+    fractus_point_i32 first,
+    fractus_point_i32 current)
+{
+    fractus_point_i32 result;
+    int32_t width;
+    int32_t height;
+    double target_ratio;
+    double dx, dy;
+    double abs_dx, abs_dy;
+    double sx, sy;
+
+    if (framebuffer == NULL || !framebuffer->initialized ||
+        framebuffer->size.width < 2u || framebuffer->size.height < 2u) {
+        return current;
+    }
+
+    width = (int32_t)framebuffer->size.width;
+    height = (int32_t)framebuffer->size.height;
+    target_ratio = (double)width / (double)height;
+
+    dx = (double)(current.x - first.x);
+    dy = (double)(current.y - first.y);
+    abs_dx = fabs(dx);
+    abs_dy = fabs(dy);
+    sx = (dx >= 0.0) ? 1.0 : -1.0;
+    sy = (dy >= 0.0) ? 1.0 : -1.0;
+
+    if (abs_dx < 1.0 && abs_dy < 1.0) {
+        return first;
+    }
+
+    /* Ajustar dimensiones para mantener la relacion de aspecto fija del dibujo */
+    if (abs_dx / target_ratio >= abs_dy) {
+        abs_dy = floor((abs_dx / target_ratio) + 0.5);
+    } else {
+        abs_dx = floor((abs_dy * target_ratio) + 0.5);
+    }
+
+    result.x = first.x + (int32_t)(sx * abs_dx);
+    result.y = first.y + (int32_t)(sy * abs_dy);
+
+    /* Limitar a los margenes del framebuffer reajustando la proporcion si se hace recorte */
+    if (result.x < 0) {
+        result.x = 0;
+        abs_dx = (double)abs(result.x - first.x);
+        abs_dy = floor((abs_dx / target_ratio) + 0.5);
+        result.y = first.y + (int32_t)(sy * abs_dy);
+    } else if (result.x >= width) {
+        result.x = width - 1;
+        abs_dx = (double)abs(result.x - first.x);
+        abs_dy = floor((abs_dx / target_ratio) + 0.5);
+        result.y = first.y + (int32_t)(sy * abs_dy);
+    }
+
+    if (result.y < 0) {
+        result.y = 0;
+        abs_dy = (double)abs(result.y - first.y);
+        abs_dx = floor((abs_dy * target_ratio) + 0.5);
+        result.x = first.x + (int32_t)(sx * abs_dx);
+    } else if (result.y >= height) {
+        result.y = height - 1;
+        abs_dy = (double)abs(result.y - first.y);
+        abs_dx = floor((abs_dy * target_ratio) + 0.5);
+        result.x = first.x + (int32_t)(sx * abs_dx);
+    }
+
+    return result;
+}
+
+fractus_status fractus_app_draw_zone_selection_overlay(
+    const fractus_platform_context *platform,
+    fractus_framebuffer *framebuffer,
+    const fractus_ui_context *ui,
+    const fractus_app_zone_selection *selection)
+{
+    fractus_point_i32 cursor;
+
+    if (platform == NULL || framebuffer == NULL || ui == NULL || selection == NULL) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    if (!selection->active ||
+        !fractus_app_map_drawing_window_point(platform, framebuffer, ui->pointer_position, &cursor)) {
+        return FRACTUS_STATUS_OK;
+    }
+
+    if (fractus_graphics_line(framebuffer, 0, cursor.y, (int32_t)framebuffer->size.width - 1, cursor.y, 15u) != FRACTUS_STATUS_OK ||
+        fractus_graphics_line(framebuffer, cursor.x, 0, cursor.x, (int32_t)framebuffer->size.height - 1, 15u) != FRACTUS_STATUS_OK) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    if (selection->has_first_corner) {
+        fractus_point_i32 constrained = fractus_app_constrain_selection_aspect_ratio(framebuffer, selection->first_corner, cursor);
+        int32_t x = (selection->first_corner.x < constrained.x) ? selection->first_corner.x : constrained.x;
+        int32_t y = (selection->first_corner.y < constrained.y) ? selection->first_corner.y : constrained.y;
+        int32_t width = (selection->first_corner.x > constrained.x) ?
+            selection->first_corner.x - constrained.x + 1 :
+            constrained.x - selection->first_corner.x + 1;
+        int32_t height = (selection->first_corner.y > constrained.y) ?
+            selection->first_corner.y - constrained.y + 1 :
+            constrained.y - selection->first_corner.y + 1;
+
+        if (fractus_graphics_rect(framebuffer, (fractus_rect_i32){x, y, width, height}, 15u) != FRACTUS_STATUS_OK) {
+            return FRACTUS_STATUS_ERROR;
+        }
+    }
+
+    return FRACTUS_STATUS_OK;
+}
+
+int fractus_app_apply_complex_selection(
+    const fractus_framebuffer *framebuffer,
+    double *xmin,
+    double *xmax,
+    double *ymin,
+    double *ymax,
+    fractus_point_i32 first,
+    fractus_point_i32 second)
+{
+    fractus_point_i32 constrained_second;
+    int32_t x_min, x_max, y_min, y_max;
+    double old_xmin, old_xmax, old_ymin, old_ymax;
+    double dx, dy;
+
+    if (framebuffer == NULL || xmin == NULL || xmax == NULL || ymin == NULL || ymax == NULL ||
+        !framebuffer->initialized || framebuffer->size.width < 2u || framebuffer->size.height < 2u) {
+        return 0;
+    }
+
+    constrained_second = fractus_app_constrain_selection_aspect_ratio(framebuffer, first, second);
+
+    x_min = (first.x < constrained_second.x) ? first.x : constrained_second.x;
+    x_max = (first.x > constrained_second.x) ? first.x : constrained_second.x;
+    y_min = (first.y < constrained_second.y) ? first.y : constrained_second.y;
+    y_max = (first.y > constrained_second.y) ? first.y : constrained_second.y;
+
+    if (x_min == x_max || y_min == y_max) {
+        return 0;
+    }
+
+    old_xmin = *xmin;
+    old_xmax = *xmax;
+    old_ymin = *ymin;
+    old_ymax = *ymax;
+    dx = (old_xmax - old_xmin) / (double)(framebuffer->size.width - 1u);
+    dy = (old_ymax - old_ymin) / (double)(framebuffer->size.height - 1u);
+
+    *xmin = old_xmin + (double)x_min * dx;
+    *xmax = old_xmin + (double)x_max * dx;
+    *ymax = old_ymax - (double)y_min * dy;
+    *ymin = old_ymax - (double)y_max * dy;
+
+    return 1;
+}
+
+int fractus_app_handle_zone_selection_input(
+    const fractus_platform_context *platform,
+    const fractus_framebuffer *framebuffer,
+    const fractus_ui_context *ui,
+    double *xmin,
+    double *xmax,
+    double *ymin,
+    double *ymax,
+    fractus_app_zone_selection *selection)
+{
+    fractus_point_i32 selected_point;
+
+    if (platform == NULL || framebuffer == NULL || ui == NULL ||
+        xmin == NULL || xmax == NULL || ymin == NULL || ymax == NULL || selection == NULL) {
+        return 0;
+    }
+
+    if (ui->key_press_pending && (ui->key_pressed == 's' || ui->key_pressed == 'S')) {
+        selection->active = 1;
+        selection->has_first_corner = 0;
+    }
+
+    if (!selection->active) {
+        return 0;
+    }
+
+    if ((ui->key_press_pending && ui->key_pressed == 27u) ||
+        (ui->press_pending && ui->press_event.buttons.right)) {
+        selection->active = 0;
+        selection->has_first_corner = 0;
+        return 0;
+    }
+
+    if (ui->press_pending && ui->press_event.buttons.left &&
+        fractus_app_map_drawing_window_point(platform, framebuffer, ui->press_event.position, &selected_point)) {
+        if (!selection->has_first_corner) {
+            selection->first_corner = selected_point;
+            selection->has_first_corner = 1;
+        } else if (fractus_app_apply_complex_selection(framebuffer, xmin, xmax, ymin, ymax, selection->first_corner, selected_point)) {
+            selection->active = 0;
+            selection->has_first_corner = 0;
+            return 1;
+        }
+    }
+
+    return 0;
 }

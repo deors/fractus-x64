@@ -103,11 +103,11 @@ typedef struct fractus_app_graphic_file {
     char path[512];
 } fractus_app_graphic_file;
 
-typedef struct fractus_app_mandelbrot_selection {
+typedef struct fractus_app_zone_selection {
     int active;
     int has_first_corner;
     fractus_point_i32 first_corner;
-} fractus_app_mandelbrot_selection;
+} fractus_app_zone_selection;
 
 void fractus_app_set_button(
     fractus_app_menu_entry *entry,
@@ -146,6 +146,7 @@ fractus_status fractus_app_set_message(
     const char *message);
 
 int fractus_app_view_is_generated_drawing(fractus_app_view view);
+int fractus_app_view_supports_zone_selection(fractus_app_view view);
 
 fractus_status fractus_app_resolve_numbered_write_path(
     const fractus_platform_context *platform,
@@ -218,5 +219,35 @@ int fractus_app_map_drawing_window_point(
     const fractus_framebuffer *framebuffer,
     fractus_point_i32 window_point,
     fractus_point_i32 *framebuffer_point);
+
+fractus_point_i32 fractus_app_constrain_selection_aspect_ratio(
+    const fractus_framebuffer *framebuffer,
+    fractus_point_i32 first,
+    fractus_point_i32 current);
+
+fractus_status fractus_app_draw_zone_selection_overlay(
+    const fractus_platform_context *platform,
+    fractus_framebuffer *framebuffer,
+    const fractus_ui_context *ui,
+    const fractus_app_zone_selection *selection);
+
+int fractus_app_apply_complex_selection(
+    const fractus_framebuffer *framebuffer,
+    double *xmin,
+    double *xmax,
+    double *ymin,
+    double *ymax,
+    fractus_point_i32 first,
+    fractus_point_i32 second);
+
+int fractus_app_handle_zone_selection_input(
+    const fractus_platform_context *platform,
+    const fractus_framebuffer *framebuffer,
+    const fractus_ui_context *ui,
+    double *xmin,
+    double *xmax,
+    double *ymin,
+    double *ymax,
+    fractus_app_zone_selection *selection);
 
 #endif
