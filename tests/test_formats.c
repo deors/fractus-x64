@@ -97,11 +97,43 @@ static int test_palette_operations(void)
     return 1;
 }
 
+static int test_bmp_save_and_formats_roundtrip(void)
+{
+    fractus_indexed_image img;
+    fractus_palette pal;
+    fractus_size_u32 size = {80, 60};
+    const char *bmp_path = "test_temp.bmp";
+    FILE *f;
+    uint8_t header[54];
+    uint32_t i;
+
+    TEST_ASSERT(fractus_indexed_image_init(&img, size) == FRACTUS_STATUS_OK, "Image init failed");
+    TEST_ASSERT(fractus_palette_init_default(&pal) == FRACTUS_STATUS_OK, "Palette init failed");
+
+    for (i = 0u; i < 80u * 60u; ++i) {
+        img.pixels[i] = (uint8_t)(i % 256u);
+    }
+
+    TEST_ASSERT(fractus_legacy_bmp_save(bmp_path, &img, &pal) == FRACTUS_STATUS_OK, "BMP save failed");
+
+    f = fopen(bmp_path, "rb");
+    TEST_ASSERT(f != NULL, "Failed to open saved BMP");
+    TEST_ASSERT(fread(header, sizeof(header), 1u, f) == 1u, "Failed to read BMP header");
+    fclose(f);
+
+    TEST_ASSERT(header[0] == 'B' && header[1] == 'M', "BMP magic mismatch");
+
+    fractus_indexed_image_shutdown(&img);
+    remove(bmp_path);
+    return 1;
+}
+
 int main(void)
 {
     printf("=== RUNNING FORMATS & CONFIG TESTS ===\n");
     TEST_RUN(test_legacy_config_defaults);
     TEST_RUN(test_legacy_config_save_and_load);
     TEST_RUN(test_palette_operations);
+    TEST_RUN(test_bmp_save_and_formats_roundtrip);
     TEST_REPORT();
 }

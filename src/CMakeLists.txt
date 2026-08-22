@@ -87,7 +87,27 @@ endif()
 
 
 
-foreach(target fractus_core fractus_ui fractus_platform fractus_x64)
+set(TOOL_TARGETS
+    drsg2bmp
+    drsg2drsp
+    drsp2drsg
+)
+
+foreach(tool_name ${TOOL_TARGETS})
+    add_executable(${tool_name}
+        tools/${tool_name}.c
+    )
+
+    target_include_directories(${tool_name} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+
+    target_link_libraries(${tool_name} PRIVATE
+        fractus_core
+    )
+endforeach()
+
+foreach(target fractus_core fractus_ui fractus_platform fractus_x64 ${TOOL_TARGETS})
     if(MSVC)
         target_compile_options(${target} PRIVATE /W4)
     else()

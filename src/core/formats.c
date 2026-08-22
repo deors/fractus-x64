@@ -762,6 +762,103 @@ fractus_status fractus_legacy_graphic_save(
     return FRACTUS_STATUS_OK;
 }
 
+fractus_status fractus_legacy_bmp_save(
+    const char *path,
+    const fractus_indexed_image *image,
+    const fractus_palette *palette)
+{
+    FILE *file;
+    uint32_t width;
+    uint32_t height;
+    uint32_t row_stride;
+    uint32_t image_size;
+    uint32_t file_header_size = 14u;
+    uint32_t info_header_size = 40u;
+    uint32_t palette_size_bytes = 256u * 4u;
+    uint32_t data_offset = file_header_size + info_header_size + palette_size_bytes;
+    uint32_t file_size;
+    uint32_t i;
+    int32_t y;
+    static const uint8_t padding[4] = {0u, 0u, 0u, 0u};
+    size_t pad_len;
+
+    if (path == NULL || image == NULL || palette == NULL || !image->initialized) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    width = image->size.width;
+    height = image->size.height;
+    if (width == 0u || height == 0u) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    row_stride = (width + 3u) & ~3u;
+    pad_len = (size_t)(row_stride - width);
+    image_size = row_stride * height;
+    file_size = data_offset + image_size;
+
+    file = fopen(path, "wb");
+    if (file == NULL) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    /* BITMAPFILEHEADER (14 bytes) */
+    if (fractus_write_u8(file, 'B') != FRACTUS_STATUS_OK ||
+        fractus_write_u8(file, 'M') != FRACTUS_STATUS_OK ||
+        fractus_write_u32_le(file, file_size) != FRACTUS_STATUS_OK ||
+        fractus_write_u16_le(file, 0u) != FRACTUS_STATUS_OK ||
+        fractus_write_u16_le(file, 0u) != FRACTUS_STATUS_OK ||
+        fractus_write_u32_le(file, data_offset) != FRACTUS_STATUS_OK) {
+        fclose(file);
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    /* BITMAPINFOHEADER (40 bytes) */
+    if (fractus_write_u32_le(file, info_header_size) != FRACTUS_STATUS_OK ||
+        fractus_write_u32_le(file, width) != FRACTUS_STATUS_OK ||
+        fractus_write_u32_le(file, height) != FRACTUS_STATUS_OK ||
+        fractus_write_u16_le(file, 1u) != FRACTUS_STATUS_OK ||
+        fractus_write_u16_le(file, 8u) != FRACTUS_STATUS_OK ||
+        fractus_write_u32_le(file, 0u) != FRACTUS_STATUS_OK ||
+        fractus_write_u32_le(file, image_size) != FRACTUS_STATUS_OK ||
+        fractus_write_u32_le(file, 2835u) != FRACTUS_STATUS_OK ||
+        fractus_write_u32_le(file, 2835u) != FRACTUS_STATUS_OK ||
+        fractus_write_u32_le(file, 256u) != FRACTUS_STATUS_OK ||
+        fractus_write_u32_le(file, 0u) != FRACTUS_STATUS_OK) {
+        fclose(file);
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    /* RGBQUAD palette table (256 * 4 = 1024 bytes: Blue, Green, Red, Reserved) */
+    for (i = 0u; i < FRACTUS_PALETTE_SIZE; ++i) {
+        if (fractus_write_u8(file, palette->entries[i].b) != FRACTUS_STATUS_OK ||
+            fractus_write_u8(file, palette->entries[i].g) != FRACTUS_STATUS_OK ||
+            fractus_write_u8(file, palette->entries[i].r) != FRACTUS_STATUS_OK ||
+            fractus_write_u8(file, 0u) != FRACTUS_STATUS_OK) {
+            fclose(file);
+            return FRACTUS_STATUS_ERROR;
+        }
+    }
+
+    /* Bitmap data (bottom-to-top raster scanlines) */
+    for (y = (int32_t)height - 1; y >= 0; --y) {
+        const uint8_t *row = image->pixels + ((size_t)y * image->pitch_pixels);
+        if (fwrite(row, (size_t)width, 1u, file) != 1u) {
+            fclose(file);
+            return FRACTUS_STATUS_ERROR;
+        }
+        if (pad_len > 0u) {
+            if (fwrite(padding, pad_len, 1u, file) != 1u) {
+                fclose(file);
+                return FRACTUS_STATUS_ERROR;
+            }
+        }
+    }
+
+    fclose(file);
+    return FRACTUS_STATUS_OK;
+}
+
 int fractus_formats_file_exists(const char *path)
 {
     FILE *file;

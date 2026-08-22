@@ -59,6 +59,10 @@ fractus_status fractus_legacy_graphic_save(
     const char *path,
     const fractus_indexed_image *image,
     const fractus_palette *palette);
+fractus_status fractus_legacy_bmp_save(
+    const char *path,
+    const fractus_indexed_image *image,
+    const fractus_palette *palette);
 
 int fractus_formats_file_exists(const char *path);
 int fractus_formats_directory_exists(const char *path);
