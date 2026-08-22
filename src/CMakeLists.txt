@@ -62,6 +62,7 @@ add_executable(fractus_x64
     app/julia.c
     app/biomorphs.c
     app/plasma.c
+    app/attractors.c
 )
 
 target_include_directories(fractus_x64 PRIVATE

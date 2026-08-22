@@ -118,6 +118,7 @@ static fractus_status fractus_app_run_main_menu_view(
     fractus_biomorph_params *biomorph_pending,
     fractus_plasma_params *plasma_rectangular_params,
     fractus_plasma_circular_params *plasma_circular_params,
+    fractus_app_attractor_method *attractor_selected_method,
     fractus_app_biomorph_fields *biomorph_fields,
     fractus_ui_numeric_field *iterations_field,
     fractus_ui_numeric_field *escape_radius_field,
@@ -147,7 +148,7 @@ static fractus_status fractus_app_run_main_menu_view(
         julia_params == NULL || julia_pending == NULL || julia_dem_params == NULL ||
         biomorph_params == NULL || biomorph_pending == NULL ||
         plasma_rectangular_params == NULL || plasma_circular_params == NULL ||
-        biomorph_fields == NULL ||
+        attractor_selected_method == NULL || biomorph_fields == NULL ||
         iterations_field == NULL || escape_radius_field == NULL || biomorph_radius_field == NULL ||
         biomorph_cutoff_field == NULL || plasma_rect_seed_field == NULL || plasma_circ_seed_field == NULL ||
         graphic_files == NULL || graphic_file_count == NULL || graphic_file_page == NULL || palette_files == NULL ||
@@ -161,9 +162,12 @@ static fractus_status fractus_app_run_main_menu_view(
     }
 
     /* 1. Contenedor exterior. */
+    if (fractus_app_draw_main_menu_frame(framebuffer, fonts) != FRACTUS_STATUS_OK) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
     /* 2. Textos y controles. */
-    if (fractus_app_draw_main_menu_frame(framebuffer, fonts) != FRACTUS_STATUS_OK ||
-        fractus_app_draw_main_menu_controls(
+    if (fractus_app_draw_main_menu_controls(
             framebuffer,
             fonts,
             fractus_app_main_menu_controls,
@@ -197,6 +201,9 @@ static fractus_status fractus_app_run_main_menu_view(
             *view = FRACTUS_APP_VIEW_BIOMORPH_CONFIG;
         } else if (selected_menu == 3) {
             *view = FRACTUS_APP_VIEW_PLASMA_MENU;
+        } else if (selected_menu == 4) {
+            *attractor_selected_method = FRACTUS_APP_ATTRACTOR_METHOD_NONE;
+            *view = FRACTUS_APP_VIEW_ATTRACTORS_MENU;
         } else if (selected_menu == FRACTUS_APP_MENU_VIDEO_INDEX) {
             *config_draft = *legacy_config;
             *view = FRACTUS_APP_VIEW_VIDEO_CONFIG;
@@ -447,6 +454,7 @@ int fractus_app_run(void)
     int plasma_circular_needs_render;
     int palette_flow_active;
     int present_is_drawing;
+    fractus_app_attractor_method attractor_selected_method;
     uint32_t save_feedback_frames;
     uint32_t palette_selected_index;
     uint32_t palette_copy_source_index;
@@ -487,6 +495,7 @@ int fractus_app_run(void)
     memset(cfg_path, 0, sizeof(cfg_path));
     memset(runtime_error_message, 0, sizeof(runtime_error_message));
     memset(selected_graphic_path, 0, sizeof(selected_graphic_path));
+    attractor_selected_method = FRACTUS_APP_ATTRACTOR_METHOD_NONE;
     palette_original_color = fractus_app_rgb8(0u, 0u, 0u);
     palette_pending_color = fractus_app_rgb8(0u, 0u, 0u);
     palette_copy_color = fractus_app_rgb8(0u, 0u, 0u);
@@ -624,6 +633,7 @@ int fractus_app_run(void)
                         &biomorph_pending,
                         &plasma_rectangular_params,
                         &plasma_circular_params,
+                        &attractor_selected_method,
                         &biomorph_fields,
                         &iterations_field,
                         &escape_radius_field,
@@ -770,6 +780,26 @@ int fractus_app_run(void)
                         &plasma_fields,
                         &view) != FRACTUS_STATUS_OK) {
                     fractus_app_log("runtime: plasma circular config failed");
+                    running = 0;
+                }
+            } else if (view == FRACTUS_APP_VIEW_ATTRACTORS_MENU) {
+                if (fractus_app_run_attractors_menu_view(
+                        &core.ui_framebuffer,
+                        &fonts,
+                        &ui,
+                        &attractor_selected_method,
+                        &view) != FRACTUS_STATUS_OK) {
+                    fractus_app_log("runtime: attractors menu failed");
+                    running = 0;
+                }
+            } else if (view == FRACTUS_APP_VIEW_ATTRACTORS_CONFIG) {
+                if (fractus_app_run_attractors_config_view(
+                        &core.ui_framebuffer,
+                        &fonts,
+                        &ui,
+                        &attractor_selected_method,
+                        &view) != FRACTUS_STATUS_OK) {
+                    fractus_app_log("runtime: attractors config failed");
                     running = 0;
                 }
             } else if (view == FRACTUS_APP_VIEW_VIDEO_CONFIG) {
