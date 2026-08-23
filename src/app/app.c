@@ -118,6 +118,9 @@ static fractus_status fractus_app_run_main_menu_view(
     fractus_biomorph_params *biomorph_pending,
     fractus_plasma_params *plasma_rectangular_params,
     fractus_plasma_circular_params *plasma_circular_params,
+    fractus_lorenz_params *lorenz_params,
+    fractus_lorenz_params *lorenz_pending,
+    fractus_app_attractor_fields *attractor_fields,
     fractus_app_attractor_method *attractor_selected_method,
     fractus_app_biomorph_fields *biomorph_fields,
     fractus_ui_numeric_field *iterations_field,
@@ -274,10 +277,14 @@ static fractus_status fractus_app_run_main_menu_view(
                 biomorph_params,
                 plasma_rectangular_params,
                 plasma_circular_params,
+                lorenz_params,
                 legacy_config);
             *mandelbrot_pending = *mandelbrot_params;
             *julia_pending = *julia_params;
             *biomorph_pending = *biomorph_params;
+            if (lorenz_params != NULL && lorenz_pending != NULL) {
+                *lorenz_pending = *lorenz_params;
+            }
             fractus_app_init_biomorph_fields(
                 biomorph_fields,
                 biomorph_pending->xmin,
@@ -289,6 +296,18 @@ static fractus_status fractus_app_run_main_menu_view(
                 biomorph_pending->max_iterations,
                 biomorph_pending->escape_radius_squared,
                 biomorph_pending->cutoff);
+            if (lorenz_pending != NULL && attractor_fields != NULL) {
+                fractus_app_init_lorenz_fields(
+                    &attractor_fields->lorenz,
+                    lorenz_pending->sigma,
+                    lorenz_pending->rho,
+                    lorenz_pending->beta,
+                    lorenz_pending->dt,
+                    lorenz_pending->iterations,
+                    lorenz_pending->rot_x,
+                    lorenz_pending->rot_y,
+                    lorenz_pending->rot_z);
+            }
             fractus_app_log("runtime: default fractal parameters restored");
         }
     }
@@ -574,6 +593,7 @@ int fractus_app_run(void)
         &biomorph_params,
         &plasma_rectangular_params,
         &plasma_circular_params,
+        &lorenz_params,
         &legacy_config);
     if (fractus_app_sync_framebuffer_palette(&core.drawing_framebuffer, &core.ui_framebuffer) != FRACTUS_STATUS_OK) {
         fractus_app_log("startup: drawing palette sync failed");
@@ -638,6 +658,9 @@ int fractus_app_run(void)
                         &biomorph_pending,
                         &plasma_rectangular_params,
                         &plasma_circular_params,
+                        &lorenz_params,
+                        &lorenz_pending,
+                        &attractor_fields,
                         &attractor_selected_method,
                         &biomorph_fields,
                         &iterations_field,

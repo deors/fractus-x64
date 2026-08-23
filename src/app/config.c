@@ -79,6 +79,7 @@ void fractus_app_reset_fractal_parameters(
     fractus_biomorph_params *biomorph_params,
     fractus_plasma_params *plasma_rectangular_params,
     fractus_plasma_circular_params *plasma_circular_params,
+    fractus_lorenz_params *lorenz_params,
     const fractus_legacy_config *legacy_config)
 {
     if (mandelbrot_params == NULL || mandelbrot_dem_params == NULL ||
@@ -169,6 +170,22 @@ void fractus_app_reset_fractal_parameters(
         16u,
         240u
     };
+
+    if (lorenz_params != NULL) {
+        *lorenz_params = (fractus_lorenz_params){
+            10.0,
+            28.0,
+            8.0 / 3.0,
+            0.01,
+            10000u,
+            FRACTUS_LORENZ_PROJECTION_XZ,
+            0.0,
+            0.0,
+            0.0,
+            16u,
+            240u
+        };
+    }
 
     fractus_app_apply_legacy_numeric_config(
         legacy_config,

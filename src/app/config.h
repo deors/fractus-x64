@@ -3,6 +3,7 @@
 
 #include "app/app.h"
 #include "app/commons.h"
+#include "core/attractors.h"
 
 typedef enum fractus_app_fractals_config_action {
     FRACTUS_APP_FRACTALS_CONFIG_ITER_DEC = 0,
@@ -43,6 +44,7 @@ void fractus_app_reset_fractal_parameters(
     fractus_biomorph_params *biomorph_params,
     fractus_plasma_params *plasma_rectangular_params,
     fractus_plasma_circular_params *plasma_circular_params,
+    fractus_lorenz_params *lorenz_params,
     const fractus_legacy_config *legacy_config);
 
 void fractus_app_capture_palette_to_config(
