@@ -24,7 +24,7 @@ void fractus_app_init_julia_fields(
     (void)fractus_ui_numeric_field_init_float(&fields->ymax, (fractus_rect_i32){324, 215, 73, 20}, ymax, -5.0, 5.0, 3);
     (void)fractus_ui_numeric_field_init_float(&fields->constant_real, (fractus_rect_i32){324, 241, 73, 20}, constant_real, -5.0, 5.0, 3);
     (void)fractus_ui_numeric_field_init_float(&fields->constant_imag, (fractus_rect_i32){324, 267, 73, 20}, constant_imag, -5.0, 5.0, 3);
-    (void)fractus_ui_numeric_field_init_int(&fields->max_iterations, (fractus_rect_i32){324, 293, 73, 20}, (int32_t)max_iterations, 16, 1024);
+    (void)fractus_ui_numeric_field_init_int(&fields->max_iterations, (fractus_rect_i32){324, 293, 73, 20}, (int32_t)max_iterations, 1, 1000);
     (void)fractus_ui_numeric_field_init_int(&fields->escape_radius_squared, (fractus_rect_i32){324, 319, 73, 20}, (int32_t)escape_radius_squared, 4, 1000);
 }
 
@@ -292,7 +292,7 @@ static fractus_status fractus_app_run_julia_generic_config_view(
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->constant_real) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 272, 0u, "Constante imaginaria") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->constant_imag) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 298, 0u, "Iteraciones maximas (16-1024)") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 298, 0u, "Iteraciones maximas (1-1000)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->max_iterations) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 324, 0u, "Radio de escape al cuadrado (4-1000)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->escape_radius_squared) != FRACTUS_STATUS_OK ||
@@ -518,10 +518,10 @@ static fractus_status fractus_app_run_julia_generic_config_view(
             *constant_imag = fractus_app_clamp_f64(*constant_imag + 0.05, -2.0, 2.0);
             fractus_app_init_julia_fields(fields, *xmin, *xmax, *ymin, *ymax, *constant_real, *constant_imag, *max_iterations, *escape_radius_squared);
         } else if (selected_menu == FRACTUS_APP_JULIA_ITER_DEC) {
-            *max_iterations = (uint32_t)fractus_app_clamp_i32((int32_t)*max_iterations - 4, 16, 1024);
+            *max_iterations = (uint32_t)fractus_app_clamp_i32((int32_t)*max_iterations - 4, 1, 1000);
             fractus_app_init_julia_fields(fields, *xmin, *xmax, *ymin, *ymax, *constant_real, *constant_imag, *max_iterations, *escape_radius_squared);
         } else if (selected_menu == FRACTUS_APP_JULIA_ITER_INC) {
-            *max_iterations = (uint32_t)fractus_app_clamp_i32((int32_t)*max_iterations + 4, 16, 1024);
+            *max_iterations = (uint32_t)fractus_app_clamp_i32((int32_t)*max_iterations + 4, 1, 1000);
             fractus_app_init_julia_fields(fields, *xmin, *xmax, *ymin, *ymax, *constant_real, *constant_imag, *max_iterations, *escape_radius_squared);
         } else if (selected_menu == FRACTUS_APP_JULIA_RADIUS_DEC) {
             *escape_radius_squared = (double)fractus_app_clamp_i32((int32_t)*escape_radius_squared - 2, 4, 1000);
