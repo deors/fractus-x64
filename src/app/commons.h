@@ -251,4 +251,9 @@ int fractus_app_handle_zone_selection_input(
     double *ymax,
     fractus_app_zone_selection *selection);
 
+fractus_status fractus_app_draw_graphic_metadata_panel(
+    fractus_framebuffer *framebuffer,
+    const fractus_font_library *fonts,
+    const fractus_graphic_metadata *metadata);
+
 #endif

@@ -104,4 +104,78 @@ fractus_status fractus_formats_resolve_legacy_write_path(
     char *buffer,
     size_t buffer_size);
 
+#include "core/attractors.h"
+#include "core/biomorphs.h"
+#include "core/julia.h"
+#include "core/mandelbrot.h"
+#include "core/plasma.h"
+
+typedef enum fractus_graphic_kind {
+    FRACTUS_GRAPHIC_KIND_UNKNOWN = 0,
+    FRACTUS_GRAPHIC_KIND_MANDELBROT,
+    FRACTUS_GRAPHIC_KIND_MANDELBROT_DEM,
+    FRACTUS_GRAPHIC_KIND_JULIA,
+    FRACTUS_GRAPHIC_KIND_JULIA_DEM,
+    FRACTUS_GRAPHIC_KIND_BIOMORPH,
+    FRACTUS_GRAPHIC_KIND_PLASMA_RECTANGULAR,
+    FRACTUS_GRAPHIC_KIND_PLASMA_CIRCULAR,
+    FRACTUS_GRAPHIC_KIND_LORENZ
+} fractus_graphic_kind;
+
+typedef struct fractus_graphic_metadata {
+    fractus_graphic_kind kind;
+    uint32_t width;
+    uint32_t height;
+    union {
+        fractus_mandelbrot_params mandelbrot;
+        fractus_mandelbrot_dem_params mandelbrot_dem;
+        fractus_julia_params julia;
+        fractus_julia_dem_params julia_dem;
+        fractus_biomorph_params biomorph;
+        fractus_plasma_params plasma_rectangular;
+        fractus_plasma_circular_params plasma_circular;
+        fractus_lorenz_params lorenz;
+    } params;
+} fractus_graphic_metadata;
+
+fractus_graphic_metadata fractus_graphic_metadata_from_mandelbrot(
+    const fractus_mandelbrot_params *params,
+    uint32_t width,
+    uint32_t height);
+fractus_graphic_metadata fractus_graphic_metadata_from_mandelbrot_dem(
+    const fractus_mandelbrot_dem_params *params,
+    uint32_t width,
+    uint32_t height);
+fractus_graphic_metadata fractus_graphic_metadata_from_julia(
+    const fractus_julia_params *params,
+    uint32_t width,
+    uint32_t height);
+fractus_graphic_metadata fractus_graphic_metadata_from_julia_dem(
+    const fractus_julia_dem_params *params,
+    uint32_t width,
+    uint32_t height);
+fractus_graphic_metadata fractus_graphic_metadata_from_biomorph(
+    const fractus_biomorph_params *params,
+    uint32_t width,
+    uint32_t height);
+fractus_graphic_metadata fractus_graphic_metadata_from_plasma_rectangular(
+    const fractus_plasma_params *params,
+    uint32_t width,
+    uint32_t height);
+fractus_graphic_metadata fractus_graphic_metadata_from_plasma_circular(
+    const fractus_plasma_circular_params *params,
+    uint32_t width,
+    uint32_t height);
+fractus_graphic_metadata fractus_graphic_metadata_from_lorenz(
+    const fractus_lorenz_params *params,
+    uint32_t width,
+    uint32_t height);
+
+fractus_status fractus_graphic_metadata_save_json(
+    const char *path,
+    const fractus_graphic_metadata *metadata);
+fractus_status fractus_graphic_metadata_load_json(
+    const char *path,
+    fractus_graphic_metadata *metadata);
+
 #endif

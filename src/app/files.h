@@ -63,6 +63,14 @@ fractus_status fractus_app_load_graphic_into_state(
     fractus_legacy_config *config,
     const char *cfg_path);
 
+fractus_status fractus_app_load_graphic_into_state_ex(
+    const char *graphic_path,
+    fractus_framebuffer *framebuffer,
+    fractus_legacy_config *config,
+    const char *cfg_path,
+    fractus_graphic_metadata *out_metadata,
+    int *out_has_metadata);
+
 fractus_status fractus_app_change_graphic_palette_into_state(
     const fractus_platform_context *platform,
     const char *graphic_path,
@@ -78,6 +86,7 @@ fractus_status fractus_app_save_current_graphic_file(
 fractus_status fractus_app_save_current_graphic_file_ex(
     const fractus_platform_context *platform,
     const fractus_framebuffer *framebuffer,
+    const fractus_graphic_metadata *metadata,
     char *out_saved_name,
     size_t out_saved_name_size);
 
@@ -91,6 +100,7 @@ fractus_status fractus_app_save_next_graphic_if_requested(
 fractus_status fractus_app_save_next_graphic_if_requested_ex(
     const fractus_platform_context *platform,
     const fractus_framebuffer *framebuffer,
+    const fractus_graphic_metadata *metadata,
     int *save_next_graphic,
     char *error_message,
     size_t error_message_size,
@@ -107,6 +117,8 @@ fractus_status fractus_app_run_load_graphic_view(
     size_t *graphic_file_page,
     fractus_legacy_config *legacy_config,
     const char *cfg_path,
+    fractus_graphic_metadata *loaded_metadata,
+    int *has_loaded_metadata,
     fractus_app_view *view);
 
 fractus_status fractus_app_run_load_palette_view(
@@ -165,6 +177,8 @@ fractus_status fractus_app_run_change_graphic_palette_palette_view(
     const char *cfg_path,
     char *error_message,
     size_t error_message_size,
+    fractus_graphic_metadata *loaded_metadata,
+    int *has_loaded_metadata,
     fractus_app_view *view);
 
 fractus_status fractus_app_run_palette_view(

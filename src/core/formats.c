@@ -1147,3 +1147,652 @@ fractus_status fractus_formats_resolve_legacy_write_path(
 
     return FRACTUS_STATUS_ERROR;
 }
+
+fractus_graphic_metadata fractus_graphic_metadata_from_mandelbrot(
+    const fractus_mandelbrot_params *params,
+    uint32_t width,
+    uint32_t height)
+{
+    fractus_graphic_metadata meta;
+    memset(&meta, 0, sizeof(meta));
+    meta.kind = FRACTUS_GRAPHIC_KIND_MANDELBROT;
+    meta.width = width;
+    meta.height = height;
+    if (params != NULL) {
+        meta.params.mandelbrot = *params;
+    }
+    return meta;
+}
+
+fractus_graphic_metadata fractus_graphic_metadata_from_mandelbrot_dem(
+    const fractus_mandelbrot_dem_params *params,
+    uint32_t width,
+    uint32_t height)
+{
+    fractus_graphic_metadata meta;
+    memset(&meta, 0, sizeof(meta));
+    meta.kind = FRACTUS_GRAPHIC_KIND_MANDELBROT_DEM;
+    meta.width = width;
+    meta.height = height;
+    if (params != NULL) {
+        meta.params.mandelbrot_dem = *params;
+    }
+    return meta;
+}
+
+fractus_graphic_metadata fractus_graphic_metadata_from_julia(
+    const fractus_julia_params *params,
+    uint32_t width,
+    uint32_t height)
+{
+    fractus_graphic_metadata meta;
+    memset(&meta, 0, sizeof(meta));
+    meta.kind = FRACTUS_GRAPHIC_KIND_JULIA;
+    meta.width = width;
+    meta.height = height;
+    if (params != NULL) {
+        meta.params.julia = *params;
+    }
+    return meta;
+}
+
+fractus_graphic_metadata fractus_graphic_metadata_from_julia_dem(
+    const fractus_julia_dem_params *params,
+    uint32_t width,
+    uint32_t height)
+{
+    fractus_graphic_metadata meta;
+    memset(&meta, 0, sizeof(meta));
+    meta.kind = FRACTUS_GRAPHIC_KIND_JULIA_DEM;
+    meta.width = width;
+    meta.height = height;
+    if (params != NULL) {
+        meta.params.julia_dem = *params;
+    }
+    return meta;
+}
+
+fractus_graphic_metadata fractus_graphic_metadata_from_biomorph(
+    const fractus_biomorph_params *params,
+    uint32_t width,
+    uint32_t height)
+{
+    fractus_graphic_metadata meta;
+    memset(&meta, 0, sizeof(meta));
+    meta.kind = FRACTUS_GRAPHIC_KIND_BIOMORPH;
+    meta.width = width;
+    meta.height = height;
+    if (params != NULL) {
+        meta.params.biomorph = *params;
+    }
+    return meta;
+}
+
+fractus_graphic_metadata fractus_graphic_metadata_from_plasma_rectangular(
+    const fractus_plasma_params *params,
+    uint32_t width,
+    uint32_t height)
+{
+    fractus_graphic_metadata meta;
+    memset(&meta, 0, sizeof(meta));
+    meta.kind = FRACTUS_GRAPHIC_KIND_PLASMA_RECTANGULAR;
+    meta.width = width;
+    meta.height = height;
+    if (params != NULL) {
+        meta.params.plasma_rectangular = *params;
+    }
+    return meta;
+}
+
+fractus_graphic_metadata fractus_graphic_metadata_from_plasma_circular(
+    const fractus_plasma_circular_params *params,
+    uint32_t width,
+    uint32_t height)
+{
+    fractus_graphic_metadata meta;
+    memset(&meta, 0, sizeof(meta));
+    meta.kind = FRACTUS_GRAPHIC_KIND_PLASMA_CIRCULAR;
+    meta.width = width;
+    meta.height = height;
+    if (params != NULL) {
+        meta.params.plasma_circular = *params;
+    }
+    return meta;
+}
+
+fractus_graphic_metadata fractus_graphic_metadata_from_lorenz(
+    const fractus_lorenz_params *params,
+    uint32_t width,
+    uint32_t height)
+{
+    fractus_graphic_metadata meta;
+    memset(&meta, 0, sizeof(meta));
+    meta.kind = FRACTUS_GRAPHIC_KIND_LORENZ;
+    meta.width = width;
+    meta.height = height;
+    if (params != NULL) {
+        meta.params.lorenz = *params;
+    }
+    return meta;
+}
+
+fractus_status fractus_graphic_metadata_save_json(
+    const char *path,
+    const fractus_graphic_metadata *metadata)
+{
+    FILE *file;
+
+    if (path == NULL || metadata == NULL) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    file = fopen(path, "w");
+    if (file == NULL) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    fprintf(file, "{\n");
+    fprintf(file, "  \"application\": \"Fractus-x64\",\n");
+    fprintf(file, "  \"version\": 1,\n");
+
+    switch (metadata->kind) {
+    case FRACTUS_GRAPHIC_KIND_MANDELBROT:
+        fprintf(file, "  \"fractal_type\": \"mandelbrot\",\n");
+        fprintf(file, "  \"resolution\": {\n");
+        fprintf(file, "    \"width\": %u,\n", (unsigned)metadata->width);
+        fprintf(file, "    \"height\": %u\n", (unsigned)metadata->height);
+        fprintf(file, "  },\n");
+        fprintf(file, "  \"coordinates\": {\n");
+        fprintf(file, "    \"xmin\": %.16g,\n", metadata->params.mandelbrot.xmin);
+        fprintf(file, "    \"xmax\": %.16g,\n", metadata->params.mandelbrot.xmax);
+        fprintf(file, "    \"ymin\": %.16g,\n", metadata->params.mandelbrot.ymin);
+        fprintf(file, "    \"ymax\": %.16g\n", metadata->params.mandelbrot.ymax);
+        fprintf(file, "  },\n");
+        fprintf(file, "  \"parameters\": {\n");
+        fprintf(file, "    \"max_iterations\": %u,\n", (unsigned)metadata->params.mandelbrot.max_iterations);
+        fprintf(file, "    \"escape_radius_squared\": %.16g,\n", metadata->params.mandelbrot.escape_radius_squared);
+        fprintf(file, "    \"inside_color_index\": %u,\n", (unsigned)metadata->params.mandelbrot.inside_color_index);
+        fprintf(file, "    \"palette_offset\": %u,\n", (unsigned)metadata->params.mandelbrot.palette_offset);
+        fprintf(file, "    \"palette_span\": %u,\n", (unsigned)metadata->params.mandelbrot.palette_span);
+        fprintf(file, "    \"color_mode\": \"%s\"\n",
+            (metadata->params.mandelbrot.color_mode == FRACTUS_MANDELBROT_COLOR_SMOOTH) ? "smooth" : "escape");
+        fprintf(file, "  }\n");
+        break;
+
+    case FRACTUS_GRAPHIC_KIND_MANDELBROT_DEM:
+        fprintf(file, "  \"fractal_type\": \"mandelbrot_dem\",\n");
+        fprintf(file, "  \"resolution\": {\n");
+        fprintf(file, "    \"width\": %u,\n", (unsigned)metadata->width);
+        fprintf(file, "    \"height\": %u\n", (unsigned)metadata->height);
+        fprintf(file, "  },\n");
+        fprintf(file, "  \"coordinates\": {\n");
+        fprintf(file, "    \"xmin\": %.16g,\n", metadata->params.mandelbrot_dem.xmin);
+        fprintf(file, "    \"xmax\": %.16g,\n", metadata->params.mandelbrot_dem.xmax);
+        fprintf(file, "    \"ymin\": %.16g,\n", metadata->params.mandelbrot_dem.ymin);
+        fprintf(file, "    \"ymax\": %.16g\n", metadata->params.mandelbrot_dem.ymax);
+        fprintf(file, "  },\n");
+        fprintf(file, "  \"parameters\": {\n");
+        fprintf(file, "    \"max_iterations\": %u,\n", (unsigned)metadata->params.mandelbrot_dem.max_iterations);
+        fprintf(file, "    \"escape_radius_squared\": %.16g,\n", metadata->params.mandelbrot_dem.escape_radius_squared);
+        fprintf(file, "    \"inside_color_index\": %u,\n", (unsigned)metadata->params.mandelbrot_dem.inside_color_index);
+        fprintf(file, "    \"palette_offset\": %u,\n", (unsigned)metadata->params.mandelbrot_dem.palette_offset);
+        fprintf(file, "    \"palette_span\": %u,\n", (unsigned)metadata->params.mandelbrot_dem.palette_span);
+        fprintf(file, "    \"color_mode\": \"%s\"\n",
+            (metadata->params.mandelbrot_dem.color_mode == FRACTUS_MANDELBROT_DEM_COLOR_GRADIENT) ? "gradient" : "boundary");
+        fprintf(file, "  }\n");
+        break;
+
+    case FRACTUS_GRAPHIC_KIND_JULIA:
+        fprintf(file, "  \"fractal_type\": \"julia\",\n");
+        fprintf(file, "  \"resolution\": {\n");
+        fprintf(file, "    \"width\": %u,\n", (unsigned)metadata->width);
+        fprintf(file, "    \"height\": %u\n", (unsigned)metadata->height);
+        fprintf(file, "  },\n");
+        fprintf(file, "  \"coordinates\": {\n");
+        fprintf(file, "    \"xmin\": %.16g,\n", metadata->params.julia.xmin);
+        fprintf(file, "    \"xmax\": %.16g,\n", metadata->params.julia.xmax);
+        fprintf(file, "    \"ymin\": %.16g,\n", metadata->params.julia.ymin);
+        fprintf(file, "    \"ymax\": %.16g\n", metadata->params.julia.ymax);
+        fprintf(file, "  },\n");
+        fprintf(file, "  \"parameters\": {\n");
+        fprintf(file, "    \"constant_real\": %.16g,\n", metadata->params.julia.constant_real);
+        fprintf(file, "    \"constant_imag\": %.16g,\n", metadata->params.julia.constant_imag);
+        fprintf(file, "    \"max_iterations\": %u,\n", (unsigned)metadata->params.julia.max_iterations);
+        fprintf(file, "    \"escape_radius_squared\": %.16g,\n", metadata->params.julia.escape_radius_squared);
+        fprintf(file, "    \"inside_color_index\": %u,\n", (unsigned)metadata->params.julia.inside_color_index);
+        fprintf(file, "    \"palette_offset\": %u,\n", (unsigned)metadata->params.julia.palette_offset);
+        fprintf(file, "    \"palette_span\": %u,\n", (unsigned)metadata->params.julia.palette_span);
+        fprintf(file, "    \"color_mode\": \"%s\"\n",
+            (metadata->params.julia.color_mode == FRACTUS_JULIA_COLOR_SMOOTH) ? "smooth" : "escape");
+        fprintf(file, "  }\n");
+        break;
+
+    case FRACTUS_GRAPHIC_KIND_JULIA_DEM:
+        fprintf(file, "  \"fractal_type\": \"julia_dem\",\n");
+        fprintf(file, "  \"resolution\": {\n");
+        fprintf(file, "    \"width\": %u,\n", (unsigned)metadata->width);
+        fprintf(file, "    \"height\": %u\n", (unsigned)metadata->height);
+        fprintf(file, "  },\n");
+        fprintf(file, "  \"coordinates\": {\n");
+        fprintf(file, "    \"xmin\": %.16g,\n", metadata->params.julia_dem.xmin);
+        fprintf(file, "    \"xmax\": %.16g,\n", metadata->params.julia_dem.xmax);
+        fprintf(file, "    \"ymin\": %.16g,\n", metadata->params.julia_dem.ymin);
+        fprintf(file, "    \"ymax\": %.16g\n", metadata->params.julia_dem.ymax);
+        fprintf(file, "  },\n");
+        fprintf(file, "  \"parameters\": {\n");
+        fprintf(file, "    \"constant_real\": %.16g,\n", metadata->params.julia_dem.constant_real);
+        fprintf(file, "    \"constant_imag\": %.16g,\n", metadata->params.julia_dem.constant_imag);
+        fprintf(file, "    \"max_iterations\": %u,\n", (unsigned)metadata->params.julia_dem.max_iterations);
+        fprintf(file, "    \"escape_radius_squared\": %.16g,\n", metadata->params.julia_dem.escape_radius_squared);
+        fprintf(file, "    \"inside_color_index\": %u,\n", (unsigned)metadata->params.julia_dem.inside_color_index);
+        fprintf(file, "    \"palette_offset\": %u,\n", (unsigned)metadata->params.julia_dem.palette_offset);
+        fprintf(file, "    \"palette_span\": %u,\n", (unsigned)metadata->params.julia_dem.palette_span);
+        fprintf(file, "    \"color_mode\": \"%s\"\n",
+            (metadata->params.julia_dem.color_mode == FRACTUS_JULIA_DEM_COLOR_GRADIENT) ? "gradient" : "boundary");
+        fprintf(file, "  }\n");
+        break;
+
+    case FRACTUS_GRAPHIC_KIND_BIOMORPH:
+        fprintf(file, "  \"fractal_type\": \"biomorph\",\n");
+        fprintf(file, "  \"resolution\": {\n");
+        fprintf(file, "    \"width\": %u,\n", (unsigned)metadata->width);
+        fprintf(file, "    \"height\": %u\n", (unsigned)metadata->height);
+        fprintf(file, "  },\n");
+        fprintf(file, "  \"coordinates\": {\n");
+        fprintf(file, "    \"xmin\": %.16g,\n", metadata->params.biomorph.xmin);
+        fprintf(file, "    \"xmax\": %.16g,\n", metadata->params.biomorph.xmax);
+        fprintf(file, "    \"ymin\": %.16g,\n", metadata->params.biomorph.ymin);
+        fprintf(file, "    \"ymax\": %.16g\n", metadata->params.biomorph.ymax);
+        fprintf(file, "  },\n");
+        fprintf(file, "  \"parameters\": {\n");
+        fprintf(file, "    \"constant_real\": %.16g,\n", metadata->params.biomorph.constant_real);
+        fprintf(file, "    \"constant_imag\": %.16g,\n", metadata->params.biomorph.constant_imag);
+        fprintf(file, "    \"max_iterations\": %u,\n", (unsigned)metadata->params.biomorph.max_iterations);
+        fprintf(file, "    \"escape_radius_squared\": %.16g,\n", metadata->params.biomorph.escape_radius_squared);
+        fprintf(file, "    \"cutoff\": %.16g,\n", metadata->params.biomorph.cutoff);
+        fprintf(file, "    \"background_color_index\": %u,\n", (unsigned)metadata->params.biomorph.background_color_index);
+        fprintf(file, "    \"palette_offset\": %u,\n", (unsigned)metadata->params.biomorph.palette_offset);
+        fprintf(file, "    \"palette_span\": %u,\n", (unsigned)metadata->params.biomorph.palette_span);
+        {
+            const char *eq_str = "z^2+c";
+            const char *trap_str = "re_or_im";
+            switch (metadata->params.biomorph.equation) {
+            case FRACTUS_BIOMORPH_EQ_Z2: eq_str = "z^2+c"; break;
+            case FRACTUS_BIOMORPH_EQ_Z3: eq_str = "z^3+c"; break;
+            case FRACTUS_BIOMORPH_EQ_Z4: eq_str = "z^4+c"; break;
+            case FRACTUS_BIOMORPH_EQ_Z5: eq_str = "z^5+c"; break;
+            case FRACTUS_BIOMORPH_EQ_SIN_Z: eq_str = "sin(z)+c"; break;
+            case FRACTUS_BIOMORPH_EQ_EXP_Z: eq_str = "exp(z)+c"; break;
+            }
+            switch (metadata->params.biomorph.trap_mode) {
+            case FRACTUS_BIOMORPH_TRAP_RE_OR_IM: trap_str = "re_or_im"; break;
+            case FRACTUS_BIOMORPH_TRAP_RE_AND_IM: trap_str = "re_and_im"; break;
+            case FRACTUS_BIOMORPH_TRAP_SOLO_RE: trap_str = "solo_re"; break;
+            case FRACTUS_BIOMORPH_TRAP_SOLO_IM: trap_str = "solo_im"; break;
+            }
+            fprintf(file, "    \"equation\": \"%s\",\n", eq_str);
+            fprintf(file, "    \"trap_mode\": \"%s\"\n", trap_str);
+        }
+        fprintf(file, "  }\n");
+        break;
+
+    case FRACTUS_GRAPHIC_KIND_PLASMA_RECTANGULAR:
+        fprintf(file, "  \"fractal_type\": \"plasma_rectangular\",\n");
+        fprintf(file, "  \"resolution\": {\n");
+        fprintf(file, "    \"width\": %u,\n", (unsigned)metadata->width);
+        fprintf(file, "    \"height\": %u\n", (unsigned)metadata->height);
+        fprintf(file, "  },\n");
+        fprintf(file, "  \"parameters\": {\n");
+        fprintf(file, "    \"seed\": %u,\n", (unsigned)metadata->params.plasma_rectangular.seed);
+        fprintf(file, "    \"dispersion\": %d,\n", (int)metadata->params.plasma_rectangular.dispersion);
+        fprintf(file, "    \"palette_offset\": %u,\n", (unsigned)metadata->params.plasma_rectangular.palette_offset);
+        fprintf(file, "    \"palette_span\": %u\n", (unsigned)metadata->params.plasma_rectangular.palette_span);
+        fprintf(file, "  }\n");
+        break;
+
+    case FRACTUS_GRAPHIC_KIND_PLASMA_CIRCULAR:
+        fprintf(file, "  \"fractal_type\": \"plasma_circular\",\n");
+        fprintf(file, "  \"resolution\": {\n");
+        fprintf(file, "    \"width\": %u,\n", (unsigned)metadata->width);
+        fprintf(file, "    \"height\": %u\n", (unsigned)metadata->height);
+        fprintf(file, "  },\n");
+        fprintf(file, "  \"parameters\": {\n");
+        fprintf(file, "    \"seed\": %u,\n", (unsigned)metadata->params.plasma_circular.seed);
+        fprintf(file, "    \"circle_count\": %d,\n", (int)metadata->params.plasma_circular.circle_count);
+        fprintf(file, "    \"max_radius\": %d,\n", (int)metadata->params.plasma_circular.max_radius);
+        fprintf(file, "    \"palette_offset\": %u,\n", (unsigned)metadata->params.plasma_circular.palette_offset);
+        fprintf(file, "    \"palette_span\": %u\n", (unsigned)metadata->params.plasma_circular.palette_span);
+        fprintf(file, "  }\n");
+        break;
+
+    case FRACTUS_GRAPHIC_KIND_LORENZ:
+        fprintf(file, "  \"fractal_type\": \"lorenz\",\n");
+        fprintf(file, "  \"resolution\": {\n");
+        fprintf(file, "    \"width\": %u,\n", (unsigned)metadata->width);
+        fprintf(file, "    \"height\": %u\n", (unsigned)metadata->height);
+        fprintf(file, "  },\n");
+        fprintf(file, "  \"parameters\": {\n");
+        fprintf(file, "    \"sigma\": %.16g,\n", metadata->params.lorenz.sigma);
+        fprintf(file, "    \"rho\": %.16g,\n", metadata->params.lorenz.rho);
+        fprintf(file, "    \"beta\": %.16g,\n", metadata->params.lorenz.beta);
+        fprintf(file, "    \"dt\": %.16g,\n", metadata->params.lorenz.dt);
+        fprintf(file, "    \"iterations\": %u,\n", (unsigned)metadata->params.lorenz.iterations);
+        {
+            const char *proj_str = "xz";
+            switch (metadata->params.lorenz.projection) {
+            case FRACTUS_LORENZ_PROJECTION_XZ: proj_str = "xz"; break;
+            case FRACTUS_LORENZ_PROJECTION_XY: proj_str = "xy"; break;
+            case FRACTUS_LORENZ_PROJECTION_YZ: proj_str = "yz"; break;
+            case FRACTUS_LORENZ_PROJECTION_CUSTOM: proj_str = "custom"; break;
+            }
+            fprintf(file, "    \"projection\": \"%s\",\n", proj_str);
+        }
+        fprintf(file, "    \"rot_x\": %.16g,\n", metadata->params.lorenz.rot_x);
+        fprintf(file, "    \"rot_y\": %.16g,\n", metadata->params.lorenz.rot_y);
+        fprintf(file, "    \"rot_z\": %.16g,\n", metadata->params.lorenz.rot_z);
+        fprintf(file, "    \"palette_offset\": %u,\n", (unsigned)metadata->params.lorenz.palette_offset);
+        fprintf(file, "    \"palette_span\": %u\n", (unsigned)metadata->params.lorenz.palette_span);
+        fprintf(file, "  }\n");
+        break;
+
+    case FRACTUS_GRAPHIC_KIND_UNKNOWN:
+    default:
+        fprintf(file, "  \"fractal_type\": \"unknown\",\n");
+        fprintf(file, "  \"resolution\": {\n");
+        fprintf(file, "    \"width\": %u,\n", (unsigned)metadata->width);
+        fprintf(file, "    \"height\": %u\n", (unsigned)metadata->height);
+        fprintf(file, "  }\n");
+        break;
+    }
+
+    fprintf(file, "}\n");
+    fclose(file);
+    return FRACTUS_STATUS_OK;
+}
+
+static int fractus_json_parse_string(const char *json, const char *key, char *out, size_t out_size)
+{
+    char search_key[128];
+    const char *pos;
+    const char *start;
+    const char *end;
+    size_t len;
+
+    if (json == NULL || key == NULL || out == NULL || out_size == 0u) {
+        return 0;
+    }
+
+    (void)snprintf(search_key, sizeof(search_key), "\"%s\"", key);
+    pos = strstr(json, search_key);
+    if (pos == NULL) {
+        return 0;
+    }
+    pos += strlen(search_key);
+    while (*pos == ' ' || *pos == '\t' || *pos == '\r' || *pos == '\n' || *pos == ':') {
+        ++pos;
+    }
+    if (*pos != '"') {
+        return 0;
+    }
+    start = pos + 1;
+    end = strchr(start, '"');
+    if (end == NULL) {
+        return 0;
+    }
+    len = (size_t)(end - start);
+    if (len + 1u > out_size) {
+        len = out_size - 1u;
+    }
+    memcpy(out, start, len);
+    out[len] = '\0';
+    return 1;
+}
+
+static int fractus_json_parse_double(const char *json, const char *key, double *out)
+{
+    char search_key[128];
+    const char *pos;
+    char *endptr;
+
+    if (json == NULL || key == NULL || out == NULL) {
+        return 0;
+    }
+
+    (void)snprintf(search_key, sizeof(search_key), "\"%s\"", key);
+    pos = strstr(json, search_key);
+    if (pos == NULL) {
+        return 0;
+    }
+    pos += strlen(search_key);
+    while (*pos == ' ' || *pos == '\t' || *pos == '\r' || *pos == '\n' || *pos == ':') {
+        ++pos;
+    }
+    *out = strtod(pos, &endptr);
+    return (endptr != pos);
+}
+
+static int fractus_json_parse_uint32(const char *json, const char *key, uint32_t *out)
+{
+    double val;
+    if (fractus_json_parse_double(json, key, &val)) {
+        *out = (uint32_t)val;
+        return 1;
+    }
+    return 0;
+}
+
+static int fractus_json_parse_int32(const char *json, const char *key, int32_t *out)
+{
+    double val;
+    if (fractus_json_parse_double(json, key, &val)) {
+        *out = (int32_t)val;
+        return 1;
+    }
+    return 0;
+}
+
+static int fractus_json_parse_uint8(const char *json, const char *key, uint8_t *out)
+{
+    double val;
+    if (fractus_json_parse_double(json, key, &val)) {
+        *out = (uint8_t)val;
+        return 1;
+    }
+    return 0;
+}
+
+fractus_status fractus_graphic_metadata_load_json(
+    const char *path,
+    fractus_graphic_metadata *metadata)
+{
+    FILE *file;
+    char buffer[4096];
+    size_t bytes_read;
+    char type_str[64];
+    char mode_str[64];
+    char eq_str[64];
+    char trap_str[64];
+    char proj_str[64];
+
+    if (path == NULL || metadata == NULL) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    file = fopen(path, "r");
+    if (file == NULL) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    bytes_read = fread(buffer, 1, sizeof(buffer) - 1, file);
+    fclose(file);
+    if (bytes_read == 0u) {
+        return FRACTUS_STATUS_ERROR;
+    }
+    buffer[bytes_read] = '\0';
+
+    memset(metadata, 0, sizeof(*metadata));
+    metadata->kind = FRACTUS_GRAPHIC_KIND_UNKNOWN;
+
+    if (!fractus_json_parse_string(buffer, "fractal_type", type_str, sizeof(type_str))) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    fractus_json_parse_uint32(buffer, "width", &metadata->width);
+    fractus_json_parse_uint32(buffer, "height", &metadata->height);
+
+    if (strcmp(type_str, "mandelbrot") == 0) {
+        metadata->kind = FRACTUS_GRAPHIC_KIND_MANDELBROT;
+        fractus_json_parse_double(buffer, "xmin", &metadata->params.mandelbrot.xmin);
+        fractus_json_parse_double(buffer, "xmax", &metadata->params.mandelbrot.xmax);
+        fractus_json_parse_double(buffer, "ymin", &metadata->params.mandelbrot.ymin);
+        fractus_json_parse_double(buffer, "ymax", &metadata->params.mandelbrot.ymax);
+        fractus_json_parse_uint32(buffer, "max_iterations", &metadata->params.mandelbrot.max_iterations);
+        fractus_json_parse_double(buffer, "escape_radius_squared", &metadata->params.mandelbrot.escape_radius_squared);
+        fractus_json_parse_uint8(buffer, "inside_color_index", &metadata->params.mandelbrot.inside_color_index);
+        fractus_json_parse_uint8(buffer, "palette_offset", &metadata->params.mandelbrot.palette_offset);
+        fractus_json_parse_uint8(buffer, "palette_span", &metadata->params.mandelbrot.palette_span);
+        if (fractus_json_parse_string(buffer, "color_mode", mode_str, sizeof(mode_str))) {
+            if (strcmp(mode_str, "smooth") == 0) {
+                metadata->params.mandelbrot.color_mode = FRACTUS_MANDELBROT_COLOR_SMOOTH;
+            } else {
+                metadata->params.mandelbrot.color_mode = FRACTUS_MANDELBROT_COLOR_ESCAPE;
+            }
+        }
+    } else if (strcmp(type_str, "mandelbrot_dem") == 0) {
+        metadata->kind = FRACTUS_GRAPHIC_KIND_MANDELBROT_DEM;
+        fractus_json_parse_double(buffer, "xmin", &metadata->params.mandelbrot_dem.xmin);
+        fractus_json_parse_double(buffer, "xmax", &metadata->params.mandelbrot_dem.xmax);
+        fractus_json_parse_double(buffer, "ymin", &metadata->params.mandelbrot_dem.ymin);
+        fractus_json_parse_double(buffer, "ymax", &metadata->params.mandelbrot_dem.ymax);
+        fractus_json_parse_uint32(buffer, "max_iterations", &metadata->params.mandelbrot_dem.max_iterations);
+        fractus_json_parse_double(buffer, "escape_radius_squared", &metadata->params.mandelbrot_dem.escape_radius_squared);
+        fractus_json_parse_uint8(buffer, "inside_color_index", &metadata->params.mandelbrot_dem.inside_color_index);
+        fractus_json_parse_uint8(buffer, "palette_offset", &metadata->params.mandelbrot_dem.palette_offset);
+        fractus_json_parse_uint8(buffer, "palette_span", &metadata->params.mandelbrot_dem.palette_span);
+        if (fractus_json_parse_string(buffer, "color_mode", mode_str, sizeof(mode_str))) {
+            if (strcmp(mode_str, "gradient") == 0) {
+                metadata->params.mandelbrot_dem.color_mode = FRACTUS_MANDELBROT_DEM_COLOR_GRADIENT;
+            } else {
+                metadata->params.mandelbrot_dem.color_mode = FRACTUS_MANDELBROT_DEM_COLOR_BOUNDARY;
+            }
+        }
+    } else if (strcmp(type_str, "julia") == 0) {
+        metadata->kind = FRACTUS_GRAPHIC_KIND_JULIA;
+        fractus_json_parse_double(buffer, "xmin", &metadata->params.julia.xmin);
+        fractus_json_parse_double(buffer, "xmax", &metadata->params.julia.xmax);
+        fractus_json_parse_double(buffer, "ymin", &metadata->params.julia.ymin);
+        fractus_json_parse_double(buffer, "ymax", &metadata->params.julia.ymax);
+        fractus_json_parse_double(buffer, "constant_real", &metadata->params.julia.constant_real);
+        fractus_json_parse_double(buffer, "constant_imag", &metadata->params.julia.constant_imag);
+        fractus_json_parse_uint32(buffer, "max_iterations", &metadata->params.julia.max_iterations);
+        fractus_json_parse_double(buffer, "escape_radius_squared", &metadata->params.julia.escape_radius_squared);
+        fractus_json_parse_uint8(buffer, "inside_color_index", &metadata->params.julia.inside_color_index);
+        fractus_json_parse_uint8(buffer, "palette_offset", &metadata->params.julia.palette_offset);
+        fractus_json_parse_uint8(buffer, "palette_span", &metadata->params.julia.palette_span);
+        if (fractus_json_parse_string(buffer, "color_mode", mode_str, sizeof(mode_str))) {
+            if (strcmp(mode_str, "smooth") == 0) {
+                metadata->params.julia.color_mode = FRACTUS_JULIA_COLOR_SMOOTH;
+            } else {
+                metadata->params.julia.color_mode = FRACTUS_JULIA_COLOR_ESCAPE;
+            }
+        }
+    } else if (strcmp(type_str, "julia_dem") == 0) {
+        metadata->kind = FRACTUS_GRAPHIC_KIND_JULIA_DEM;
+        fractus_json_parse_double(buffer, "xmin", &metadata->params.julia_dem.xmin);
+        fractus_json_parse_double(buffer, "xmax", &metadata->params.julia_dem.xmax);
+        fractus_json_parse_double(buffer, "ymin", &metadata->params.julia_dem.ymin);
+        fractus_json_parse_double(buffer, "ymax", &metadata->params.julia_dem.ymax);
+        fractus_json_parse_double(buffer, "constant_real", &metadata->params.julia_dem.constant_real);
+        fractus_json_parse_double(buffer, "constant_imag", &metadata->params.julia_dem.constant_imag);
+        fractus_json_parse_uint32(buffer, "max_iterations", &metadata->params.julia_dem.max_iterations);
+        fractus_json_parse_double(buffer, "escape_radius_squared", &metadata->params.julia_dem.escape_radius_squared);
+        fractus_json_parse_uint8(buffer, "inside_color_index", &metadata->params.julia_dem.inside_color_index);
+        fractus_json_parse_uint8(buffer, "palette_offset", &metadata->params.julia_dem.palette_offset);
+        fractus_json_parse_uint8(buffer, "palette_span", &metadata->params.julia_dem.palette_span);
+        if (fractus_json_parse_string(buffer, "color_mode", mode_str, sizeof(mode_str))) {
+            if (strcmp(mode_str, "gradient") == 0) {
+                metadata->params.julia_dem.color_mode = FRACTUS_JULIA_DEM_COLOR_GRADIENT;
+            } else {
+                metadata->params.julia_dem.color_mode = FRACTUS_JULIA_DEM_COLOR_BOUNDARY;
+            }
+        }
+    } else if (strcmp(type_str, "biomorph") == 0) {
+        metadata->kind = FRACTUS_GRAPHIC_KIND_BIOMORPH;
+        fractus_json_parse_double(buffer, "xmin", &metadata->params.biomorph.xmin);
+        fractus_json_parse_double(buffer, "xmax", &metadata->params.biomorph.xmax);
+        fractus_json_parse_double(buffer, "ymin", &metadata->params.biomorph.ymin);
+        fractus_json_parse_double(buffer, "ymax", &metadata->params.biomorph.ymax);
+        fractus_json_parse_double(buffer, "constant_real", &metadata->params.biomorph.constant_real);
+        fractus_json_parse_double(buffer, "constant_imag", &metadata->params.biomorph.constant_imag);
+        fractus_json_parse_uint32(buffer, "max_iterations", &metadata->params.biomorph.max_iterations);
+        fractus_json_parse_double(buffer, "escape_radius_squared", &metadata->params.biomorph.escape_radius_squared);
+        fractus_json_parse_double(buffer, "cutoff", &metadata->params.biomorph.cutoff);
+        fractus_json_parse_uint8(buffer, "background_color_index", &metadata->params.biomorph.background_color_index);
+        fractus_json_parse_uint8(buffer, "palette_offset", &metadata->params.biomorph.palette_offset);
+        fractus_json_parse_uint8(buffer, "palette_span", &metadata->params.biomorph.palette_span);
+        if (fractus_json_parse_string(buffer, "equation", eq_str, sizeof(eq_str))) {
+            if (strcmp(eq_str, "z^3+c") == 0) {
+                metadata->params.biomorph.equation = FRACTUS_BIOMORPH_EQ_Z3;
+            } else if (strcmp(eq_str, "z^4+c") == 0) {
+                metadata->params.biomorph.equation = FRACTUS_BIOMORPH_EQ_Z4;
+            } else if (strcmp(eq_str, "z^5+c") == 0) {
+                metadata->params.biomorph.equation = FRACTUS_BIOMORPH_EQ_Z5;
+            } else if (strcmp(eq_str, "sin(z)+c") == 0) {
+                metadata->params.biomorph.equation = FRACTUS_BIOMORPH_EQ_SIN_Z;
+            } else if (strcmp(eq_str, "exp(z)+c") == 0) {
+                metadata->params.biomorph.equation = FRACTUS_BIOMORPH_EQ_EXP_Z;
+            } else {
+                metadata->params.biomorph.equation = FRACTUS_BIOMORPH_EQ_Z2;
+            }
+        }
+        if (fractus_json_parse_string(buffer, "trap_mode", trap_str, sizeof(trap_str))) {
+            if (strcmp(trap_str, "re_and_im") == 0) {
+                metadata->params.biomorph.trap_mode = FRACTUS_BIOMORPH_TRAP_RE_AND_IM;
+            } else if (strcmp(trap_str, "solo_re") == 0) {
+                metadata->params.biomorph.trap_mode = FRACTUS_BIOMORPH_TRAP_SOLO_RE;
+            } else if (strcmp(trap_str, "solo_im") == 0) {
+                metadata->params.biomorph.trap_mode = FRACTUS_BIOMORPH_TRAP_SOLO_IM;
+            } else {
+                metadata->params.biomorph.trap_mode = FRACTUS_BIOMORPH_TRAP_RE_OR_IM;
+            }
+        }
+    } else if (strcmp(type_str, "plasma_rectangular") == 0) {
+        metadata->kind = FRACTUS_GRAPHIC_KIND_PLASMA_RECTANGULAR;
+        fractus_json_parse_uint32(buffer, "seed", &metadata->params.plasma_rectangular.seed);
+        fractus_json_parse_int32(buffer, "dispersion", &metadata->params.plasma_rectangular.dispersion);
+        fractus_json_parse_uint8(buffer, "palette_offset", &metadata->params.plasma_rectangular.palette_offset);
+        fractus_json_parse_uint8(buffer, "palette_span", &metadata->params.plasma_rectangular.palette_span);
+    } else if (strcmp(type_str, "plasma_circular") == 0) {
+        metadata->kind = FRACTUS_GRAPHIC_KIND_PLASMA_CIRCULAR;
+        fractus_json_parse_uint32(buffer, "seed", &metadata->params.plasma_circular.seed);
+        fractus_json_parse_int32(buffer, "circle_count", &metadata->params.plasma_circular.circle_count);
+        fractus_json_parse_int32(buffer, "max_radius", &metadata->params.plasma_circular.max_radius);
+        fractus_json_parse_uint8(buffer, "palette_offset", &metadata->params.plasma_circular.palette_offset);
+        fractus_json_parse_uint8(buffer, "palette_span", &metadata->params.plasma_circular.palette_span);
+    } else if (strcmp(type_str, "lorenz") == 0) {
+        metadata->kind = FRACTUS_GRAPHIC_KIND_LORENZ;
+        fractus_json_parse_double(buffer, "sigma", &metadata->params.lorenz.sigma);
+        fractus_json_parse_double(buffer, "rho", &metadata->params.lorenz.rho);
+        fractus_json_parse_double(buffer, "beta", &metadata->params.lorenz.beta);
+        fractus_json_parse_double(buffer, "dt", &metadata->params.lorenz.dt);
+        fractus_json_parse_uint32(buffer, "iterations", &metadata->params.lorenz.iterations);
+        if (fractus_json_parse_string(buffer, "projection", proj_str, sizeof(proj_str))) {
+            if (strcmp(proj_str, "xy") == 0) {
+                metadata->params.lorenz.projection = FRACTUS_LORENZ_PROJECTION_XY;
+            } else if (strcmp(proj_str, "yz") == 0) {
+                metadata->params.lorenz.projection = FRACTUS_LORENZ_PROJECTION_YZ;
+            } else if (strcmp(proj_str, "custom") == 0) {
+                metadata->params.lorenz.projection = FRACTUS_LORENZ_PROJECTION_CUSTOM;
+            } else {
+                metadata->params.lorenz.projection = FRACTUS_LORENZ_PROJECTION_XZ;
+            }
+        }
+        fractus_json_parse_double(buffer, "rot_x", &metadata->params.lorenz.rot_x);
+        fractus_json_parse_double(buffer, "rot_y", &metadata->params.lorenz.rot_y);
+        fractus_json_parse_double(buffer, "rot_z", &metadata->params.lorenz.rot_z);
+        fractus_json_parse_uint8(buffer, "palette_offset", &metadata->params.lorenz.palette_offset);
+        fractus_json_parse_uint8(buffer, "palette_span", &metadata->params.lorenz.palette_span);
+    }
+
+    return FRACTUS_STATUS_OK;
+}

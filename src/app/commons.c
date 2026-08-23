@@ -503,9 +503,9 @@ fractus_status fractus_app_draw_drawing_footer_ex(
 
     if (saved_filename != NULL && saved_filename[0] != '\0') {
         if (allow_selection) {
-            (void)snprintf(footer_buf, sizeof(footer_buf), "Grabado %s - ESC / botón derecho: menú - S: seleccionar zona - F: flujo", saved_filename);
+            (void)snprintf(footer_buf, sizeof(footer_buf), "Grabado %s - ESC / botón derecho: menú - S: seleccionar zona - M: metadatos - F: flujo", saved_filename);
         } else {
-            (void)snprintf(footer_buf, sizeof(footer_buf), "Grabado %s - ESC o botón derecho: menú - F: flujo", saved_filename);
+            (void)snprintf(footer_buf, sizeof(footer_buf), "Grabado %s - ESC o botón derecho: menú - M: metadatos - F: flujo", saved_filename);
         }
         text = footer_buf;
     }
@@ -802,4 +802,224 @@ int fractus_app_handle_zone_selection_input(
     }
 
     return 0;
+}
+
+fractus_status fractus_app_draw_graphic_metadata_panel(
+    fractus_framebuffer *framebuffer,
+    const fractus_font_library *fonts,
+    const fractus_graphic_metadata *metadata)
+{
+    char title[128];
+    char lines[10][128];
+    size_t line_count = 0u;
+    int32_t max_text_width = 0;
+    int32_t title_width = 0;
+    int32_t text_height = 0;
+    int32_t panel_width;
+    int32_t panel_height;
+    int32_t panel_x;
+    int32_t panel_y;
+    int32_t line_y;
+    size_t i;
+
+    if (framebuffer == NULL || fonts == NULL || metadata == NULL) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    title[0] = '\0';
+    switch (metadata->kind) {
+    case FRACTUS_GRAPHIC_KIND_MANDELBROT:
+        (void)snprintf(title, sizeof(title), "Conjunto de Mandelbrot");
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Resolucion: %ux%u", (unsigned)metadata->width, (unsigned)metadata->height);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "X: [%.7g, %.7g]", metadata->params.mandelbrot.xmin, metadata->params.mandelbrot.xmax);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Y: [%.7g, %.7g]", metadata->params.mandelbrot.ymin, metadata->params.mandelbrot.ymax);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Iteraciones max.: %u", (unsigned)metadata->params.mandelbrot.max_iterations);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Radio escape: %.4g", metadata->params.mandelbrot.escape_radius_squared);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Modo color: %s",
+            (metadata->params.mandelbrot.color_mode == FRACTUS_MANDELBROT_COLOR_SMOOTH) ? "Suave" : "Escape");
+        break;
+
+    case FRACTUS_GRAPHIC_KIND_MANDELBROT_DEM:
+        (void)snprintf(title, sizeof(title), "Mandelbrot (DEM)");
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Resolucion: %ux%u", (unsigned)metadata->width, (unsigned)metadata->height);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "X: [%.7g, %.7g]", metadata->params.mandelbrot_dem.xmin, metadata->params.mandelbrot_dem.xmax);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Y: [%.7g, %.7g]", metadata->params.mandelbrot_dem.ymin, metadata->params.mandelbrot_dem.ymax);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Iteraciones max.: %u", (unsigned)metadata->params.mandelbrot_dem.max_iterations);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Radio escape: %.4g", metadata->params.mandelbrot_dem.escape_radius_squared);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Modo color: %s",
+            (metadata->params.mandelbrot_dem.color_mode == FRACTUS_MANDELBROT_DEM_COLOR_GRADIENT) ? "Gradiente" : "Frontera");
+        break;
+
+    case FRACTUS_GRAPHIC_KIND_JULIA:
+        (void)snprintf(title, sizeof(title), "Conjunto de Gaston Julia");
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Resolucion: %ux%u", (unsigned)metadata->width, (unsigned)metadata->height);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "X: [%.7g, %.7g]", metadata->params.julia.xmin, metadata->params.julia.xmax);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Y: [%.7g, %.7g]", metadata->params.julia.ymin, metadata->params.julia.ymax);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "C: %.6g %c %.6g i",
+            metadata->params.julia.constant_real,
+            (metadata->params.julia.constant_imag >= 0.0) ? '+' : '-',
+            fabs(metadata->params.julia.constant_imag));
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Iteraciones max.: %u", (unsigned)metadata->params.julia.max_iterations);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Radio escape: %.4g", metadata->params.julia.escape_radius_squared);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Modo color: %s",
+            (metadata->params.julia.color_mode == FRACTUS_JULIA_COLOR_SMOOTH) ? "Suave" : "Escape");
+        break;
+
+    case FRACTUS_GRAPHIC_KIND_JULIA_DEM:
+        (void)snprintf(title, sizeof(title), "Julia (DEM)");
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Resolucion: %ux%u", (unsigned)metadata->width, (unsigned)metadata->height);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "X: [%.7g, %.7g]", metadata->params.julia_dem.xmin, metadata->params.julia_dem.xmax);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Y: [%.7g, %.7g]", metadata->params.julia_dem.ymin, metadata->params.julia_dem.ymax);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "C: %.6g %c %.6g i",
+            metadata->params.julia_dem.constant_real,
+            (metadata->params.julia_dem.constant_imag >= 0.0) ? '+' : '-',
+            fabs(metadata->params.julia_dem.constant_imag));
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Iteraciones max.: %u", (unsigned)metadata->params.julia_dem.max_iterations);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Radio escape: %.4g", metadata->params.julia_dem.escape_radius_squared);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Modo color: %s",
+            (metadata->params.julia_dem.color_mode == FRACTUS_JULIA_DEM_COLOR_GRADIENT) ? "Gradiente" : "Frontera");
+        break;
+
+    case FRACTUS_GRAPHIC_KIND_BIOMORPH:
+        (void)snprintf(title, sizeof(title), "Biomorfo de Pickover");
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Resolucion: %ux%u", (unsigned)metadata->width, (unsigned)metadata->height);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "X: [%.7g, %.7g]", metadata->params.biomorph.xmin, metadata->params.biomorph.xmax);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Y: [%.7g, %.7g]", metadata->params.biomorph.ymin, metadata->params.biomorph.ymax);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "C: %.6g %c %.6g i",
+            metadata->params.biomorph.constant_real,
+            (metadata->params.biomorph.constant_imag >= 0.0) ? '+' : '-',
+            fabs(metadata->params.biomorph.constant_imag));
+        {
+            const char *eq_name = "z^2+c";
+            const char *trap_name = "Re OR Im";
+            switch (metadata->params.biomorph.equation) {
+            case FRACTUS_BIOMORPH_EQ_Z2: eq_name = "z^2+c"; break;
+            case FRACTUS_BIOMORPH_EQ_Z3: eq_name = "z^3+c"; break;
+            case FRACTUS_BIOMORPH_EQ_Z4: eq_name = "z^4+c"; break;
+            case FRACTUS_BIOMORPH_EQ_Z5: eq_name = "z^5+c"; break;
+            case FRACTUS_BIOMORPH_EQ_SIN_Z: eq_name = "sin(z)+c"; break;
+            case FRACTUS_BIOMORPH_EQ_EXP_Z: eq_name = "exp(z)+c"; break;
+            }
+            switch (metadata->params.biomorph.trap_mode) {
+            case FRACTUS_BIOMORPH_TRAP_RE_OR_IM: trap_name = "Re OR Im"; break;
+            case FRACTUS_BIOMORPH_TRAP_RE_AND_IM: trap_name = "Re AND Im"; break;
+            case FRACTUS_BIOMORPH_TRAP_SOLO_RE: trap_name = "Solo Re"; break;
+            case FRACTUS_BIOMORPH_TRAP_SOLO_IM: trap_name = "Solo Im"; break;
+            }
+            (void)snprintf(lines[line_count++], sizeof(lines[0]), "Ecuacion: %s | Modo: %s", eq_name, trap_name);
+        }
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Iteraciones max.: %u | Cutoff: %.4g",
+            (unsigned)metadata->params.biomorph.max_iterations, metadata->params.biomorph.cutoff);
+        break;
+
+    case FRACTUS_GRAPHIC_KIND_PLASMA_RECTANGULAR:
+        (void)snprintf(title, sizeof(title), "Plasma Rectangular");
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Resolucion: %ux%u", (unsigned)metadata->width, (unsigned)metadata->height);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Semilla: %u", (unsigned)metadata->params.plasma_rectangular.seed);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Dispersion: %d", (int)metadata->params.plasma_rectangular.dispersion);
+        break;
+
+    case FRACTUS_GRAPHIC_KIND_PLASMA_CIRCULAR:
+        (void)snprintf(title, sizeof(title), "Plasma Circular");
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Resolucion: %ux%u", (unsigned)metadata->width, (unsigned)metadata->height);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Semilla: %u", (unsigned)metadata->params.plasma_circular.seed);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Circulos: %d | Radio max: %d",
+            (int)metadata->params.plasma_circular.circle_count, (int)metadata->params.plasma_circular.max_radius);
+        break;
+
+    case FRACTUS_GRAPHIC_KIND_LORENZ:
+        (void)snprintf(title, sizeof(title), "Atractor de Lorenz (3D)");
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Resolucion: %ux%u", (unsigned)metadata->width, (unsigned)metadata->height);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Sigma: %.4g | Rho: %.4g | Beta: %.4g",
+            metadata->params.lorenz.sigma, metadata->params.lorenz.rho, metadata->params.lorenz.beta);
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "dt: %.4g | Iteraciones: %u",
+            metadata->params.lorenz.dt, (unsigned)metadata->params.lorenz.iterations);
+        {
+            const char *proj_name = "Plano X-Z";
+            switch (metadata->params.lorenz.projection) {
+            case FRACTUS_LORENZ_PROJECTION_XZ: proj_name = "Plano X-Z"; break;
+            case FRACTUS_LORENZ_PROJECTION_XY: proj_name = "Plano X-Y"; break;
+            case FRACTUS_LORENZ_PROJECTION_YZ: proj_name = "Plano Y-Z"; break;
+            case FRACTUS_LORENZ_PROJECTION_CUSTOM: proj_name = "Rotacion libre 3D"; break;
+            }
+            (void)snprintf(lines[line_count++], sizeof(lines[0]), "Proyeccion: %s", proj_name);
+        }
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Rotacion: X=%.1f\370 Y=%.1f\370 Z=%.1f\370",
+            metadata->params.lorenz.rot_x, metadata->params.lorenz.rot_y, metadata->params.lorenz.rot_z);
+        break;
+
+    case FRACTUS_GRAPHIC_KIND_UNKNOWN:
+    default:
+        (void)snprintf(title, sizeof(title), "Dibujo Fractus-x64");
+        (void)snprintf(lines[line_count++], sizeof(lines[0]), "Resolucion: %ux%u", (unsigned)metadata->width, (unsigned)metadata->height);
+        break;
+    }
+
+    fractus_font_kind font = (framebuffer->size.width <= 1024u && framebuffer->size.height <= 768u)
+        ? FRACTUS_FONT_SMALL
+        : FRACTUS_FONT_ARIAL;
+    int32_t pad_x = (font == FRACTUS_FONT_ARIAL) ? 12 : 8;
+    int32_t pad_y = (font == FRACTUS_FONT_ARIAL) ? 8 : 6;
+    int32_t title_margin = (font == FRACTUS_FONT_ARIAL) ? 10 : 7;
+    int32_t line_gap = (font == FRACTUS_FONT_ARIAL) ? 4 : 3;
+    int32_t line_step;
+
+    (void)fractus_font_measure_text(fonts, font, title, &title_width, &text_height);
+    if (text_height <= 0) {
+        text_height = (font == FRACTUS_FONT_ARIAL) ? 14 : 9;
+    }
+    max_text_width = title_width;
+    for (i = 0u; i < line_count; ++i) {
+        int32_t w = 0;
+        int32_t h = 0;
+        (void)fractus_font_measure_text(fonts, font, lines[i], &w, &h);
+        if (w > max_text_width) {
+            max_text_width = w;
+        }
+    }
+
+    line_step = text_height + line_gap;
+    panel_width = max_text_width + pad_x * 2;
+    if (panel_width < 220) {
+        panel_width = 220;
+    }
+    panel_height = pad_y + text_height + title_margin + (int32_t)line_count * line_step + pad_y;
+
+    panel_x = (int32_t)framebuffer->size.width - panel_width - 8;
+    panel_y = (int32_t)framebuffer->size.height - panel_height - 28;
+    if (panel_x < 0) {
+        panel_x = 0;
+    }
+    if (panel_y < 0) {
+        panel_y = 0;
+    }
+
+    /* Fondo gris oscuro (7u) con relieve biselado y texto blanco (15u) */
+    (void)fractus_graphics_fill_rect(
+        framebuffer,
+        (fractus_rect_i32){panel_x, panel_y, panel_width, panel_height},
+        7u);
+    (void)fractus_graphics_rect(
+        framebuffer,
+        (fractus_rect_i32){panel_x, panel_y, panel_width, panel_height},
+        15u);
+    (void)fractus_graphics_line(framebuffer, panel_x + 1, panel_y + panel_height - 1, panel_x + panel_width - 1, panel_y + panel_height - 1, 0u);
+    (void)fractus_graphics_line(framebuffer, panel_x + panel_width - 1, panel_y + 1, panel_x + panel_width - 1, panel_y + panel_height - 1, 0u);
+
+    /* Titulo del panel */
+    (void)fractus_ui_draw_text_left(framebuffer, fonts, font, panel_x + pad_x, panel_y + pad_y, 15u, title);
+    {
+        int32_t sep_y = panel_y + pad_y + text_height + title_margin / 2;
+        (void)fractus_graphics_line(framebuffer, panel_x + 6, sep_y, panel_x + panel_width - 7, sep_y, 8u);
+        (void)fractus_graphics_line(framebuffer, panel_x + 6, sep_y + 1, panel_x + panel_width - 7, sep_y + 1, 0u);
+    }
+
+    /* Lineas de parametros y coordenadas */
+    line_y = panel_y + pad_y + text_height + title_margin;
+    for (i = 0u; i < line_count; ++i) {
+        (void)fractus_ui_draw_text_left(framebuffer, fonts, font, panel_x + pad_x, line_y, 15u, lines[i]);
+        line_y += line_step;
+    }
+
+    return FRACTUS_STATUS_OK;
 }

@@ -603,14 +603,19 @@ fractus_status fractus_app_render_mandelbrot(
     char *saved_filename,
     size_t saved_filename_size)
 {
+    fractus_graphic_metadata metadata;
+
     if (platform == NULL || framebuffer == NULL || fonts == NULL || params == NULL) {
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
+
+    metadata = fractus_graphic_metadata_from_mandelbrot(params, framebuffer->size.width, framebuffer->size.height);
 
     if (fractus_fractal_render_mandelbrot(framebuffer, params) != FRACTUS_STATUS_OK ||
         fractus_app_save_next_graphic_if_requested_ex(
             platform,
             framebuffer,
+            &metadata,
             save_next_graphic,
             error_message,
             error_message_size,
@@ -619,12 +624,8 @@ fractus_status fractus_app_render_mandelbrot(
         return FRACTUS_STATUS_ERROR;
     }
 
-    return fractus_app_draw_drawing_footer_ex(
-        framebuffer,
-        fonts,
-        "ESC / botón derecho: menú - G: grabar - S: seleccionar zona - F: flujo",
-        saved_filename,
-        1);
+    (void)fonts;
+    return FRACTUS_STATUS_OK;
 }
 
 fractus_status fractus_app_render_mandelbrot_dem(
@@ -638,14 +639,19 @@ fractus_status fractus_app_render_mandelbrot_dem(
     char *saved_filename,
     size_t saved_filename_size)
 {
+    fractus_graphic_metadata metadata;
+
     if (platform == NULL || framebuffer == NULL || fonts == NULL || params == NULL) {
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
+
+    metadata = fractus_graphic_metadata_from_mandelbrot_dem(params, framebuffer->size.width, framebuffer->size.height);
 
     if (fractus_fractal_render_mandelbrot_dem(framebuffer, params) != FRACTUS_STATUS_OK ||
         fractus_app_save_next_graphic_if_requested_ex(
             platform,
             framebuffer,
+            &metadata,
             save_next_graphic,
             error_message,
             error_message_size,
@@ -654,10 +660,6 @@ fractus_status fractus_app_render_mandelbrot_dem(
         return FRACTUS_STATUS_ERROR;
     }
 
-    return fractus_app_draw_drawing_footer_ex(
-        framebuffer,
-        fonts,
-        "ESC / botón derecho: menú - G: grabar - S: seleccionar zona - F: flujo",
-        saved_filename,
-        1);
+    (void)fonts;
+    return FRACTUS_STATUS_OK;
 }

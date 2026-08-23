@@ -1,6 +1,7 @@
 #include "test_common.h"
 #include "core/formats.h"
 #include "platform/framebuffer.h"
+#include <string.h>
 
 static int test_legacy_config_defaults(void)
 {
@@ -131,6 +132,139 @@ static int test_bmp_save_and_formats_roundtrip(void)
     return 1;
 }
 
+static int test_graphic_metadata_json_save(void)
+{
+    fractus_mandelbrot_params mandel = {
+        .xmin = -2.1,
+        .xmax = 0.8,
+        .ymin = -1.2,
+        .ymax = 1.2,
+        .max_iterations = 250,
+        .escape_radius_squared = 4.0,
+        .inside_color_index = 0,
+        .palette_offset = 16,
+        .palette_span = 240,
+        .color_mode = FRACTUS_MANDELBROT_COLOR_ESCAPE
+    };
+    fractus_biomorph_params bio = {
+        .xmin = -2.0,
+        .xmax = 2.0,
+        .ymin = -2.0,
+        .ymax = 2.0,
+        .constant_real = 0.5,
+        .constant_imag = 0.0,
+        .max_iterations = 250,
+        .escape_radius_squared = 100.0,
+        .cutoff = 10.0,
+        .background_color_index = 0,
+        .palette_offset = 16,
+        .palette_span = 240,
+        .equation = FRACTUS_BIOMORPH_EQ_Z3,
+        .trap_mode = FRACTUS_BIOMORPH_TRAP_RE_OR_IM
+    };
+    fractus_lorenz_params lorenz = {
+        .sigma = 10.0,
+        .rho = 28.0,
+        .beta = 8.0 / 3.0,
+        .dt = 0.01,
+        .iterations = 10000,
+        .projection = FRACTUS_LORENZ_PROJECTION_XZ,
+        .rot_x = 0.0,
+        .rot_y = 0.0,
+        .rot_z = 0.0,
+        .palette_offset = 16,
+        .palette_span = 240
+    };
+    const char *test_json = "test_metadata_temp.json";
+    char buffer[2048];
+    FILE *f;
+    size_t bytes_read;
+
+    fractus_graphic_metadata meta = fractus_graphic_metadata_from_mandelbrot(&mandel, 640, 480);
+    TEST_ASSERT(fractus_graphic_metadata_save_json(test_json, &meta) == FRACTUS_STATUS_OK, "Mandelbrot JSON save failed");
+
+    f = fopen(test_json, "r");
+    TEST_ASSERT(f != NULL, "Failed to open saved Mandelbrot JSON");
+    bytes_read = fread(buffer, 1, sizeof(buffer) - 1, f);
+    buffer[bytes_read] = '\0';
+    fclose(f);
+    remove(test_json);
+
+    TEST_ASSERT(strstr(buffer, "\"application\": \"Fractus-x64\"") != NULL, "JSON application missing");
+    TEST_ASSERT(strstr(buffer, "\"fractal_type\": \"mandelbrot\"") != NULL, "JSON fractal_type missing");
+    TEST_ASSERT(strstr(buffer, "\"max_iterations\": 250") != NULL, "JSON max_iterations missing");
+    TEST_ASSERT(strstr(buffer, "\"color_mode\": \"escape\"") != NULL, "JSON color_mode missing");
+
+    meta = fractus_graphic_metadata_from_biomorph(&bio, 800, 600);
+    TEST_ASSERT(fractus_graphic_metadata_save_json(test_json, &meta) == FRACTUS_STATUS_OK, "Biomorph JSON save failed");
+    f = fopen(test_json, "r");
+    TEST_ASSERT(f != NULL, "Failed to open saved Biomorph JSON");
+    bytes_read = fread(buffer, 1, sizeof(buffer) - 1, f);
+    buffer[bytes_read] = '\0';
+    fclose(f);
+    remove(test_json);
+
+    TEST_ASSERT(strstr(buffer, "\"fractal_type\": \"biomorph\"") != NULL, "JSON biomorph missing");
+    TEST_ASSERT(strstr(buffer, "\"equation\": \"z^3+c\"") != NULL, "JSON equation missing");
+    TEST_ASSERT(strstr(buffer, "\"trap_mode\": \"re_or_im\"") != NULL, "JSON trap_mode missing");
+
+    meta = fractus_graphic_metadata_from_lorenz(&lorenz, 1024, 768);
+    TEST_ASSERT(fractus_graphic_metadata_save_json(test_json, &meta) == FRACTUS_STATUS_OK, "Lorenz JSON save failed");
+    f = fopen(test_json, "r");
+    TEST_ASSERT(f != NULL, "Failed to open saved Lorenz JSON");
+    bytes_read = fread(buffer, 1, sizeof(buffer) - 1, f);
+    buffer[bytes_read] = '\0';
+    fclose(f);
+    remove(test_json);
+
+    TEST_ASSERT(strstr(buffer, "\"fractal_type\": \"lorenz\"") != NULL, "JSON lorenz missing");
+    TEST_ASSERT(strstr(buffer, "\"sigma\": 10") != NULL, "JSON sigma missing");
+    TEST_ASSERT(strstr(buffer, "\"projection\": \"xz\"") != NULL, "JSON projection missing");
+
+    return 1;
+}
+
+static int test_graphic_metadata_json_load(void)
+{
+    fractus_biomorph_params bio = {
+        .xmin = -2.5,
+        .xmax = 2.5,
+        .ymin = -1.8,
+        .ymax = 1.8,
+        .constant_real = 0.35,
+        .constant_imag = -0.42,
+        .max_iterations = 300,
+        .escape_radius_squared = 50.0,
+        .cutoff = 8.5,
+        .background_color_index = 0,
+        .palette_offset = 16,
+        .palette_span = 240,
+        .equation = FRACTUS_BIOMORPH_EQ_SIN_Z,
+        .trap_mode = FRACTUS_BIOMORPH_TRAP_RE_AND_IM
+    };
+    const char *test_json = "test_metadata_load_temp.json";
+    fractus_graphic_metadata saved_meta = fractus_graphic_metadata_from_biomorph(&bio, 800, 600);
+    fractus_graphic_metadata loaded_meta;
+
+    TEST_ASSERT(fractus_graphic_metadata_save_json(test_json, &saved_meta) == FRACTUS_STATUS_OK, "JSON save failed");
+    TEST_ASSERT(fractus_graphic_metadata_load_json(test_json, &loaded_meta) == FRACTUS_STATUS_OK, "JSON load failed");
+    remove(test_json);
+
+    TEST_ASSERT_EQUAL_INT(FRACTUS_GRAPHIC_KIND_BIOMORPH, loaded_meta.kind, "Loaded kind mismatch");
+    TEST_ASSERT_EQUAL_INT(800, (int)loaded_meta.width, "Loaded width mismatch");
+    TEST_ASSERT_EQUAL_INT(600, (int)loaded_meta.height, "Loaded height mismatch");
+    TEST_ASSERT(fabs(loaded_meta.params.biomorph.xmin - (-2.5)) < 1e-6, "xmin mismatch");
+    TEST_ASSERT(fabs(loaded_meta.params.biomorph.xmax - 2.5) < 1e-6, "xmax mismatch");
+    TEST_ASSERT(fabs(loaded_meta.params.biomorph.constant_real - 0.35) < 1e-6, "constant_real mismatch");
+    TEST_ASSERT(fabs(loaded_meta.params.biomorph.constant_imag - (-0.42)) < 1e-6, "constant_imag mismatch");
+    TEST_ASSERT_EQUAL_INT(300, (int)loaded_meta.params.biomorph.max_iterations, "max_iterations mismatch");
+    TEST_ASSERT(fabs(loaded_meta.params.biomorph.cutoff - 8.5) < 1e-6, "cutoff mismatch");
+    TEST_ASSERT_EQUAL_INT(FRACTUS_BIOMORPH_EQ_SIN_Z, loaded_meta.params.biomorph.equation, "equation mismatch");
+    TEST_ASSERT_EQUAL_INT(FRACTUS_BIOMORPH_TRAP_RE_AND_IM, loaded_meta.params.biomorph.trap_mode, "trap_mode mismatch");
+
+    return 1;
+}
+
 int main(void)
 {
     printf("=== RUNNING FORMATS & CONFIG TESTS ===\n");
@@ -138,5 +272,7 @@ int main(void)
     TEST_RUN(test_legacy_config_save_and_load);
     TEST_RUN(test_palette_operations);
     TEST_RUN(test_bmp_save_and_formats_roundtrip);
+    TEST_RUN(test_graphic_metadata_json_save);
+    TEST_RUN(test_graphic_metadata_json_load);
     TEST_REPORT();
 }

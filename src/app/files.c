@@ -272,11 +272,13 @@ fractus_status fractus_app_save_current_palette_file(
     return fractus_app_persist_current_palette(cfg_path, framebuffer, config);
 }
 
-fractus_status fractus_app_load_graphic_into_state(
+fractus_status fractus_app_load_graphic_into_state_ex(
     const char *graphic_path,
     fractus_framebuffer *framebuffer,
     fractus_legacy_config *config,
-    const char *cfg_path)
+    const char *cfg_path,
+    fractus_graphic_metadata *out_metadata,
+    int *out_has_metadata)
 {
     fractus_indexed_image image;
     fractus_palette palette;
@@ -285,6 +287,10 @@ fractus_status fractus_app_load_graphic_into_state(
 
     if (graphic_path == NULL || framebuffer == NULL || config == NULL || !framebuffer->initialized) {
         return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    if (out_has_metadata != NULL) {
+        *out_has_metadata = 0;
     }
 
     memset(&image, 0, sizeof(image));
@@ -309,7 +315,33 @@ fractus_status fractus_app_load_graphic_into_state(
     }
 
     fractus_indexed_image_shutdown(&image);
+
+    if (out_metadata != NULL && out_has_metadata != NULL) {
+        char json_path[512];
+        char *dot;
+        if (fractus_formats_copy_path(graphic_path, json_path, sizeof(json_path)) == FRACTUS_STATUS_OK) {
+            dot = strrchr(json_path, '.');
+            if (dot != NULL) {
+                (void)snprintf(dot, sizeof(json_path) - (size_t)(dot - json_path), ".json");
+            } else {
+                (void)strncat(json_path, ".json", sizeof(json_path) - strlen(json_path) - 1);
+            }
+            if (fractus_graphic_metadata_load_json(json_path, out_metadata) == FRACTUS_STATUS_OK) {
+                *out_has_metadata = 1;
+            }
+        }
+    }
+
     return fractus_app_persist_current_palette(cfg_path, framebuffer, config);
+}
+
+fractus_status fractus_app_load_graphic_into_state(
+    const char *graphic_path,
+    fractus_framebuffer *framebuffer,
+    fractus_legacy_config *config,
+    const char *cfg_path)
+{
+    return fractus_app_load_graphic_into_state_ex(graphic_path, framebuffer, config, cfg_path, NULL, NULL);
 }
 
 fractus_status fractus_app_change_graphic_palette_into_state(
@@ -379,11 +411,14 @@ fractus_status fractus_app_change_graphic_palette_into_state(
 fractus_status fractus_app_save_current_graphic_file_ex(
     const fractus_platform_context *platform,
     const fractus_framebuffer *framebuffer,
+    const fractus_graphic_metadata *metadata,
     char *out_saved_name,
     size_t out_saved_name_size)
 {
     fractus_indexed_image image;
     char graphic_path[512];
+    char json_path[512];
+    char *dot;
     fractus_status status;
 
     if (platform == NULL || framebuffer == NULL || !framebuffer->initialized) {
@@ -425,6 +460,30 @@ fractus_status fractus_app_save_current_graphic_file_ex(
         return status;
     }
 
+    if (fractus_formats_copy_path(graphic_path, json_path, sizeof(json_path)) == FRACTUS_STATUS_OK) {
+        dot = strrchr(json_path, '.');
+        if (dot != NULL) {
+            (void)snprintf(dot, sizeof(json_path) - (size_t)(dot - json_path), ".json");
+        } else {
+            (void)strncat(json_path, ".json", sizeof(json_path) - strlen(json_path) - 1);
+        }
+
+        if (metadata != NULL) {
+            if (fractus_graphic_metadata_save_json(json_path, metadata) != FRACTUS_STATUS_OK) {
+                fractus_app_log("graphic: saving companion .json metadata failed");
+            }
+        } else {
+            fractus_graphic_metadata fallback;
+            memset(&fallback, 0, sizeof(fallback));
+            fallback.kind = FRACTUS_GRAPHIC_KIND_UNKNOWN;
+            fallback.width = framebuffer->size.width;
+            fallback.height = framebuffer->size.height;
+            if (fractus_graphic_metadata_save_json(json_path, &fallback) != FRACTUS_STATUS_OK) {
+                fractus_app_log("graphic: saving companion .json metadata failed");
+            }
+        }
+    }
+
     return FRACTUS_STATUS_OK;
 }
 
@@ -432,12 +491,13 @@ fractus_status fractus_app_save_current_graphic_file(
     const fractus_platform_context *platform,
     const fractus_framebuffer *framebuffer)
 {
-    return fractus_app_save_current_graphic_file_ex(platform, framebuffer, NULL, 0u);
+    return fractus_app_save_current_graphic_file_ex(platform, framebuffer, NULL, NULL, 0u);
 }
 
 fractus_status fractus_app_save_next_graphic_if_requested_ex(
     const fractus_platform_context *platform,
     const fractus_framebuffer *framebuffer,
+    const fractus_graphic_metadata *metadata,
     int *save_next_graphic,
     char *error_message,
     size_t error_message_size,
@@ -451,7 +511,7 @@ fractus_status fractus_app_save_next_graphic_if_requested_ex(
     }
 
     *save_next_graphic = 0;
-    status = fractus_app_save_current_graphic_file_ex(platform, framebuffer, out_saved_name, out_saved_name_size);
+    status = fractus_app_save_current_graphic_file_ex(platform, framebuffer, metadata, out_saved_name, out_saved_name_size);
     if (status != FRACTUS_STATUS_OK) {
         fractus_app_log("runtime: saving next graphic failed");
         if (status == FRACTUS_STATUS_UNSUPPORTED) {
@@ -475,6 +535,7 @@ fractus_status fractus_app_save_next_graphic_if_requested(
     return fractus_app_save_next_graphic_if_requested_ex(
         platform,
         framebuffer,
+        NULL,
         save_next_graphic,
         error_message,
         error_message_size,
@@ -869,6 +930,8 @@ fractus_status fractus_app_run_load_graphic_view(
     size_t *graphic_file_page,
     fractus_legacy_config *legacy_config,
     const char *cfg_path,
+    fractus_graphic_metadata *loaded_metadata,
+    int *has_loaded_metadata,
     fractus_app_view *view)
 {
     fractus_app_menu_entry dialog_entries[FRACTUS_APP_DIALOG_BUTTON_CAPACITY];
@@ -929,11 +992,13 @@ fractus_status fractus_app_run_load_graphic_view(
                 ++(*graphic_file_page);
             }
         } else if (selected_menu >= 0 && (size_t)selected_menu < visible_file_count) {
-            if (fractus_app_load_graphic_into_state(
+            if (fractus_app_load_graphic_into_state_ex(
                     graphic_files[first_file + (size_t)selected_menu].path,
                     drawing_framebuffer,
                     legacy_config,
-                    cfg_path) != FRACTUS_STATUS_OK ||
+                    cfg_path,
+                    loaded_metadata,
+                    has_loaded_metadata) != FRACTUS_STATUS_OK ||
                 fractus_app_sync_framebuffer_palette(ui_framebuffer, drawing_framebuffer) != FRACTUS_STATUS_OK) {
                 fractus_app_log("runtime: loading selected graphic failed");
                 *view = FRACTUS_APP_VIEW_MAIN_MENU;
@@ -1234,6 +1299,8 @@ fractus_status fractus_app_run_change_graphic_palette_palette_view(
     const char *cfg_path,
     char *error_message,
     size_t error_message_size,
+    fractus_graphic_metadata *loaded_metadata,
+    int *has_loaded_metadata,
     fractus_app_view *view)
 {
     fractus_app_menu_entry dialog_entries[FRACTUS_APP_DIALOG_BUTTON_CAPACITY];
@@ -1317,6 +1384,22 @@ fractus_status fractus_app_run_change_graphic_palette_palette_view(
                     *view = FRACTUS_APP_VIEW_MAIN_MENU;
                 }
             } else {
+                if (loaded_metadata != NULL && has_loaded_metadata != NULL) {
+                    char json_path[512];
+                    char *dot;
+                    *has_loaded_metadata = 0;
+                    if (fractus_formats_copy_path(selected_graphic_path, json_path, sizeof(json_path)) == FRACTUS_STATUS_OK) {
+                        dot = strrchr(json_path, '.');
+                        if (dot != NULL) {
+                            (void)snprintf(dot, sizeof(json_path) - (size_t)(dot - json_path), ".json");
+                        } else {
+                            (void)strncat(json_path, ".json", sizeof(json_path) - strlen(json_path) - 1);
+                        }
+                        if (fractus_graphic_metadata_load_json(json_path, loaded_metadata) == FRACTUS_STATUS_OK) {
+                            *has_loaded_metadata = 1;
+                        }
+                    }
+                }
                 if (fractus_app_sync_framebuffer_palette(ui_framebuffer, drawing_framebuffer) != FRACTUS_STATUS_OK) {
                     return FRACTUS_STATUS_ERROR;
                 }
