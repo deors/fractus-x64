@@ -27,6 +27,7 @@ typedef struct fractus_legacy_config {
     uint8_t drawing_video_mode;
     int16_t iterations;
     int16_t escape_radius_squared;
+    int16_t biomorph_iterations;
     int16_t biomorph_escape_radius_squared;
     int16_t biomorph_cutoff;
     uint32_t plasma_rectangular_seed;

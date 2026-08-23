@@ -122,6 +122,7 @@ static fractus_status fractus_app_run_main_menu_view(
     fractus_app_biomorph_fields *biomorph_fields,
     fractus_ui_numeric_field *iterations_field,
     fractus_ui_numeric_field *escape_radius_field,
+    fractus_ui_numeric_field *biomorph_iterations_field,
     fractus_ui_numeric_field *biomorph_radius_field,
     fractus_ui_numeric_field *biomorph_cutoff_field,
     fractus_ui_numeric_field *plasma_rect_seed_field,
@@ -149,7 +150,8 @@ static fractus_status fractus_app_run_main_menu_view(
         biomorph_params == NULL || biomorph_pending == NULL ||
         plasma_rectangular_params == NULL || plasma_circular_params == NULL ||
         attractor_selected_method == NULL || biomorph_fields == NULL ||
-        iterations_field == NULL || escape_radius_field == NULL || biomorph_radius_field == NULL ||
+        iterations_field == NULL || escape_radius_field == NULL ||
+        biomorph_iterations_field == NULL || biomorph_radius_field == NULL ||
         biomorph_cutoff_field == NULL || plasma_rect_seed_field == NULL || plasma_circ_seed_field == NULL ||
         graphic_files == NULL || graphic_file_count == NULL || graphic_file_page == NULL || palette_files == NULL ||
         palette_file_count == NULL || palette_file_page == NULL || runtime_error_message == NULL || cfg_path == NULL ||
@@ -196,6 +198,7 @@ static fractus_status fractus_app_run_main_menu_view(
                 biomorph_pending->ymax,
                 biomorph_pending->constant_real,
                 biomorph_pending->constant_imag,
+                biomorph_pending->max_iterations,
                 biomorph_pending->escape_radius_squared,
                 biomorph_pending->cutoff);
             *view = FRACTUS_APP_VIEW_BIOMORPH_CONFIG;
@@ -211,37 +214,43 @@ static fractus_status fractus_app_run_main_menu_view(
             *config_draft = *legacy_config;
             (void)fractus_ui_numeric_field_init_int(
                 iterations_field,
-                (fractus_rect_i32){324, 131, 73, 20},
+                (fractus_rect_i32){324, 115, 73, 20},
                 (int32_t)config_draft->iterations,
-                16,
-                1024);
+                1,
+                1000);
             (void)fractus_ui_numeric_field_init_int(
                 escape_radius_field,
-                (fractus_rect_i32){324, 157, 73, 20},
+                (fractus_rect_i32){324, 141, 73, 20},
                 (int32_t)config_draft->escape_radius_squared,
                 4,
                 1000);
             (void)fractus_ui_numeric_field_init_int(
+                biomorph_iterations_field,
+                (fractus_rect_i32){324, 189, 73, 20},
+                (int32_t)config_draft->biomorph_iterations,
+                1,
+                1000);
+            (void)fractus_ui_numeric_field_init_int(
                 biomorph_radius_field,
-                (fractus_rect_i32){324, 207, 73, 20},
+                (fractus_rect_i32){324, 215, 73, 20},
                 (int32_t)config_draft->biomorph_escape_radius_squared,
                 4,
                 1000);
             (void)fractus_ui_numeric_field_init_int(
                 biomorph_cutoff_field,
-                (fractus_rect_i32){324, 233, 73, 20},
+                (fractus_rect_i32){324, 241, 73, 20},
                 (int32_t)config_draft->biomorph_cutoff,
                 1,
                 100);
             (void)fractus_ui_numeric_field_init_int(
                 plasma_rect_seed_field,
-                (fractus_rect_i32){324, 283, 73, 20},
+                (fractus_rect_i32){324, 289, 73, 20},
                 (int32_t)config_draft->plasma_rectangular_seed,
                 1,
                 999999);
             (void)fractus_ui_numeric_field_init_int(
                 plasma_circ_seed_field,
-                (fractus_rect_i32){324, 309, 73, 20},
+                (fractus_rect_i32){324, 315, 73, 20},
                 (int32_t)config_draft->plasma_circular_seed,
                 1,
                 999999);
@@ -310,6 +319,7 @@ static fractus_status fractus_app_run_main_menu_view(
                 biomorph_pending->ymax,
                 biomorph_pending->constant_real,
                 biomorph_pending->constant_imag,
+                biomorph_pending->max_iterations,
                 biomorph_pending->escape_radius_squared,
                 biomorph_pending->cutoff);
             fractus_app_log("runtime: default fractal parameters restored");
@@ -421,6 +431,7 @@ int fractus_app_run(void)
     fractus_color_rgba8 palette_copy_color;
     fractus_ui_numeric_field iterations_field;
     fractus_ui_numeric_field escape_radius_field;
+    fractus_ui_numeric_field biomorph_iterations_field;
     fractus_ui_numeric_field biomorph_radius_field;
     fractus_ui_numeric_field biomorph_cutoff_field;
     fractus_ui_numeric_field plasma_rect_seed_field;
@@ -479,6 +490,7 @@ int fractus_app_run(void)
     memset(&config_draft, 0, sizeof(config_draft));
     memset(&iterations_field, 0, sizeof(iterations_field));
     memset(&escape_radius_field, 0, sizeof(escape_radius_field));
+    memset(&biomorph_iterations_field, 0, sizeof(biomorph_iterations_field));
     memset(&biomorph_radius_field, 0, sizeof(biomorph_radius_field));
     memset(&biomorph_cutoff_field, 0, sizeof(biomorph_cutoff_field));
     memset(&plasma_rect_seed_field, 0, sizeof(plasma_rect_seed_field));
@@ -655,6 +667,7 @@ int fractus_app_run(void)
                         &biomorph_fields,
                         &iterations_field,
                         &escape_radius_field,
+                        &biomorph_iterations_field,
                         &biomorph_radius_field,
                         &biomorph_cutoff_field,
                         &plasma_rect_seed_field,
@@ -858,6 +871,7 @@ int fractus_app_run(void)
                         cfg_path,
                         &iterations_field,
                         &escape_radius_field,
+                        &biomorph_iterations_field,
                         &biomorph_radius_field,
                         &biomorph_cutoff_field,
                         &plasma_rect_seed_field,

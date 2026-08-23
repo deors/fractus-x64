@@ -10,8 +10,9 @@ static int test_legacy_config_defaults(void)
     TEST_ASSERT(fractus_legacy_config_init_default(&config) == FRACTUS_STATUS_OK, "Default config init failed");
     TEST_ASSERT_EQUAL_INT(240, config.iterations, "Default iterations mismatch");
     TEST_ASSERT_EQUAL_INT(4, config.escape_radius_squared, "Default escape radius mismatch");
-    TEST_ASSERT_EQUAL_INT(1000, config.biomorph_escape_radius_squared, "Default biomorph radius mismatch");
-    TEST_ASSERT_EQUAL_INT(1, config.biomorph_cutoff, "Default biomorph cutoff mismatch");
+    TEST_ASSERT_EQUAL_INT(15, config.biomorph_iterations, "Default biomorph iterations mismatch");
+    TEST_ASSERT_EQUAL_INT(100, config.biomorph_escape_radius_squared, "Default biomorph radius mismatch");
+    TEST_ASSERT_EQUAL_INT(10, config.biomorph_cutoff, "Default biomorph cutoff mismatch");
     TEST_ASSERT_EQUAL_INT(1337, (int)config.plasma_rectangular_seed, "Default rectangular plasma seed mismatch");
     TEST_ASSERT_EQUAL_INT(7331, (int)config.plasma_circular_seed, "Default circular plasma seed mismatch");
 
@@ -38,6 +39,7 @@ static int test_legacy_config_save_and_load(void)
     TEST_ASSERT(fractus_legacy_config_init_default(&original) == FRACTUS_STATUS_OK, "Default config init failed");
     original.iterations = 500;
     original.escape_radius_squared = 250;
+    original.biomorph_iterations = 25;
     original.biomorph_escape_radius_squared = 2000;
     original.biomorph_cutoff = 5;
     original.plasma_rectangular_seed = 4242u;
@@ -60,6 +62,7 @@ static int test_legacy_config_save_and_load(void)
 
     TEST_ASSERT_EQUAL_INT(original.iterations, loaded.iterations, "Saved iterations mismatch");
     TEST_ASSERT_EQUAL_INT(original.escape_radius_squared, loaded.escape_radius_squared, "Saved radius mismatch");
+    TEST_ASSERT_EQUAL_INT(original.biomorph_iterations, loaded.biomorph_iterations, "Saved biomorph iterations mismatch");
     TEST_ASSERT_EQUAL_INT(original.biomorph_escape_radius_squared, loaded.biomorph_escape_radius_squared, "Saved biomorph radius mismatch");
     TEST_ASSERT_EQUAL_INT(original.biomorph_cutoff, loaded.biomorph_cutoff, "Saved biomorph cutoff mismatch");
     TEST_ASSERT_EQUAL_INT((int)original.plasma_rectangular_seed, (int)loaded.plasma_rectangular_seed, "Saved rectangular seed mismatch");

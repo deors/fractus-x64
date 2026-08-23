@@ -18,6 +18,8 @@ typedef enum fractus_app_biomorph_dialog_action {
     FRACTUS_APP_BIOMORPH_CREAL_INC,
     FRACTUS_APP_BIOMORPH_CIMAG_DEC,
     FRACTUS_APP_BIOMORPH_CIMAG_INC,
+    FRACTUS_APP_BIOMORPH_ITERATIONS_DEC,
+    FRACTUS_APP_BIOMORPH_ITERATIONS_INC,
     FRACTUS_APP_BIOMORPH_RADIUS_DEC,
     FRACTUS_APP_BIOMORPH_RADIUS_INC,
     FRACTUS_APP_BIOMORPH_CUTOFF_DEC,
@@ -43,6 +45,7 @@ typedef struct fractus_app_biomorph_fields {
     fractus_ui_numeric_field ymax;
     fractus_ui_numeric_field constant_real;
     fractus_ui_numeric_field constant_imag;
+    fractus_ui_numeric_field max_iterations;
     fractus_ui_numeric_field escape_radius_squared;
     fractus_ui_numeric_field cutoff;
 } fractus_app_biomorph_fields;
@@ -55,6 +58,7 @@ void fractus_app_init_biomorph_fields(
     double ymax,
     double constant_real,
     double constant_imag,
+    uint32_t max_iterations,
     double escape_radius_squared,
     double cutoff);
 
