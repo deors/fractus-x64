@@ -48,7 +48,7 @@ static fractus_status fractus_app_draw_main_menu_frame(
     if (fractus_framebuffer_clear(framebuffer, 8u) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_window(framebuffer, 0, 0, 639, 479) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_frame(framebuffer, 4, 4, 635, 52) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_FRANCE, 320, 5, 0u, "Fractus I") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_FRANCE, 320, 5, 0u, "Fractus-x64") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 30, 0u, "Dibujo de conjuntos fractales") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_group_box(framebuffer, fonts, 5, 60, 318, 275, 8u, 0u, "Tipos de conjuntos") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_group_box(framebuffer, fonts, 322, 60, 635, 316, 8u, 0u, "Gráficos y colores") != FRACTUS_STATUS_OK ||
