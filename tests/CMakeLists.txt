@@ -2,6 +2,7 @@ set(TEST_TARGETS
     test_biomorphs
     test_fractals
     test_formats
+    test_font
 )
 
 foreach(test_name ${TEST_TARGETS})

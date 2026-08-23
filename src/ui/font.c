@@ -60,56 +60,134 @@ static uint32_t fractus_read_u32_le_from_memory(const uint8_t *data)
         ((uint32_t)data[3] << 24u);
 }
 
-static int fractus_font_glyph_index(char c, uint32_t *index)
+static int fractus_font_decode_next_glyph(
+    const char *text,
+    size_t *offset,
+    uint32_t *index,
+    int *is_space)
 {
-    if (index == NULL) {
+    uint8_t b0;
+
+    if (text == NULL || offset == NULL || index == NULL || is_space == NULL) {
         return 0;
     }
 
-    if (c >= 33 && c <= 47) {
-        *index = (uint32_t)(c - 33 + 64);
+    *is_space = 0;
+    b0 = (uint8_t)text[*offset];
+    if (b0 == 0u) {
+        return 0;
+    }
+
+    /* 1. Secuencia UTF-8 de 2 bytes que comienza con 0xC3 (Latin-1 Supplement: Acentos, Ñ, etc.) */
+    if (b0 == 0xC3u && text[*offset + 1] != '\0') {
+        uint8_t b1 = (uint8_t)text[*offset + 1];
+        *offset += 2u;
+
+        /* Acentos minusculas y enes presentes en fractus.fon */
+        if (b1 == 0xA1u) { *index = 92u; return 1; } /* á */
+        if (b1 == 0xA9u) { *index = 93u; return 1; } /* é */
+        if (b1 == 0xADu) { *index = 94u; return 1; } /* í */
+        if (b1 == 0xB3u) { *index = 95u; return 1; } /* ó */
+        if (b1 == 0xBAu) { *index = 96u; return 1; } /* ú */
+        if (b1 == 0xB1u) { *index = 51u; return 1; } /* ñ */
+        if (b1 == 0x91u) { *index = 14u; return 1; } /* Ñ */
+
+        /* Fallbacks para mayusculas con tilde y dieresis */
+        if (b1 == 0x81u) { *index = 0u;  return 1; } /* Á -> A */
+        if (b1 == 0x89u) { *index = 4u;  return 1; } /* É -> E */
+        if (b1 == 0x8Du) { *index = 8u;  return 1; } /* Í -> I */
+        if (b1 == 0x93u) { *index = 15u; return 1; } /* Ó -> O */
+        if (b1 == 0x9Au) { *index = 20u; return 1; } /* Ú -> U */
+        if (b1 == 0x9Cu) { *index = 20u; return 1; } /* Ü -> U */
+        if (b1 == 0xBCu) { *index = 58u; return 1; } /* ü -> u */
+
+        return 0;
+    }
+
+    /* 2. Secuencia UTF-8 de 2 bytes que comienza con 0xC2 (Puntuacion espanola) */
+    if (b0 == 0xC2u && text[*offset + 1] != '\0') {
+        *offset += 2u;
+        return 0;
+    }
+
+    /* 3. Secuencia UTF-8 multibyte de 3 o 4 bytes */
+    if ((b0 & 0xE0u) == 0xE0u) {
+        size_t skip = ((b0 & 0xF0u) == 0xF0u) ? 4u : 3u;
+        while (skip > 0u && text[*offset] != '\0') {
+            *offset += 1u;
+            --skip;
+        }
+        return 0;
+    }
+
+    /* 4. Caracteres ASCII estandar de 1 byte */
+    *offset += 1u;
+
+    if (b0 == 32u) {
+        *is_space = 1;
         return 1;
     }
 
-    if (c >= 48 && c <= 57) {
-        *index = (uint32_t)(c - 48 + 27);
+    if (b0 >= 33u && b0 <= 47u) {
+        *index = (uint32_t)(b0 - 33u + 64u);
         return 1;
     }
 
-    if (c >= 58 && c <= 64) {
-        *index = (uint32_t)(c - 58 + 79);
+    if (b0 >= 48u && b0 <= 57u) {
+        *index = (uint32_t)(b0 - 48u + 27u);
         return 1;
     }
 
-    if (c >= 65 && c <= 78) {
-        *index = (uint32_t)(c - 65);
+    if (b0 >= 58u && b0 <= 64u) {
+        *index = (uint32_t)(b0 - 58u + 79u);
         return 1;
     }
 
-    if (c >= 79 && c <= 90) {
-        *index = (uint32_t)(c - 79 + 15);
+    if (b0 >= 65u && b0 <= 78u) {
+        *index = (uint32_t)(b0 - 65u);
         return 1;
     }
 
-    if (c >= 91 && c <= 93) {
-        *index = (uint32_t)(c - 91 + 86);
+    if (b0 >= 79u && b0 <= 90u) {
+        *index = (uint32_t)(b0 - 79u + 15u);
         return 1;
     }
 
-    if (c >= 97 && c <= 110) {
-        *index = (uint32_t)(c - 97 + 37);
+    if (b0 >= 91u && b0 <= 93u) {
+        *index = (uint32_t)(b0 - 91u + 86u);
         return 1;
     }
 
-    if (c >= 111 && c <= 122) {
-        *index = (uint32_t)(c - 111 + 52);
+    if (b0 >= 97u && b0 <= 110u) {
+        *index = (uint32_t)(b0 - 97u + 37u);
         return 1;
     }
 
-    if (c >= 123 && c <= 125) {
-        *index = (uint32_t)(c - 123 + 89);
+    if (b0 >= 111u && b0 <= 122u) {
+        *index = (uint32_t)(b0 - 111u + 52u);
         return 1;
     }
+
+    if (b0 >= 123u && b0 <= 125u) {
+        *index = (uint32_t)(b0 - 123u + 89u);
+        return 1;
+    }
+
+    /* 5. Fallback para caracteres de 1 solo byte en ISO-8859-1 / Windows-1252 */
+    if (b0 == 0xE1u) { *index = 92u; return 1; } /* á */
+    if (b0 == 0xE9u) { *index = 93u; return 1; } /* é */
+    if (b0 == 0xEDu) { *index = 94u; return 1; } /* í */
+    if (b0 == 0xF3u) { *index = 95u; return 1; } /* ó */
+    if (b0 == 0xFAu) { *index = 96u; return 1; } /* ú */
+    if (b0 == 0xF1u) { *index = 51u; return 1; } /* ñ */
+    if (b0 == 0xD1u) { *index = 14u; return 1; } /* Ñ */
+    if (b0 == 0xC1u) { *index = 0u;  return 1; } /* Á -> A */
+    if (b0 == 0xC9u) { *index = 4u;  return 1; } /* É -> E */
+    if (b0 == 0xCDu) { *index = 8u;  return 1; } /* Í -> I */
+    if (b0 == 0xD3u) { *index = 15u; return 1; } /* Ó -> O */
+    if (b0 == 0xDAu) { *index = 20u; return 1; } /* Ú -> U */
+    if (b0 == 0xDCu) { *index = 20u; return 1; } /* Ü -> U */
+    if (b0 == 0xFCu) { *index = 58u; return 1; } /* ü -> u */
 
     return 0;
 }
@@ -327,7 +405,7 @@ fractus_status fractus_font_measure_text(
     int32_t *height)
 {
     const fractus_font_face *face;
-    size_t i;
+    size_t offset;
     int32_t measured_width;
 
     if (library == NULL || !library->initialized || text == NULL ||
@@ -341,17 +419,21 @@ fractus_status fractus_font_measure_text(
     }
 
     measured_width = 0;
-    for (i = 0u; text[i] != '\0'; ++i) {
-        uint32_t glyph_index;
+    offset = 0u;
+    while (text[offset] != '\0') {
+        uint32_t glyph_index = 0u;
+        int is_space = 0;
 
-        if (text[i] == ' ') {
+        if (!fractus_font_decode_next_glyph(text, &offset, &glyph_index, &is_space)) {
+            continue;
+        }
+
+        if (is_space) {
             measured_width += (int32_t)face->glyph_widths[8] + ((kind == FRACTUS_FONT_COURIER) ? 0 : 1);
             continue;
         }
 
-        if (fractus_font_glyph_index(text[i], &glyph_index)) {
-            measured_width += (int32_t)face->glyph_widths[glyph_index] + 1;
-        }
+        measured_width += (int32_t)face->glyph_widths[glyph_index] + 1;
     }
 
     if (measured_width > 0) {
@@ -379,7 +461,7 @@ fractus_status fractus_font_draw_text(
     const char *text)
 {
     const fractus_font_face *face;
-    size_t n;
+    size_t offset;
 
     if (framebuffer == NULL || library == NULL || text == NULL ||
         !framebuffer->initialized || !library->initialized ||
@@ -392,18 +474,20 @@ fractus_status fractus_font_draw_text(
         return FRACTUS_STATUS_ERROR;
     }
 
-    for (n = 0u; text[n] != '\0'; ++n) {
-        uint32_t glyph_index;
+    offset = 0u;
+    while (text[offset] != '\0') {
+        uint32_t glyph_index = 0u;
         uint16_t glyph_width;
         uint16_t row;
         uint16_t column;
+        int is_space = 0;
 
-        if (text[n] == ' ') {
-            x += (int32_t)face->glyph_widths[8] + ((kind == FRACTUS_FONT_COURIER) ? 0 : 1);
+        if (!fractus_font_decode_next_glyph(text, &offset, &glyph_index, &is_space)) {
             continue;
         }
 
-        if (!fractus_font_glyph_index(text[n], &glyph_index)) {
+        if (is_space) {
+            x += (int32_t)face->glyph_widths[8] + ((kind == FRACTUS_FONT_COURIER) ? 0 : 1);
             continue;
         }
 
@@ -441,7 +525,7 @@ fractus_status fractus_font_draw_text_scaled(
     uint32_t scale)
 {
     const fractus_font_face *face;
-    size_t n;
+    size_t offset;
 
     if (framebuffer == NULL || library == NULL || text == NULL ||
         !framebuffer->initialized || !library->initialized ||
@@ -458,18 +542,20 @@ fractus_status fractus_font_draw_text_scaled(
         return FRACTUS_STATUS_ERROR;
     }
 
-    for (n = 0u; text[n] != '\0'; ++n) {
-        uint32_t glyph_index;
+    offset = 0u;
+    while (text[offset] != '\0') {
+        uint32_t glyph_index = 0u;
         uint16_t glyph_width;
         uint16_t row;
         uint16_t column;
+        int is_space = 0;
 
-        if (text[n] == ' ') {
-            x += ((int32_t)face->glyph_widths[8] + ((kind == FRACTUS_FONT_COURIER) ? 0 : 1)) * (int32_t)scale;
+        if (!fractus_font_decode_next_glyph(text, &offset, &glyph_index, &is_space)) {
             continue;
         }
 
-        if (!fractus_font_glyph_index(text[n], &glyph_index)) {
+        if (is_space) {
+            x += ((int32_t)face->glyph_widths[8] + ((kind == FRACTUS_FONT_COURIER) ? 0 : 1)) * (int32_t)scale;
             continue;
         }
 
