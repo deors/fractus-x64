@@ -928,7 +928,7 @@ fractus_status fractus_ui_draw_radio_option(
     center_y = option->bounds.y + option->bounds.height / 2;
     text_color = active ? 6u : 0u;
 
-    if (fractus_ui_draw_radio_mark(framebuffer, option->bounds.x + 10, center_y, selected) != FRACTUS_STATUS_OK) {
+    if (fractus_ui_draw_radio_mark(framebuffer, option->bounds.x + 8, center_y, selected) != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
@@ -936,7 +936,7 @@ fractus_status fractus_ui_draw_radio_option(
         framebuffer,
         fonts,
         FRACTUS_FONT_SMALL,
-        option->bounds.x + 28,
+        option->bounds.x + 18,
         center_y - 5,
         text_color,
         option->label);
