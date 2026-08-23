@@ -5,18 +5,21 @@
 #include <stdlib.h>
 #include <string.h>
 
+static const int32_t attractor_x0 = 115;
+static const int32_t attractor_y0 = 55;
+
 static const fractus_app_menu_entry fractus_app_attractor_method_buttons[] = {
-    {FRACTUS_APP_RECT(126, 97, 224, 117), 8u, 0u, "Lorenz"},
-    {FRACTUS_APP_RECT(126, 121, 224, 141), 8u, 0u, "Henon"},
-    {FRACTUS_APP_RECT(126, 145, 224, 165), 8u, 0u, "Rossler"},
-    {FRACTUS_APP_RECT(126, 169, 224, 189), 8u, 0u, "Ikeda"},
-    {FRACTUS_APP_RECT(126, 193, 224, 213), 8u, 0u, "Gumowski-Mira"},
-    {FRACTUS_APP_RECT(126, 217, 224, 237), 8u, 0u, "Aizawa"},
-    {FRACTUS_APP_RECT(126, 241, 224, 261), 8u, 0u, "Peter de Jong"},
-    {FRACTUS_APP_RECT(126, 265, 224, 285), 8u, 0u, "Pickover"},
-    {FRACTUS_APP_RECT(126, 289, 224, 309), 8u, 0u, "Tinkerbell"},
-    {FRACTUS_APP_RECT(126, 313, 224, 333), 8u, 0u, "Thomas"},
-    {FRACTUS_APP_RECT(126, 337, 224, 357), 8u, 0u, "Svensson"}
+    {FRACTUS_APP_RECT(attractor_x0 + 11, attractor_y0 + 44, attractor_x0 + 109, attractor_y0 + 64), 8u, 0u, "Lorenz"},
+    {FRACTUS_APP_RECT(attractor_x0 + 11, attractor_y0 + 68, attractor_x0 + 109, attractor_y0 + 88), 8u, 0u, "Henon"},
+    {FRACTUS_APP_RECT(attractor_x0 + 11, attractor_y0 + 92, attractor_x0 + 109, attractor_y0 + 112), 8u, 0u, "Rossler"},
+    {FRACTUS_APP_RECT(attractor_x0 + 11, attractor_y0 + 116, attractor_x0 + 109, attractor_y0 + 136), 8u, 0u, "Ikeda"},
+    {FRACTUS_APP_RECT(attractor_x0 + 11, attractor_y0 + 140, attractor_x0 + 109, attractor_y0 + 160), 8u, 0u, "Gumowski-Mira"},
+    {FRACTUS_APP_RECT(attractor_x0 + 11, attractor_y0 + 164, attractor_x0 + 109, attractor_y0 + 184), 8u, 0u, "Aizawa"},
+    {FRACTUS_APP_RECT(attractor_x0 + 11, attractor_y0 + 188, attractor_x0 + 109, attractor_y0 + 208), 8u, 0u, "Peter de Jong"},
+    {FRACTUS_APP_RECT(attractor_x0 + 11, attractor_y0 + 212, attractor_x0 + 109, attractor_y0 + 232), 8u, 0u, "Pickover"},
+    {FRACTUS_APP_RECT(attractor_x0 + 11, attractor_y0 + 236, attractor_x0 + 109, attractor_y0 + 256), 8u, 0u, "Tinkerbell"},
+    {FRACTUS_APP_RECT(attractor_x0 + 11, attractor_y0 + 260, attractor_x0 + 109, attractor_y0 + 280), 8u, 0u, "Thomas"},
+    {FRACTUS_APP_RECT(attractor_x0 + 11, attractor_y0 + 284, attractor_x0 + 109, attractor_y0 + 304), 8u, 0u, "Svensson"}
 };
 
 const char *fractus_app_attractor_method_name(fractus_app_attractor_method method)
@@ -185,41 +188,46 @@ void fractus_app_init_lorenz_fields(
     double rot_y,
     double rot_z)
 {
+    const int32_t x0 = attractor_x0;
+    const int32_t y0 = attractor_y0;
+
     if (fields == NULL) {
         return;
     }
 
-    (void)fractus_ui_numeric_field_init_float(&fields->sigma, (fractus_rect_i32){385, 104, 60, 20}, sigma, 0.10, 50.00, 2);
-    (void)fractus_ui_numeric_field_init_float(&fields->rho, (fractus_rect_i32){385, 130, 60, 20}, rho, 0.10, 100.00, 2);
-    (void)fractus_ui_numeric_field_init_float(&fields->beta, (fractus_rect_i32){385, 156, 60, 20}, beta, 0.10, 20.00, 2);
-    (void)fractus_ui_numeric_field_init_float(&fields->dt, (fractus_rect_i32){385, 182, 60, 20}, dt, 0.001, 0.100, 3);
-    (void)fractus_ui_numeric_field_init_int(&fields->iterations, (fractus_rect_i32){385, 208, 60, 20}, (int32_t)iterations, 1000, 99999);
-    (void)fractus_ui_numeric_field_init_float(&fields->rot_x, (fractus_rect_i32){440, 264, 65, 20}, rot_x, -180.0, 180.0, 1);
-    (void)fractus_ui_numeric_field_init_float(&fields->rot_y, (fractus_rect_i32){440, 288, 65, 20}, rot_y, -180.0, 180.0, 1);
-    (void)fractus_ui_numeric_field_init_float(&fields->rot_z, (fractus_rect_i32){440, 312, 65, 20}, rot_z, -180.0, 180.0, 1);
+    (void)fractus_ui_numeric_field_init_float(&fields->sigma, (fractus_rect_i32){x0 + 264, y0 + 48, 60, 20}, sigma, 0.10, 50.00, 2);
+    (void)fractus_ui_numeric_field_init_float(&fields->rho, (fractus_rect_i32){x0 + 264, y0 + 74, 60, 20}, rho, 0.10, 100.00, 2);
+    (void)fractus_ui_numeric_field_init_float(&fields->beta, (fractus_rect_i32){x0 + 264, y0 + 100, 60, 20}, beta, 0.10, 20.00, 2);
+    (void)fractus_ui_numeric_field_init_float(&fields->dt, (fractus_rect_i32){x0 + 264, y0 + 126, 60, 20}, dt, 0.001, 0.100, 3);
+    (void)fractus_ui_numeric_field_init_int(&fields->iterations, (fractus_rect_i32){x0 + 264, y0 + 152, 60, 20}, (int32_t)iterations, 1000, 99999);
+    (void)fractus_ui_numeric_field_init_float(&fields->rot_x, (fractus_rect_i32){x0 + 324, y0 + 208, 70, 20}, rot_x, -180.0, 180.0, 1);
+    (void)fractus_ui_numeric_field_init_float(&fields->rot_y, (fractus_rect_i32){x0 + 324, y0 + 234, 70, 20}, rot_y, -180.0, 180.0, 1);
+    (void)fractus_ui_numeric_field_init_float(&fields->rot_z, (fractus_rect_i32){x0 + 324, y0 + 260, 70, 20}, rot_z, -180.0, 180.0, 1);
 }
 
 static size_t fractus_app_build_lorenz_config_entries(
     fractus_app_menu_entry *entries,
     size_t capacity)
 {
-    static const fractus_app_menu_entry controls[] = {
-        {FRACTUS_APP_RECT(450, 104, 480, 124), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(485, 104, 515, 124), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(450, 130, 480, 150), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(485, 130, 515, 150), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(450, 156, 480, 176), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(485, 156, 515, 176), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(450, 182, 480, 202), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(485, 182, 515, 202), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(450, 208, 480, 228), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(485, 208, 515, 228), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(340, 236, 380, 256), 8u, 0u, "X-Z"},
-        {FRACTUS_APP_RECT(385, 236, 425, 256), 8u, 0u, "X-Y"},
-        {FRACTUS_APP_RECT(430, 236, 470, 256), 8u, 0u, "Y-Z"},
-        {FRACTUS_APP_RECT(475, 236, 515, 256), 8u, 0u, "3D"},
-        {FRACTUS_APP_RECT(210, 395, 310, 415), 8u, 0u, "Dibujar"},
-        {FRACTUS_APP_RECT(330, 395, 430, 415), 0u, 15u, "Cancelar"}
+    const int32_t x0 = attractor_x0;
+    const int32_t y0 = attractor_y0;
+    const fractus_app_menu_entry controls[] = {
+        {FRACTUS_APP_RECT(x0 + 329, y0 + 48, x0 + 359, y0 + 68), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(x0 + 364, y0 + 48, x0 + 394, y0 + 68), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(x0 + 329, y0 + 74, x0 + 359, y0 + 94), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(x0 + 364, y0 + 74, x0 + 394, y0 + 94), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(x0 + 329, y0 + 100, x0 + 359, y0 + 120), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(x0 + 364, y0 + 100, x0 + 394, y0 + 120), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(x0 + 329, y0 + 126, x0 + 359, y0 + 146), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(x0 + 364, y0 + 126, x0 + 394, y0 + 146), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(x0 + 329, y0 + 152, x0 + 359, y0 + 172), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(x0 + 364, y0 + 152, x0 + 394, y0 + 172), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(x0 + 224, y0 + 178, x0 + 264, y0 + 198), 8u, 0u, "X-Z"},
+        {FRACTUS_APP_RECT(x0 + 267, y0 + 178, x0 + 307, y0 + 198), 8u, 0u, "X-Y"},
+        {FRACTUS_APP_RECT(x0 + 310, y0 + 178, x0 + 350, y0 + 198), 8u, 0u, "Y-Z"},
+        {FRACTUS_APP_RECT(x0 + 354, y0 + 178, x0 + 394, y0 + 198), 8u, 0u, "3D"},
+        {FRACTUS_APP_RECT(x0 + 95, y0 + 340, x0 + 195, y0 + 360), 8u, 0u, "Dibujar"},
+        {FRACTUS_APP_RECT(x0 + 215, y0 + 340, x0 + 315, y0 + 360), 0u, 15u, "Cancelar"}
     };
 
     return fractus_app_copy_control_entries(
@@ -235,6 +243,8 @@ static fractus_status fractus_app_render_attractors_base(
     fractus_app_attractor_method selected_method,
     int is_config_view)
 {
+    const int32_t x0 = attractor_x0;
+    const int32_t y0 = attractor_y0;
     uint32_t i;
     const uint32_t method_count = FRACTUS_APP_ARRAY_COUNT(fractus_app_attractor_method_buttons);
 
@@ -243,9 +253,9 @@ static fractus_status fractus_app_render_attractors_base(
     }
 
     if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_window(framebuffer, 115, 55, 524, 425) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 59, 15u, "Atractores dinamicos") != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, 120, 85, 230, 365, 8u, 0u, "Tipo de atractor") != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_window(framebuffer, x0, y0, x0 + 409, y0 + 370) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, x0 + 205, y0 + 4, 15u, "Atractores dinamicos") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_group_box(framebuffer, fonts, x0 + 5, y0 + 32, x0 + 115, y0 + 314, 8u, 0u, "Tipo de atractor") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
@@ -282,9 +292,11 @@ static fractus_status fractus_app_render_attractors_menu(
     const fractus_font_library *fonts,
     int active_index)
 {
+    const int32_t x0 = attractor_x0;
+    const int32_t y0 = attractor_y0;
     static const fractus_app_menu_entry action_buttons[] = {
-        {FRACTUS_APP_RECT(210, 395, 310, 415), 8u, 7u, "Dibujar"},
-        {FRACTUS_APP_RECT(330, 395, 430, 415), 0u, 15u, "Cancelar"}
+        {FRACTUS_APP_RECT(attractor_x0 + 95, attractor_y0 + 340, attractor_x0 + 195, attractor_y0 + 360), 8u, 7u, "Dibujar"},
+        {FRACTUS_APP_RECT(attractor_x0 + 215, attractor_y0 + 340, attractor_x0 + 315, attractor_y0 + 360), 0u, 15u, "Cancelar"}
     };
     uint32_t i;
     const uint32_t method_count = FRACTUS_APP_ARRAY_COUNT(fractus_app_attractor_method_buttons);
@@ -323,8 +335,8 @@ static fractus_status fractus_app_render_attractors_menu(
             framebuffer,
             fonts,
             FRACTUS_FONT_SMALL,
-            320,
-            373,
+            x0 + 205,
+            y0 + 322,
             0u,
             "Selecciona el tipo de atractor del que se quiere generar el dibujo.") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
@@ -348,6 +360,8 @@ fractus_status fractus_app_run_attractors_menu_view(
     int cancelled = 0;
     size_t i;
     const size_t method_count = FRACTUS_APP_ARRAY_COUNT(fractus_app_attractor_method_buttons);
+    const int32_t x0 = attractor_x0;
+    const int32_t y0 = attractor_y0;
 
     (void)lorenz_params;
     if (framebuffer == NULL || fonts == NULL || ui == NULL ||
@@ -358,8 +372,8 @@ fractus_status fractus_app_run_attractors_menu_view(
     for (i = 0u; i < method_count; ++i) {
         options[i].bounds = fractus_app_attractor_method_buttons[i].bounds;
     }
-    options[method_count].bounds = (fractus_rect_i32)FRACTUS_APP_RECT(210, 395, 310, 415);     /* Dibujar (disabled) */
-    options[method_count + 1u].bounds = (fractus_rect_i32)FRACTUS_APP_RECT(330, 395, 430, 415); /* Cancelar */
+    options[method_count].bounds = (fractus_rect_i32)FRACTUS_APP_RECT(x0 + 95, y0 + 340, x0 + 195, y0 + 360);     /* Dibujar (disabled) */
+    options[method_count + 1u].bounds = (fractus_rect_i32)FRACTUS_APP_RECT(x0 + 215, y0 + 340, x0 + 315, y0 + 360); /* Cancelar */
 
     if (fractus_app_render_attractors_menu(
             framebuffer,
@@ -400,15 +414,17 @@ static fractus_status fractus_app_run_lorenz_config_view(
     fractus_app_lorenz_fields *fields,
     fractus_app_view *view)
 {
+    const int32_t x0 = attractor_x0;
+    const int32_t y0 = attractor_y0;
     const fractus_ui_radio_option proj_options[] = {
-        {FRACTUS_APP_RECT(340, 236, 380, 256), "X-Z"},
-        {FRACTUS_APP_RECT(385, 236, 425, 256), "X-Y"},
-        {FRACTUS_APP_RECT(430, 236, 470, 256), "Y-Z"},
-        {FRACTUS_APP_RECT(475, 236, 515, 256), "3D"}
+        {FRACTUS_APP_RECT(x0 + 224, y0 + 178, x0 + 264, y0 + 198), "X-Z"},
+        {FRACTUS_APP_RECT(x0 + 267, y0 + 178, x0 + 307, y0 + 198), "X-Y"},
+        {FRACTUS_APP_RECT(x0 + 310, y0 + 178, x0 + 350, y0 + 198), "Y-Z"},
+        {FRACTUS_APP_RECT(x0 + 354, y0 + 178, x0 + 394, y0 + 198), "3D"}
     };
     fractus_app_menu_entry dialog_entries[FRACTUS_APP_DIALOG_BUTTON_CAPACITY];
     fractus_ui_menu_option dialog_options[FRACTUS_APP_DIALOG_BUTTON_CAPACITY];
-    fractus_rect_i32 box_3d = {248, 262, 90, 80};
+    fractus_rect_i32 box_3d = {x0 + 133, y0 + 208, 90, 86};
     size_t dialog_entry_count;
     int selected_menu = -1;
     int cancelled = 0;
@@ -435,24 +451,24 @@ static fractus_status fractus_app_run_lorenz_config_view(
         fractus_ui_draw_group_box(
             framebuffer,
             fonts,
-            238, 85, 519, 365,
+            x0 + 123, y0 + 32, x0 + 404, y0 + 314,
             8u, 0u,
             "Parametros del atractor de Lorenz") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
     /* 2. Textos, campos numericos y radio buttons */
-    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 248, 108, 0u, "Sigma (0.10-50.00)") != FRACTUS_STATUS_OK ||
+    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 133, y0 + 53, 0u, "Sigma (0.10-50.00)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->sigma) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 248, 134, 0u, "Rho (0.10-100.00)") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 133, y0 + 79, 0u, "Rho (0.10-100.00)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->rho) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 248, 160, 0u, "Beta (0.10-20.00)") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 133, y0 + 105, 0u, "Beta (0.10-20.00)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->beta) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 248, 186, 0u, "Paso dt (0.001-0.100)") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 133, y0 + 131, 0u, "Paso dt (0.001-0.100)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->dt) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 248, 212, 0u, "Iteraciones (1000-99999)") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 133, y0 + 157, 0u, "Iteraciones (1000-99999)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->iterations) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 248, 240, 0u, "Proyeccion") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 133, y0 + 183, 0u, "Proyeccion") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_radio_list(
             framebuffer,
             fonts,
@@ -468,19 +484,19 @@ static fractus_status fractus_app_run_lorenz_config_view(
     fractus_app_draw_3d_axes(framebuffer, fonts, box_3d, pending->rot_x, pending->rot_y, pending->rot_z, is_3d_active);
 
     /* 4. Campos numericos de rotacion */
-    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 372, 268, 0u, "Angulo X") != FRACTUS_STATUS_OK ||
+    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 240, y0 + 213, 0u, "Angulo X") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->rot_x) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 372, 292, 0u, "Angulo Y") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 240, y0 + 239, 0u, "Angulo Y") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->rot_y) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 372, 316, 0u, "Angulo Z") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 240, y0 + 265, 0u, "Angulo Z") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->rot_z) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 378, 348, 7u, "Punto inicial: (0.1, 0.0, 0.0)") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 309, y0 + 290, 7u, "Punto inicial: (0.1, 0.0, 0.0)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_centered(
             framebuffer,
             fonts,
             FRACTUS_FONT_SMALL,
-            320,
-            373,
+            x0 + 205,
+            y0 + 322,
             0u,
             "Estos valores solo afectan al dibujo actual y no cambian la cfg global.") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_button_list(

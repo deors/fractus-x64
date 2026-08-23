@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 
+static const int32_t julia_x0 = 135;
+static const int32_t julia_y0 = 44;
+
 void fractus_app_init_julia_fields(
     fractus_app_julia_fields *fields,
     double xmin,
@@ -15,17 +18,20 @@ void fractus_app_init_julia_fields(
     uint32_t max_iterations,
     double escape_radius_squared)
 {
+    const int32_t x0 = julia_x0;
+    const int32_t y0 = julia_y0;
+
     if (fields == NULL) {
         return;
     }
-    (void)fractus_ui_numeric_field_init_float(&fields->xmin, (fractus_rect_i32){324, 137, 73, 20}, xmin, -5.0, 5.0, 3);
-    (void)fractus_ui_numeric_field_init_float(&fields->xmax, (fractus_rect_i32){324, 163, 73, 20}, xmax, -5.0, 5.0, 3);
-    (void)fractus_ui_numeric_field_init_float(&fields->ymin, (fractus_rect_i32){324, 189, 73, 20}, ymin, -5.0, 5.0, 3);
-    (void)fractus_ui_numeric_field_init_float(&fields->ymax, (fractus_rect_i32){324, 215, 73, 20}, ymax, -5.0, 5.0, 3);
-    (void)fractus_ui_numeric_field_init_float(&fields->constant_real, (fractus_rect_i32){324, 241, 73, 20}, constant_real, -5.0, 5.0, 3);
-    (void)fractus_ui_numeric_field_init_float(&fields->constant_imag, (fractus_rect_i32){324, 267, 73, 20}, constant_imag, -5.0, 5.0, 3);
-    (void)fractus_ui_numeric_field_init_int(&fields->max_iterations, (fractus_rect_i32){324, 293, 73, 20}, (int32_t)max_iterations, 1, 1000);
-    (void)fractus_ui_numeric_field_init_int(&fields->escape_radius_squared, (fractus_rect_i32){324, 319, 73, 20}, (int32_t)escape_radius_squared, 4, 1000);
+    (void)fractus_ui_numeric_field_init_float(&fields->xmin, (fractus_rect_i32){x0 + 189, y0 + 96, 73, 20}, xmin, -5.0, 5.0, 3);
+    (void)fractus_ui_numeric_field_init_float(&fields->xmax, (fractus_rect_i32){x0 + 189, y0 + 122, 73, 20}, xmax, -5.0, 5.0, 3);
+    (void)fractus_ui_numeric_field_init_float(&fields->ymin, (fractus_rect_i32){x0 + 189, y0 + 148, 73, 20}, ymin, -5.0, 5.0, 3);
+    (void)fractus_ui_numeric_field_init_float(&fields->ymax, (fractus_rect_i32){x0 + 189, y0 + 174, 73, 20}, ymax, -5.0, 5.0, 3);
+    (void)fractus_ui_numeric_field_init_float(&fields->constant_real, (fractus_rect_i32){x0 + 189, y0 + 200, 73, 20}, constant_real, -5.0, 5.0, 3);
+    (void)fractus_ui_numeric_field_init_float(&fields->constant_imag, (fractus_rect_i32){x0 + 189, y0 + 226, 73, 20}, constant_imag, -5.0, 5.0, 3);
+    (void)fractus_ui_numeric_field_init_int(&fields->max_iterations, (fractus_rect_i32){x0 + 189, y0 + 252, 73, 20}, (int32_t)max_iterations, 1, 1000);
+    (void)fractus_ui_numeric_field_init_int(&fields->escape_radius_squared, (fractus_rect_i32){x0 + 189, y0 + 278, 73, 20}, (int32_t)escape_radius_squared, 4, 1000);
 }
 
 static fractus_status fractus_app_render_julia_menu(
@@ -37,6 +43,8 @@ static fractus_status fractus_app_render_julia_menu(
     fractus_app_julia_method selected_method,
     int method_enabled)
 {
+    const int32_t x0 = julia_x0;
+    const int32_t y0 = julia_y0;
     uint32_t i;
 
     if (framebuffer == NULL || fonts == NULL || julia_menu_controls == NULL) {
@@ -44,9 +52,9 @@ static fractus_status fractus_app_render_julia_menu(
     }
 
     if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_window(framebuffer, 135, 51, 504, 428) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 55, 15u, "Conjuntos de Gaston Julia") != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, 140, 83, 499, 122, 8u, 0u, "Metodo de dibujo") != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_window(framebuffer, x0, y0, x0 + 369, y0 + 390) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, x0 + 185, y0 + 4, 15u, "Conjuntos de Gaston Julia") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_group_box(framebuffer, fonts, x0 + 5, y0 + 32, x0 + 364, y0 + 72, 8u, 0u, "Metodo de dibujo") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
@@ -87,8 +95,8 @@ static fractus_status fractus_app_render_julia_menu(
         framebuffer,
         fonts,
         FRACTUS_FONT_SMALL,
-        320,
-        380,
+        x0 + 185,
+        y0 + 342,
         0u,
         "Selecciona el algoritmo que se utilizara para generar el dibujo.");
 }
@@ -105,13 +113,14 @@ fractus_status fractus_app_run_julia_menu_view(
     fractus_app_julia_fields *julia_dem_fields,
     fractus_app_view *view)
 {
-    static const fractus_app_menu_entry julia_menu_controls[] = {
-        {FRACTUS_APP_RECT(148, 94, 314, 114), 8u, 0u, "Tiempo de escape"},
-        {FRACTUS_APP_RECT(325, 94, 491, 114), 8u, 0u, "Estimacion de distancias"},
-        {FRACTUS_APP_RECT(210, 398, 310, 418), 6u, 8u, "Dibujar"},
-        {FRACTUS_APP_RECT(330, 398, 430, 418), 0u, 15u, "Cancelar"}
+    const int32_t x0 = julia_x0;
+    const int32_t y0 = julia_y0;
+    const fractus_app_menu_entry julia_menu_controls[] = {
+        {FRACTUS_APP_RECT(x0 + 13, y0 + 43, x0 + 179, y0 + 63), 8u, 0u, "Tiempo de escape"},
+        {FRACTUS_APP_RECT(x0 + 190, y0 + 43, x0 + 356, y0 + 63), 8u, 0u, "Estimacion de distancias"},
+        {FRACTUS_APP_RECT(x0 + 135, y0 + 360, x0 + 235, y0 + 380), 0u, 15u, "Volver"}
     };
-    fractus_ui_menu_option julia_menu_options[FRACTUS_APP_ARRAY_COUNT(julia_menu_controls)];
+    fractus_ui_menu_option dialog_options[FRACTUS_APP_ARRAY_COUNT(julia_menu_controls)];
     int selected_menu = -1;
     int cancelled = 0;
 
@@ -121,15 +130,14 @@ fractus_status fractus_app_run_julia_menu_view(
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
 
-    fractus_app_build_options_from_entries(
-        julia_menu_options,
-        julia_menu_controls,
-        FRACTUS_APP_ARRAY_COUNT(julia_menu_controls));
+    fractus_app_build_options_from_entries(dialog_options, julia_menu_controls, FRACTUS_APP_ARRAY_COUNT(julia_menu_controls));
 
+    /* 1. Contenedor exterior. */
+    /* 2. Textos y controles. */
     if (fractus_app_render_julia_menu(
             framebuffer,
             fonts,
-            fractus_ui_active_menu_index(ui, julia_menu_options, FRACTUS_APP_ARRAY_COUNT(julia_menu_controls)),
+            fractus_ui_active_menu_index(ui, dialog_options, FRACTUS_APP_ARRAY_COUNT(dialog_options)),
             julia_menu_controls,
             FRACTUS_APP_ARRAY_COUNT(julia_menu_controls),
             FRACTUS_APP_JULIA_METHOD_NONE,
@@ -137,10 +145,13 @@ fractus_status fractus_app_run_julia_menu_view(
         return FRACTUS_STATUS_ERROR;
     }
 
-    if (fractus_ui_menu(ui, julia_menu_options, FRACTUS_APP_ARRAY_COUNT(julia_menu_controls), &selected_menu, &cancelled)) {
-        if (cancelled || selected_menu == 3) {
+    /* 3. Teclado. No hay campos editables directos en este selector de modo */
+
+    /* 4. Raton y acciones de botones. */
+    if (fractus_ui_menu(ui, dialog_options, FRACTUS_APP_ARRAY_COUNT(dialog_options), &selected_menu, &cancelled)) {
+        if (cancelled || selected_menu == 2) {
             *view = FRACTUS_APP_VIEW_MAIN_MENU;
-        } else if (selected_menu == (int)FRACTUS_APP_JULIA_METHOD_ESCAPE) {
+        } else if (selected_menu == 0) {
             *julia_pending = *julia_params;
             fractus_app_init_julia_fields(
                 julia_fields,
@@ -153,7 +164,7 @@ fractus_status fractus_app_run_julia_menu_view(
                 julia_pending->max_iterations,
                 julia_pending->escape_radius_squared);
             *view = FRACTUS_APP_VIEW_JULIA_CONFIG;
-        } else if (selected_menu == (int)FRACTUS_APP_JULIA_METHOD_DEM) {
+        } else if (selected_menu == 1) {
             *julia_dem_pending = *julia_dem_params;
             fractus_app_init_julia_fields(
                 julia_dem_fields,
@@ -178,27 +189,29 @@ static size_t fractus_app_build_julia_config_entries_generic(
     const char *color_opt0_label,
     const char *color_opt1_label)
 {
+    const int32_t x0 = julia_x0;
+    const int32_t y0 = julia_y0;
     const fractus_app_menu_entry controls[] = {
-        {FRACTUS_APP_RECT(404, 137, 444, 157), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(449, 137, 489, 157), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(404, 163, 444, 183), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(449, 163, 489, 183), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(404, 189, 444, 209), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(449, 189, 489, 209), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(404, 215, 444, 235), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(449, 215, 489, 235), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(404, 241, 444, 261), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(449, 241, 489, 261), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(404, 267, 444, 287), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(449, 267, 489, 287), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(404, 293, 444, 313), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(449, 293, 489, 313), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(404, 319, 444, 339), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(449, 319, 489, 339), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(324, 345, 396, 365), 8u, 0u, color_opt0_label},
-        {FRACTUS_APP_RECT(404, 345, 489, 365), 8u, 0u, color_opt1_label},
-        {FRACTUS_APP_RECT(210, 398, 310, 418), 8u, 0u, "Dibujar"},
-        {FRACTUS_APP_RECT(330, 398, 430, 418), 0u, 15u, "Cancelar"}
+        {FRACTUS_APP_RECT(x0 + 269, y0 + 96, x0 + 309, y0 + 116), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(x0 + 314, y0 + 96, x0 + 354, y0 + 116), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(x0 + 269, y0 + 122, x0 + 309, y0 + 142), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(x0 + 314, y0 + 122, x0 + 354, y0 + 142), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(x0 + 269, y0 + 148, x0 + 309, y0 + 168), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(x0 + 314, y0 + 148, x0 + 354, y0 + 168), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(x0 + 269, y0 + 174, x0 + 309, y0 + 194), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(x0 + 314, y0 + 174, x0 + 354, y0 + 194), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(x0 + 269, y0 + 200, x0 + 309, y0 + 220), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(x0 + 314, y0 + 200, x0 + 354, y0 + 220), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(x0 + 269, y0 + 226, x0 + 309, y0 + 246), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(x0 + 314, y0 + 226, x0 + 354, y0 + 246), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(x0 + 269, y0 + 252, x0 + 309, y0 + 272), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(x0 + 314, y0 + 252, x0 + 354, y0 + 272), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(x0 + 269, y0 + 278, x0 + 309, y0 + 298), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(x0 + 314, y0 + 278, x0 + 354, y0 + 298), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(x0 + 189, y0 + 304, x0 + 261, y0 + 324), 8u, 0u, color_opt0_label},
+        {FRACTUS_APP_RECT(x0 + 269, y0 + 304, x0 + 354, y0 + 324), 8u, 0u, color_opt1_label},
+        {FRACTUS_APP_RECT(x0 + 75, y0 + 360, x0 + 175, y0 + 380), 8u, 0u, "Dibujar"},
+        {FRACTUS_APP_RECT(x0 + 195, y0 + 360, x0 + 295, y0 + 380), 0u, 15u, "Cancelar"}
     };
 
     return fractus_app_copy_control_entries(
@@ -230,15 +243,17 @@ static fractus_status fractus_app_run_julia_generic_config_view(
     int *draw_confirmed,
     fractus_app_view *view)
 {
-    static const fractus_app_menu_entry julia_menu_controls[] = {
-        {FRACTUS_APP_RECT(148, 94, 314, 114), 8u, 0u, "Tiempo de escape"},
-        {FRACTUS_APP_RECT(325, 94, 491, 114), 8u, 0u, "Estimacion de distancias"},
-        {FRACTUS_APP_RECT(210, 398, 310, 418), 6u, 8u, "Dibujar"},
-        {FRACTUS_APP_RECT(330, 398, 430, 418), 0u, 15u, "Cancelar"}
+    const int32_t x0 = julia_x0;
+    const int32_t y0 = julia_y0;
+    const fractus_app_menu_entry julia_menu_controls[] = {
+        {FRACTUS_APP_RECT(x0 + 13, y0 + 43, x0 + 179, y0 + 63), 8u, 0u, "Tiempo de escape"},
+        {FRACTUS_APP_RECT(x0 + 190, y0 + 43, x0 + 356, y0 + 63), 8u, 0u, "Estimacion de distancias"},
+        {FRACTUS_APP_RECT(x0 + 75, y0 + 360, x0 + 175, y0 + 380), 6u, 8u, "Dibujar"},
+        {FRACTUS_APP_RECT(x0 + 195, y0 + 360, x0 + 295, y0 + 380), 0u, 15u, "Cancelar"}
     };
     const fractus_ui_radio_option color_options[] = {
-        {FRACTUS_APP_RECT(324, 345, 396, 365), color_opt0_label},
-        {FRACTUS_APP_RECT(404, 345, 489, 365), color_opt1_label}
+        {FRACTUS_APP_RECT(x0 + 189, y0 + 304, x0 + 261, y0 + 324), color_opt0_label},
+        {FRACTUS_APP_RECT(x0 + 269, y0 + 304, x0 + 354, y0 + 324), color_opt1_label}
     };
     fractus_app_menu_entry dialog_entries[FRACTUS_APP_DIALOG_BUTTON_CAPACITY];
     fractus_ui_menu_option dialog_options[FRACTUS_APP_DIALOG_BUTTON_CAPACITY];
@@ -275,28 +290,28 @@ static fractus_status fractus_app_run_julia_generic_config_view(
             FRACTUS_APP_ARRAY_COUNT(julia_menu_controls),
             method,
             0) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, 140, 130, 499, 372, 8u, 0u, group_box_title) != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_group_box(framebuffer, fonts, x0 + 5, y0 + 80, x0 + 364, y0 + 334, 8u, 0u, group_box_title) != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
     /* 2. Textos y controles. */
-    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 142, 0u, "Minimo valor real") != FRACTUS_STATUS_OK ||
+    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 101, 0u, "Minimo valor real") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->xmin) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 168, 0u, "Maximo valor real") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 127, 0u, "Maximo valor real") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->xmax) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 194, 0u, "Minimo valor imaginario") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 153, 0u, "Minimo valor imaginario") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->ymin) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 220, 0u, "Maximo valor imaginario") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 179, 0u, "Maximo valor imaginario") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->ymax) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 246, 0u, "Constante real") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 205, 0u, "Constante real") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->constant_real) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 272, 0u, "Constante imaginaria") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 231, 0u, "Constante imaginaria") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->constant_imag) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 298, 0u, "Iteraciones maximas (1-1000)") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 257, 0u, "Iteraciones maximas (1-1000)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->max_iterations) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 324, 0u, "Radio de escape al cuadrado (4-1000)") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 283, 0u, "Radio de escape al cuadrado (4-1000)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->escape_radius_squared) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 350, 0u, "Modo de coloreado") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 309, 0u, "Modo de coloreado") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_radio_list(
             framebuffer,
             fonts,
@@ -305,7 +320,7 @@ static fractus_status fractus_app_run_julia_generic_config_view(
             *color_mode == 1 ? 1 : 0,
             (active_index == FRACTUS_APP_JULIA_COLOR_MODE_0 || active_index == FRACTUS_APP_JULIA_COLOR_MODE_1) ?
                 active_index - FRACTUS_APP_JULIA_COLOR_MODE_0 : -1) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 320, 380, 0u, "Estos valores solo afectan al dibujo actual y no cambian la cfg global.") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 185, y0 + 342, 0u, "Estos valores solo afectan al dibujo actual y no cambian la cfg global.") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_button_list(framebuffer, fonts, dialog_entries, FRACTUS_APP_JULIA_COLOR_MODE_0, active_index) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_button_list(
             framebuffer,

@@ -726,6 +726,9 @@ static size_t fractus_app_build_palette_load_entries(
     return visible_count + 3u;
 }
 
+static const int32_t browser_x0 = 170;
+static const int32_t browser_y0 = 76;
+
 static size_t fractus_app_build_graphic_load_entries(
     fractus_app_menu_entry *entries,
     size_t capacity,
@@ -734,9 +737,11 @@ static size_t fractus_app_build_graphic_load_entries(
     size_t page,
     size_t *visible_file_count)
 {
-    size_t i;
+    const int32_t x0 = browser_x0;
+    const int32_t y0 = browser_y0;
     size_t first_file;
     size_t visible_count;
+    size_t i;
     int has_previous;
     int has_next;
     int32_t y;
@@ -755,17 +760,17 @@ static size_t fractus_app_build_graphic_load_entries(
         visible_count = FRACTUS_APP_GRAPHIC_FILE_PAGE_SIZE;
     }
 
-    y = 124;
+    y = y0 + 48;
     for (i = 0u; i < visible_count; ++i) {
-        fractus_app_set_button(&entries[i], 185, y, 455, y + 20, 8u, 0u, files[first_file + i].label);
+        fractus_app_set_button(&entries[i], x0 + 15, y, x0 + 285, y + 20, 8u, 0u, files[first_file + i].label);
         y += 24;
     }
 
     has_previous = page > 0u;
     has_next = first_file + visible_count < file_count;
-    fractus_app_set_button(&entries[visible_count], 185, 374, 225, 394, 8u, has_previous ? 0u : 7u, "<");
-    fractus_app_set_button(&entries[visible_count + 1u], 270, 374, 370, 394, 0u, 15u, "Cancelar");
-    fractus_app_set_button(&entries[visible_count + 2u], 415, 374, 455, 394, 8u, has_next ? 0u : 7u, ">");
+    fractus_app_set_button(&entries[visible_count], x0 + 15, y0 + 298, x0 + 55, y0 + 318, 8u, has_previous ? 0u : 7u, "<");
+    fractus_app_set_button(&entries[visible_count + 1u], x0 + 100, y0 + 298, x0 + 200, y0 + 318, 0u, 15u, "Cancelar");
+    fractus_app_set_button(&entries[visible_count + 2u], x0 + 245, y0 + 298, x0 + 285, y0 + 318, 8u, has_next ? 0u : 7u, ">");
     *visible_file_count = visible_count;
     return visible_count + 3u;
 }
@@ -781,14 +786,17 @@ static fractus_status fractus_app_render_file_load(
     size_t file_count,
     int active_index)
 {
+    const int32_t x0 = browser_x0;
+    const int32_t y0 = browser_y0;
+
     if (framebuffer == NULL || fonts == NULL || title == NULL || help == NULL || empty_message == NULL || entries == NULL) {
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
 
     if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_window(framebuffer, 170, 76, 469, 404) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 80, 15u, title) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 320, 102, 0u, help) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_window(framebuffer, x0, y0, x0 + 299, y0 + 328) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, x0 + 150, y0 + 4, 15u, title) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 150, y0 + 30, 0u, help) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_button_list(framebuffer, fonts, entries, entry_count, active_index) != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
@@ -1440,6 +1448,12 @@ static int fractus_app_palette_back_was_clicked(const fractus_ui_context *ui)
            fractus_ui_point_in_rect(ui->release_event.position, (fractus_rect_i32)FRACTUS_APP_RECT(270, 401, 370, 420));
 }
 
+static const int32_t pal_x0 = 36;
+static const int32_t pal_y0 = 48;
+
+static const int32_t color_x0 = 135;
+static const int32_t color_y0 = 146;
+
 static fractus_status fractus_app_render_palette_screen(
     fractus_framebuffer *framebuffer,
     const fractus_font_library *fonts,
@@ -1447,8 +1461,10 @@ static fractus_status fractus_app_render_palette_screen(
     const char *line1,
     int back_pressed)
 {
+    const int32_t x0 = pal_x0;
+    const int32_t y0 = pal_y0;
     const fractus_app_menu_entry back_button = {
-        FRACTUS_APP_RECT(270, 401, 370, 420), 0u, 15u, "Volver"
+        FRACTUS_APP_RECT(x0 + 234, y0 + 353, x0 + 334, y0 + 372), 0u, 15u, "Volver"
     };
 
     if (framebuffer == NULL || fonts == NULL || title == NULL) {
@@ -1456,14 +1472,14 @@ static fractus_status fractus_app_render_palette_screen(
     }
 
     if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_window(framebuffer, 36, 48, 603, 430) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 52, 15u, title) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_window(framebuffer, x0, y0, x0 + 567, y0 + 382) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, x0 + 284, y0 + 4, 15u, title) != FRACTUS_STATUS_OK ||
         fractus_app_draw_palette_grid(framebuffer) != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
     if (line1 != NULL &&
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 320, 383, 0u, line1) != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 284, y0 + 335, 0u, line1) != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
@@ -1498,8 +1514,10 @@ static fractus_status fractus_app_render_palette_color_edit(
     size_t entry_count,
     int active_index)
 {
+    const int32_t x0 = color_x0;
+    const int32_t y0 = color_y0;
     char buffer[48];
-    fractus_rect_i32 preview = {345, 189, 145, 58};
+    fractus_rect_i32 preview = {x0 + 210, y0 + 48, 145, 60};
 
     if (framebuffer == NULL || fonts == NULL || red_field == NULL || green_field == NULL ||
         blue_field == NULL || entries == NULL) {
@@ -1514,27 +1532,27 @@ static fractus_status fractus_app_render_palette_color_edit(
             "Modificar un color de la paleta",
             "",
             0) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_window(framebuffer, 135, 142, 504, 336) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 146, 15u, "Modificar color") != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, 140, 174, 499, 280, 8u, 0u, buffer) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 320, 288, 0u, "Ajuste los canales RGB con valores VGA entre 0 y 63 y pulse Guardar.") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_window(framebuffer, x0, y0, x0 + 369, y0 + 186) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, x0 + 185, y0 + 4, 15u, "Modificar color") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_group_box(framebuffer, fonts, x0 + 5, y0 + 32, x0 + 364, y0 + 130, 8u, 0u, buffer) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 185, y0 + 138, 0u, "Ajuste los canales RGB con valores VGA entre 0 y 63 y pulse Guardar.") != FRACTUS_STATUS_OK ||
         fractus_graphics_fill_rect(framebuffer, preview, (uint8_t)palette_index) != FRACTUS_STATUS_OK ||
         fractus_graphics_rect(framebuffer, preview, 15u) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 417, 254, 0u, "Previsualizacion") != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 282, y0 + 114, 0u, "Previsualizacion") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
-    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 194, 0u, "Rojo") != FRACTUS_STATUS_OK ||
+    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 53, 0u, "Rojo") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, red_field) != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
-    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 221, 0u, "Verde") != FRACTUS_STATUS_OK ||
+    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 79, 0u, "Verde") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, green_field) != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
-    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 248, 0u, "Azul") != FRACTUS_STATUS_OK ||
+    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 105, 0u, "Azul") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, blue_field) != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
@@ -1548,6 +1566,9 @@ fractus_status fractus_app_run_palette_view(
     fractus_ui_context *ui,
     fractus_app_view *view)
 {
+    const int32_t x0 = pal_x0;
+    const int32_t y0 = pal_y0;
+
     if (framebuffer == NULL || fonts == NULL || ui == NULL || view == NULL) {
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
@@ -1566,7 +1587,7 @@ fractus_status fractus_app_run_palette_view(
     /* 4. Raton y acciones de botones. */
     if (ui->release_pending &&
         ui->release_event.buttons.left &&
-        fractus_ui_point_in_rect(ui->release_event.position, (fractus_rect_i32)FRACTUS_APP_RECT(270, 401, 370, 420))) {
+        fractus_ui_point_in_rect(ui->release_event.position, (fractus_rect_i32)FRACTUS_APP_RECT(x0 + 234, y0 + 353, x0 + 334, y0 + 372))) {
         *view = FRACTUS_APP_VIEW_MAIN_MENU;
     }
 
@@ -1577,15 +1598,17 @@ static size_t fractus_app_build_palette_color_entries(
     fractus_app_menu_entry *entries,
     size_t capacity)
 {
-    static const fractus_app_menu_entry controls[] = {
-        {FRACTUS_APP_RECT(244, 189, 284, 209), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(289, 189, 329, 209), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(244, 216, 284, 236), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(289, 216, 329, 236), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(244, 243, 284, 263), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(289, 243, 329, 263), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(210, 306, 310, 326), 8u, 0u, "Guardar"},
-        {FRACTUS_APP_RECT(330, 306, 430, 326), 0u, 15u, "Cancelar"}
+    const int32_t x0 = color_x0;
+    const int32_t y0 = color_y0;
+    const fractus_app_menu_entry controls[] = {
+        {FRACTUS_APP_RECT(x0 + 109, y0 + 48, x0 + 149, y0 + 68), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(x0 + 154, y0 + 48, x0 + 194, y0 + 68), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(x0 + 109, y0 + 74, x0 + 149, y0 + 94), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(x0 + 154, y0 + 74, x0 + 194, y0 + 94), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(x0 + 109, y0 + 100, x0 + 149, y0 + 120), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(x0 + 154, y0 + 100, x0 + 194, y0 + 120), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(x0 + 75, y0 + 156, x0 + 175, y0 + 176), 8u, 0u, "Guardar"},
+        {FRACTUS_APP_RECT(x0 + 195, y0 + 156, x0 + 295, y0 + 176), 0u, 15u, "Cancelar"}
     };
 
     return fractus_app_copy_control_entries(

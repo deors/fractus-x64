@@ -1,6 +1,6 @@
 # Guía de Diseño de UI para Diálogos de Fractus-x64
 
-Esta guía establece las **reglas de diseño y métricas oficiales** para todas las ventanas modales y diálogos de configuración, parámetros y gestión de ficheros en **Fractus-x64**. 
+Esta guía establece las **reglas de diseño, arquitectura de coordenadas relativas $(x_0, y_0)$ y métricas oficiales** para todas las ventanas modales y diálogos de configuración, parámetros y gestión de ficheros en **Fractus-x64**. 
 
 Cualquier diálogo nuevo que se añada a la aplicación en el futuro debe construirse siguiendo estrictamente las especificaciones descritas en este documento.
 
@@ -9,9 +9,12 @@ Cualquier diálogo nuevo que se añada a la aplicación en el futuro debe constr
 ## 1. Principios Generales de Diseño
 
 * **Resolución Lógica:** La interfaz de Fractus opera sobre un lienzo base de **$640 \times 480\text{ px}$** ($X: 0 \dots 639$, $Y: 0 \dots 479$).
-* **Centrado Horizontal:** Todo diálogo debe estar centrado simétricamente respecto al eje medio de la pantalla ($X = 320$).
-* **Centrado Vertical:** La coordenada superior $Y_1$ de la ventana se calcula en base a la altura total $H$ del diálogo para que los márgenes superior e inferior sean idénticos:
-  $$Y_1 = \left\lfloor\frac{480 - H}{2}\right\rfloor, \quad Y_2 = Y_1 + H - 1$$
+* **Arquitectura de Coordenadas Relativas $(x_0, y_0)$:** 
+  Cada diálogo define explícitamente sus coordenadas base `x0, y0` como la esquina superior izquierda de la ventana. **Absolutamente todas las coordenadas internas (ventanas, paneles, campos, etiquetas, botones, tips) se calculan sumando deltas a `x0` e `y0`** (`x0 + dx`, `y0 + dy`).
+* **Centrado Horizontal:** Todo diálogo debe estar centrado simétricamente respecto al eje medio de la pantalla ($X = 320$):
+  $$x_0 = \left\lfloor\frac{640 - W}{2}\right\rfloor, \quad x_1 = x_0 + W - 1$$
+* **Centrado Vertical:** La coordenada superior $y_0$ de la ventana se calcula en base a la altura total $H$ del diálogo para que los márgenes superior e inferior sean idénticos:
+  $$y_0 = \left\lfloor\frac{480 - H}{2}\right\rfloor, \quad y_1 = y_0 + H - 1$$
 * **Fondo:** Todos los diálogos modales se renderizan superpuestos sobre el menú principal enmarcado (`fractus_app_render_main_menu(framebuffer, fonts, -1)`).
 
 ---
@@ -20,112 +23,134 @@ Cualquier diálogo nuevo que se añada a la aplicación en el futuro debe constr
 
 ### Anchuras Estándar
 
-| Tipo de Diálogo | Rango Horizontal ($X_1 \dots X_2$) | Ancho ($W$) | Margen a Pantalla |
-|---|---|---|---|
-| **Diálogo Estándar (Parámetros / Config)** | `135 .. 504` | **$370\text{ px}$** | $135\text{ px}$ izq. / $135\text{ px}$ dcha. |
-| **Diálogo de Selección / Lista / Selector** | `165 .. 474` ó `170 .. 469` | **$300\text{ px} – 310\text{ px}$** | $165\text{ px} – 170\text{ px}$ |
-| **Diálogo de Error / Notificación Simple** | `150 .. 489` | **$340\text{ px}$** | $150\text{ px}$ |
-| **Pantalla Completa Enmarcada (Paletas)** | `36 .. 603` | **$568\text{ px}$** | $36\text{ px}$ |
+| Tipo de Diálogo | Ancho ($W$) | Origen $x_0$ | Rango Horizontal ($X_1 \dots X_2$) | Margen a Pantalla |
+|---|---|---|---|---|
+| **Diálogo Estándar (Parámetros / Config)** | **$370\text{ px}$** | `135` | `135 .. 504` | $135\text{ px}$ izq. / $135\text{ px}$ dcha. |
+| **Atractores Dinámicos (Lorenz + 3D)** | **$410\text{ px}$** | `115` | `115 .. 524` | $115\text{ px}$ izq. / $115\text{ px}$ dcha. |
+| **Diálogo de Selección / Modo de Vídeo** | **$320\text{ px}$** | `160` | `160 .. 479` | $160\text{ px}$ izq. / $160\text{ px}$ dcha. |
+| **Selector de Archivos / Cargar** | **$300\text{ px}$** | `170` | `170 .. 469` | $170\text{ px}$ izq. / $170\text{ px}$ dcha. |
+| **Diálogo de Error / Notificación Simple** | **$340\text{ px}$** | `150` | `150 .. 489` | $150\text{ px}$ izq. / $150\text{ px}$ dcha. |
+| **Pantalla Completa Enmarcada (Paletas)** | **$568\text{ px}$** | `36` | `36 .. 603` | $36\text{ px}$ izq. / $36\text{ px}$ dcha. |
 
 ### Barra de Título
-* La barra gráfica de título (`fractus_ui_draw_window`) abarca desde **$Y_1 + 4$** hasta **$Y_1 + 23$** (altura de $19\text{ px}$, fondo azul cian).
-* El texto del título se dibuja centrado horizontalmente en **$X = 320$** a una altura de **$Y = Y_1 + 4$** utilizando la fuente `FRACTUS_FONT_ARIAL` en color blanco (`15u`).
+* La ventana dibuja su barra superior desde **$y_0 + 4$** hasta **$y_0 + 23$** (altura de $19\text{ px}$, fondo azul cian).
+* El texto del título se dibuja centrado horizontalmente en **$x_0 + W/2$** a una altura de **$y = y_0 + 4$** utilizando la fuente `FRACTUS_FONT_ARIAL` en color blanco (`15u`).
 
 ---
 
 ## 3. Sistema de Separaciones Verticales (Reglas Métricas)
 
 ```
-┌──────────────────────────────────────────────────────────────┐  Y1
-│ [================== TÍTULO DEL DIÁLOGO ==================]   │  Y1 + 4 .. Y1 + 23
+┌──────────────────────────────────────────────────────────────┐  y0
+│ [================== TÍTULO DEL DIÁLOGO ==================]   │  y0 + 4 .. y0 + 23 (Barra de título)
 │                                                              │
-│   ┌── Panel 1 (Group Box) ───────────────────────────────┐   │  Y1 + 32  (32 px desde Y1 / 9 px bajo barra)
-│   │  Radios de método / opciones                         │   │
-│   └──────────────────────────────────────────────────────┘   │  Y_panel1_bottom
-│                                                              │
-│                     (8 px exactos)                           │
-│                                                              │
-│   ┌── Panel 2 (Group Box) ───────────────────────────────┐   │  Y_panel2_top = Y_panel1_bottom + 8
-│   │  Etiqueta              [ Campo ]  [-]  [+]           │   │
-│   │  Etiqueta              [ Campo ]  [-]  [+]           │   │
-│   └──────────────────────────────────────────────────────┘   │  Y_panel2_bottom
+│   ┌── Panel 1 (Group Box) ───────────────────────────────┐   │  y_panel1_top = y0 + 32 (9 px bajo barra)
+│   │                                                      │   │  y_field0 = y_panel1_top + 16 (9 px bajo título panel)
+│   │  Etiqueta              [ Campo ]  [-]  [+]           │   │  y_label0 = y_field0 + 5
+│   │  Etiqueta              [ Campo ]  [-]  [+]           │   │  Paso uniforme entre filas = 26 px
+│   └──────────────────────────────────────────────────────┘   │  y_panel1_bottom = y_last_field_bottom + 10
 │                                                              │
 │                     (8 px exactos)                           │
 │                                                              │
-│      Texto de ayuda / Tip explicativo con punto final.       │  Y_tip = Y_panel_bottom + 8
+│   ┌── Panel 2 (Group Box) ───────────────────────────────┐   │  y_panel2_top = y_panel1_bottom + 8
+│   │  (O) Opción 1                                        │   │  y_radio0 = y_panel2_top + 16
+│   │  ( ) Opción 2                                        │   │
+│   └──────────────────────────────────────────────────────┘   │  y_panel2_bottom = y_last_radio_bottom + 10
+│                                                              │
+│                     (8 px exactos)                           │
+│                                                              │
+│      Texto de ayuda / Tip explicativo con punto final.       │  y_tip = y_last_panel_bottom + 8
 │                                                              │
 │                     (18 px exactos)                          │
 │                                                              │
-│         [ Botón Acción ]         [ Botón Cancelar ]          │  Y_btn = Y_tip + 18 (Alto: 20 px)
+│         [ Botón Acción ]         [ Botón Cancelar ]          │  y_btn = y_tip + 18 (Alto: 20 px)
 │                                                              │
 │                     (10 px exactos)                          │
-└──────────────────────────────────────────────────────────────┘  Y2 = Y_btn + 20 + 10 = Y_btn + 30
+└──────────────────────────────────────────────────────────────┘  y_bottom = y_btn + 20 + 10 = y_btn + 30
 ```
 
 ### Reglas Métricas Obligatorias:
 
-1. **Borde superior de la ventana $\to$ Panel superior (Group Box):**
-   * Siempre **$32\text{ px}$** desde $Y_1$ (equivalente a un margen limpio de **$9\text{ px}$** bajo la barra de título $Y_1 + 23$).
-2. **Separación entre paneles consecutivos:**
-   * Siempre **$8\text{ px}$ exactos** entre el borde inferior de un panel y el borde superior del siguiente ($Y_{\text{panel2\_top}} = Y_{\text{panel1\_bottom}} + 8$).
-3. **Borde inferior del último panel $\to$ Tip explicativo:**
-   * Siempre **$8\text{ px}$ exactos** ($Y_{\text{tip}} = Y_{\text{panel\_bottom}} + 8$).
-4. **Tip explicativo $\to$ Botones inferiores:**
-   * Siempre **$18\text{ px}$ exactos** ($Y_{\text{btn\_top}} = Y_{\text{tip}} + 18$).
-5. **Borde inferior de los botones $\to$ Borde inferior de la ventana:**
-   * Siempre **$10\text{ px}$ exactos** ($Y_2 = Y_{\text{btn\_bottom}} + 10$).
+1. **Borde superior de ventana $\to$ Panel superior (Group Box):**
+   * Siempre **$y_0 + 32\text{ px}$** (margen limpio de **$9\text{ px}$** bajo la barra de título $y_0 + 23$).
+2. **Panel superior $\to$ Primer campo / control:**
+   * El borde superior del primer campo editable o control está siempre a **$16\text{ px}$** del borde superior del panel ($y_{\text{field0}} = y_{\text{panel\_top}} + 16$). Dado que el título del panel se renderiza centrado verticalmente sobre el borde superior ($y_{\text{panel\_top}} - 4 \dots y_{\text{panel\_top}} + 7$, altura 11 px), esto garantiza un espacio visual limpio de **$9\text{ px}$** entre el título del panel y el primer campo, eliminando cualquier superposición visual.
+3. **Alineación vertical de Etiqueta $\to$ Campo numérico:**
+   * La etiqueta de texto se dibuja a **$5\text{ px}$** por debajo del borde superior del campo numérico ($y_{\text{label}} = y_{\text{field}} + 5$), centrando verticalmente la tipografía de 11 px respecto al campo de 20 px.
+4. **Paso entre filas:**
+   * Estándar unificado en todos los diálogos de parámetros: **$26\text{ px}$** (campo de 20 px + separación inter-fila de 6 px).
+5. **Último control $\to$ Borde inferior del panel:**
+   * **$10\text{ px}$** ($y_{\text{panel\_bottom}} = y_{\text{last\_control\_bottom}} + 10$).
+6. **Separación entre paneles consecutivos:**
+   * Siempre **$8\text{ px}$ exactos** ($y_{\text{next\_panel\_top}} = y_{\text{prev\_panel\_bottom}} + 8$).
+7. **Borde inferior del último panel $\to$ Tip explicativo:**
+   * Siempre **$8\text{ px}$ exactos** ($y_{\text{tip}} = y_{\text{last\_panel\_bottom}} + 8$).
+8. **Tip explicativo $\to$ Botones inferiores:**
+   * Siempre **$18\text{ px}$ exactos** ($y_{\text{btn\_top}} = y_{\text{tip}} + 18$).
+9. **Borde inferior de los botones $\to$ Borde inferior de la ventana:**
+   * Siempre **$10\text{ px}$ exactos** ($y_{\text{window\_bottom}} = y_{\text{btn\_bottom}} + 10 = y_{\text{btn\_top}} + 30$).
 
 ---
 
 ## 4. Componentes y Controles
 
 ### Paneles (Group Boxes)
-* **Bordes horizontales:** Margen exterior de **$5\text{ px}$** respecto al borde de la ventana.
-  * Para ventana `135 .. 504`, el group box abarca `140 .. 499`.
-* **Márgenes interiores:** Margen de **$10\text{ px}$** desde el borde lateral del panel hasta los textos o componentes de los extremos.
-* **Colores:** Marco en gris oscuro (`8u`), título de panel en negro (`0u`).
+* **Bordes horizontales:** Margen exterior de **$5\text{ px}$** respecto a la ventana (`[x0 + 5, x0 + W - 6]`).
+  * Para ventana de ancho 370 ($x_0 = 135$), el group box abarca `[140, 499]`.
+* **Márgenes interiores:** Margen lateral de **$10\text{ px}$** desde el borde del panel (`x0 + 15` a la izquierda, y `x0 + W - 16` a la derecha).
+* **Colores:** Marco en gris oscuro (`8u`), título del panel en negro (`0u`).
 
 ### Campos Numéricos y Botones de Paso `[-]`/`[+]`
-* **Dimensiones:**
-  * Campos numéricos: ancho $43\text{ px} – 73\text{ px}$, alto **$21\text{ px}$**.
-  * Botones `[-]` y `[+]`: ancho **$41\text{ px}$**, alto **$21\text{ px}$**.
-* **Separación entre filas de parámetros:** Paso vertical de **$26\text{ px} – 28\text{ px}$**.
-* **Pasos estándar por parámetro:**
-  * Iteraciones máximas: **$4$** (rango 16–1024).
-  * Radio de escape al cuadrado: **$2$** (rango 4–1000).
-  * Umbral de escape (Biomorfos): **$1$** (rango 1–100).
-  * Canales de color VGA (Rojo, Verde, Azul): **$1$** (rango 0–63).
-  * Número de círculos (Plasma): **$5$** (rango 10–500).
-* **Gestión de Foco:** Solo un campo editable puede tener el foco a la vez. Al hacer clic en un control, el resto de campos consolida su valor y sale del modo de edición.
+* **Dimensiones estándar (para diálogos de ancho 370):**
+  * Etiquetas de texto: `x0 + 15` ($150$).
+  * Campos numéricos: `x0 + 189` ($324$), ancho $73\text{ px}$, alto **$20\text{ px}$**.
+  * Botón `[-]`: `[x0 + 269, x0 + 309]` ($[404, 444]$), ancho $40\text{ px}$, alto **$20\text{ px}$**.
+  * Botón `[+]`: `[x0 + 314, x0 + 354]` ($[449, 489]$), ancho $40\text{ px}$, alto **$20\text{ px}$**. Margen derecho al panel de 10 px (`364 - 354 = 10`).
+* **Dimensiones para Atractores Dinámicos (Panel derecho $W=281$, ancho ventana 410, $x_0 = 115$):**
+  * Panel derecho: `[x0 + 123, x0 + 404]`.
+  * Etiquetas: `x0 + 133` (margen izq. 10 px).
+  * Campos numéricos: `[x0 + 264, x0 + 324]`, ancho $60\text{ px}$.
+  * Botón `[-]`: `[x0 + 329, x0 + 359]`, ancho $30\text{ px}$.
+  * Botón `[+]`: `[x0 + 364, x0 + 394]`, ancho $30\text{ px}$ (margen dcho. 10 px al borde `404`).
+* **Gestión de Foco:** Solo un campo editable puede tener foco a la vez. Al interactuar con otros controles, el campo activo consolida su valor y cierra la edición.
 
 ### Botones Inferiores de Acción
-* **Par Estándar ("Guardar" / "Cancelar" ó "Dibujar" / "Cancelar"):**
-  * Botón izquierdo (Acción/Aceptar): `FRACTUS_APP_RECT(210, Y_btn, 310, Y_btn + 20)` (ancho 101 px, alto 21 px).
-  * Botón derecho (Cancelar): `FRACTUS_APP_RECT(330, Y_btn, 430, Y_btn + 20)` (ancho 101 px, alto 21 px).
-  * Separación horizontal entre ambos botones: **$20\text{ px}$**.
-* **Botón Único Centrado ("Volver" ó "Aceptar"):**
-  * `FRACTUS_APP_RECT(270, Y_btn, 370, Y_btn + 20)` (ancho 101 px, alto 21 px, centrado en $X = 320$).
+* **Par Estándar de Botones ("Guardar" / "Cancelar" o "Dibujar" / "Cancelar"):**
+  * Dos botones de ancho $100\text{ px}$ con separación de $20\text{ px}$ (ancho total del bloque $220\text{ px}$), centrados horizontalmente en la ventana:
+    * Margen izquierdo: $\Delta x = (W - 220)/2$.
+    * Botón izquierdo: `[x0 + Δx, x0 + Δx + 100]`.
+    * Botón derecho: `[x0 + Δx + 120, x0 + Δx + 220]`.
+  * En ventanas de $W = 370$ ($x_0 = 135$): `[x0 + 75, x0 + 175]` y `[x0 + 195, x0 + 295]`.
+  * En ventanas de $W = 410$ ($x_0 = 115$): `[x0 + 95, x0 + 195]` and `[x0 + 215, x0 + 315]`.
+  * En ventanas de $W = 320$ ($x_0 = 160$): `[x0 + 50, x0 + 150]` and `[x0 + 170, x0 + 270]`.
+* **Botón Único Centrado ("Aceptar" / "Volver"):**
+  * Ancho $100\text{ px}$ centrado en la ventana: $\Delta x = (W - 100)/2$.
+  * En ventana de $W = 370$ ($x_0 = 135$, Menús de método): `[x0 + 135, x0 + 235]`.
+  * En ventana de $W = 340$ ($x_0 = 150$, Error): `[x0 + 120, x0 + 220]`.
+  * En ventana de $W = 568$ ($x_0 = 36$, Paletas): `[x0 + 234, x0 + 334]`.
 
 ### Tipografía y Textos
-* **Títulos de Diálogo:** `FRACTUS_FONT_ARIAL`, tamaño estándar, color blanco (`15u`).
+* **Títulos de Diálogo:** `FRACTUS_FONT_ARIAL`, tamaño estándar, color blanco (`15u`), centrado en `x0 + W/2`, `y0 + 4`.
 * **Etiquetas y Controles:** `FRACTUS_FONT_SMALL`, color negro (`0u`) o blanco (`15u`).
-* **Tips Explicativos:** `FRACTUS_FONT_SMALL`, color negro (`0u`), siempre centrados en $X = 320$ y terminados obligatoriamente en **punto final (`.`)**.
+* **Tips Explicativos:** `FRACTUS_FONT_SMALL`, color negro (`0u`), centrados en $X = 320$, terminados obligatoriamente en **punto final (`.`)**.
 
 ---
 
 ## 5. Matriz de Diálogos Existentes (Referencia y Validación)
 
-Todos los diálogos actuales de la aplicación han sido ajustados y verificados bajo estas reglas:
+Todos los diálogos de la aplicación cumplen con la arquitectura relativa $(x_0, y_0)$ y la fórmula de consistencia:
 
-| Diálogo | Archivo fuente | Ventana ($X_1, Y_1, X_2, Y_2$) | Dimensiones ($W \times H$) | Panel Top ($Y$) | Entre Paneles | Panel $\to$ Tip | Tip $\to$ Botones | Botones $\to$ Ventana | Centrado Vertical |
+| Diálogo | Archivo fuente | Origen $(x_0, y_0)$ | Ventana ($X_1, Y_1, X_2, Y_2$) | Dimensiones ($W \times H$) | Panel 1 ($Y$) | Panel 2 ($Y$) | Tip ($Y$) | Botones ($Y$) | Margen V (Top/Bottom) |
 |---|---|---|---|---|---|---|---|---|---|
-| **Mandelbrot** | `src/app/fractal.c` | `(135, 65, 504, 415)` | $370 \times 351\text{ px}$ | $Y = 97$ ($+32\text{ px}$) | **$8\text{ px}$** ($136 \to 144$) | **$8\text{ px}$** ($359 \to 367$) | **$18\text{ px}$** ($367 \to 385$) | **$10\text{ px}$** ($405 \to 415$) | $65\text{ px} / 64\text{ px}$ |
-| **Julia** | `src/app/fractal.c` | `(135, 51, 504, 428)` | $370 \times 378\text{ px}$ | $Y = 83$ ($+32\text{ px}$) | **$8\text{ px}$** ($122 \to 130$) | **$8\text{ px}$** ($372 \to 380$) | **$18\text{ px}$** ($380 \to 398$) | **$10\text{ px}$** ($418 \to 428$) | $51\text{ px} / 51\text{ px}$ |
-| **Biomorfos** | `src/app/fractal.c` | `(135, 57, 504, 423)` | $370 \times 367\text{ px}$ | $Y = 89$ ($+32\text{ px}$) | — (1 panel) | **$8\text{ px}$** ($367 \to 375$) | **$18\text{ px}$** ($375 \to 393$) | **$10\text{ px}$** ($413 \to 423$) | $57\text{ px} / 57\text{ px}$ |
-| **Plasma** | `src/app/fractal.c` | `(160, 140, 479, 341)` | $320 \times 202\text{ px}$ | $Y = 172$ ($+32\text{ px}$) | — (1 panel) | **$8\text{ px}$** ($285 \to 293$) | **$18\text{ px}$** ($293 \to 311$) | **$10\text{ px}$** ($331 \to 341$) | $140\text{ px} / 139\text{ px}$ |
-| **Parámetros por Defecto** | `src/app/config.c` | `(135, 123, 504, 355)` | $370 \times 233\text{ px}$ | $Y = 155$ ($+32\text{ px}$) | **$8\text{ px}$** ($223 \to 231$) | **$8\text{ px}$** ($299 \to 307$) | **$18\text{ px}$** ($307 \to 325$) | **$10\text{ px}$** ($345 \to 355$) | $123\text{ px} / 124\text{ px}$ |
-| **Modo de Vídeo** | `src/app/config.c` | `(165, 107, 474, 371)` | $310 \times 265\text{ px}$ | $Y = 139$ ($+32\text{ px}$) | — (1 panel) | **$8\text{ px}$** ($315 \to 323$) | **$18\text{ px}$** ($323 \to 341$) | **$10\text{ px}$** ($361 \to 371$) | $107\text{ px} / 108\text{ px}$ |
-| **Cargar Dibujo / Paleta** | `src/app/files.c` | `(170, 76, 469, 404)` | $300 \times 329\text{ px}$ | $Y = 108$ ($+32\text{ px}$) | — (lista de 10 slots) | — (sin tip) | **$18\text{ px}$** ($356 \to 374$) | **$10\text{ px}$** ($394 \to 404$) | $76\text{ px} / 76\text{ px}$ |
-| **Pantalla de Paletas** | `src/app/files.c` | `(36, 48, 603, 430)` | $568 \times 383\text{ px}$ | $Y = 80$ ($+32\text{ px}$) | — (1 rejilla) | **$8\text{ px}$** ($375 \to 383$) | **$18\text{ px}$** ($383 \to 401$) | **$10\text{ px}$** ($420 \to 430$) | $48\text{ px} / 49\text{ px}$ |
-| **Modificar Color** | `src/app/files.c` | `(135, 142, 504, 336)` | $370 \times 195\text{ px}$ | $Y = 174$ ($+32\text{ px}$) | — (1 panel) | **$8\text{ px}$** ($280 \to 288$) | **$18\text{ px}$** ($288 \to 306$) | **$10\text{ px}$** ($326 \to 336$) | $142\text{ px} / 143\text{ px}$ |
-| **Diálogo de Error** | `src/app/app.c` | `(150, 184, 489, 296)` | $340 \times 113\text{ px}$ | $Y = 216$ ($+32\text{ px}$) | — (sin panel) | — (mensaje $Y=230$) | **$18\text{ px}$** ($240 \to 258$) | **$10\text{ px}$** ($278 \to 288$) | $184\text{ px} / 184\text{ px}$ |
+| **Mandelbrot** | `src/app/mandelbrot.c` | `(135, 70)` | `(135, 70, 504, 408)` | $370 \times 339\text{ px}$ | `y0+32 .. y0+72` | `y0+80 .. y0+282` | `y0+290` | `y0+308 .. y0+328` | $70\text{ px} / 71\text{ px}$ |
+| **Julia** | `src/app/julia.c` | `(135, 44)` | `(135, 44, 504, 434)` | $370 \times 391\text{ px}$ | `y0+32 .. y0+72` | `y0+80 .. y0+334` | `y0+342` | `y0+360 .. y0+380` | $44\text{ px} / 45\text{ px}$ |
+| **Biomorfos** | `src/app/biomorphs.c` | `(135, 30)` | `(135, 30, 504, 448)` | $370 \times 419\text{ px}$ | `y0+32 .. y0+362` | — (1 panel) | `y0+370` | `y0+388 .. y0+408` | $30\text{ px} / 31\text{ px}$ |
+| **Plasmas** | `src/app/plasma.c` | `(135, 122)` | `(135, 122, 504, 356)` | $370 \times 235\text{ px}$ | `y0+32 .. y0+72` | `y0+80 .. y0+178` | `y0+186` | `y0+204 .. y0+224` | $122\text{ px} / 123\text{ px}$ |
+| **Atractores Dinámicos** | `src/app/attractors.c` | `(115, 55)` | `(115, 55, 524, 425)` | $410 \times 371\text{ px}$ | `y0+32 .. y0+314` (izq) | `y0+32 .. y0+314` (dcha) | `y0+322` | `y0+340 .. y0+360` | $55\text{ px} / 55\text{ px}$ |
+| **Parámetros por Defecto** | `src/app/config.c` | `(135, 66)` | `(135, 66, 504, 412)` | $370 \times 347\text{ px}$ | `y0+32 .. y0+104` | `y0+112 .. y0+210` / `P3: y0+218 .. y0+290` | `y0+298` | `y0+316 .. y0+336` | $66\text{ px} / 67\text{ px}$ |
+| **Modo de Vídeo** | `src/app/config.c` | `(160, 113)` | `(160, 113, 479, 366)` | $320 \times 254\text{ px}$ | `y0+32 .. y0+197` | — (1 panel) | `y0+205` | `y0+223 .. y0+243` | $113\text{ px} / 113\text{ px}$ |
+| **Selector de Archivos** | `src/app/files.c` | `(170, 76)` | `(170, 76, 469, 404)` | $300 \times 329\text{ px}$ | `y0+48 .. y0+288` | — (lista de slots) | — | `y0+298 .. y0+318` | $76\text{ px} / 76\text{ px}$ |
+| **Pantalla de Paletas** | `src/app/files.c` | `(36, 48)` | `(36, 48, 603, 430)` | $568 \times 383\text{ px}$ | `y0+48 .. y0+348` | — (rejilla paletas) | `y0+335` | `y0+353 .. y0+372` | $48\text{ px} / 49\text{ px}$ |
+| **Modificar Color Paleta** | `src/app/files.c` | `(135, 146)` | `(135, 146, 504, 332)` | $370 \times 187\text{ px}$ | `y0+32 .. y0+130` | — (1 panel) | `y0+138` | `y0+156 .. y0+176` | $146\text{ px} / 147\text{ px}$ |
+| **Diálogo de Error** | `src/app/app.c` | `(150, 187)` | `(150, 187, 489, 291)` | $340 \times 105\text{ px}$ | — (sin panel) | — | — | `y0+74 .. y0+94` | $187\text{ px} / 188\text{ px}$ |
+

@@ -88,25 +88,30 @@ void fractus_app_vga_channels_from_color(
     }
 }
 
+static const int32_t color_x0 = 135;
+static const int32_t color_y0 = 146;
+
 void fractus_app_init_palette_color_fields(
     fractus_ui_numeric_field *red_field,
     fractus_ui_numeric_field *green_field,
     fractus_ui_numeric_field *blue_field,
     fractus_color_rgba8 color)
 {
+    const int32_t x0 = color_x0;
+    const int32_t y0 = color_y0;
     int32_t red;
     int32_t green;
     int32_t blue;
 
     fractus_app_vga_channels_from_color(color, &red, &green, &blue);
     if (red_field != NULL) {
-        (void)fractus_ui_numeric_field_init_int(red_field, (fractus_rect_i32){195, 189, 43, 21}, red, 0, 63);
+        (void)fractus_ui_numeric_field_init_int(red_field, (fractus_rect_i32){x0 + 60, y0 + 48, 43, 20}, red, 0, 63);
     }
     if (green_field != NULL) {
-        (void)fractus_ui_numeric_field_init_int(green_field, (fractus_rect_i32){195, 216, 43, 21}, green, 0, 63);
+        (void)fractus_ui_numeric_field_init_int(green_field, (fractus_rect_i32){x0 + 60, y0 + 74, 43, 20}, green, 0, 63);
     }
     if (blue_field != NULL) {
-        (void)fractus_ui_numeric_field_init_int(blue_field, (fractus_rect_i32){195, 243, 43, 21}, blue, 0, 63);
+        (void)fractus_ui_numeric_field_init_int(blue_field, (fractus_rect_i32){x0 + 60, y0 + 100, 43, 20}, blue, 0, 63);
     }
 }
 

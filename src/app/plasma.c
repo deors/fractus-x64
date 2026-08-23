@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 
+static const int32_t plasma_x0 = 135;
+static const int32_t plasma_y0 = 122;
+
 void fractus_app_init_plasma_fields(
     fractus_app_plasma_fields *fields,
     uint32_t rectangular_seed,
@@ -12,14 +15,17 @@ void fractus_app_init_plasma_fields(
     int32_t circle_count,
     int32_t max_radius)
 {
+    const int32_t x0 = plasma_x0;
+    const int32_t y0 = plasma_y0;
+
     if (fields == NULL) {
         return;
     }
-    (void)fractus_ui_numeric_field_init_int(&fields->rectangular_seed, (fractus_rect_i32){324, 213, 73, 20}, (int32_t)rectangular_seed, 1, 999999);
-    (void)fractus_ui_numeric_field_init_int(&fields->rectangular_dispersion, (fractus_rect_i32){324, 239, 73, 20}, dispersion, 1, 500);
-    (void)fractus_ui_numeric_field_init_int(&fields->circular_seed, (fractus_rect_i32){324, 213, 73, 20}, (int32_t)circular_seed, 1, 999999);
-    (void)fractus_ui_numeric_field_init_int(&fields->circular_circles, (fractus_rect_i32){324, 239, 73, 20}, circle_count, 5, 5000);
-    (void)fractus_ui_numeric_field_init_int(&fields->circular_radius, (fractus_rect_i32){324, 265, 73, 20}, max_radius, 1, 500);
+    (void)fractus_ui_numeric_field_init_int(&fields->rectangular_seed, (fractus_rect_i32){x0 + 189, y0 + 96, 73, 20}, (int32_t)rectangular_seed, 1, 999999);
+    (void)fractus_ui_numeric_field_init_int(&fields->rectangular_dispersion, (fractus_rect_i32){x0 + 189, y0 + 122, 73, 20}, dispersion, 1, 500);
+    (void)fractus_ui_numeric_field_init_int(&fields->circular_seed, (fractus_rect_i32){x0 + 189, y0 + 96, 73, 20}, (int32_t)circular_seed, 1, 999999);
+    (void)fractus_ui_numeric_field_init_int(&fields->circular_circles, (fractus_rect_i32){x0 + 189, y0 + 122, 73, 20}, circle_count, 5, 5000);
+    (void)fractus_ui_numeric_field_init_int(&fields->circular_radius, (fractus_rect_i32){x0 + 189, y0 + 148, 73, 20}, max_radius, 1, 500);
 }
 
 static fractus_status fractus_app_render_plasma_menu(
@@ -31,6 +37,8 @@ static fractus_status fractus_app_render_plasma_menu(
     fractus_app_plasma_method selected_method,
     int method_enabled)
 {
+    const int32_t x0 = plasma_x0;
+    const int32_t y0 = plasma_y0;
     uint32_t i;
 
     if (framebuffer == NULL || fonts == NULL || plasma_menu_controls == NULL) {
@@ -38,9 +46,9 @@ static fractus_status fractus_app_render_plasma_menu(
     }
 
     if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_window(framebuffer, 135, 126, 504, 355) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 130, 15u, "Fractales por el metodo de plasma") != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, 140, 156, 499, 195, 8u, 0u, "Metodo de dibujo") != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_window(framebuffer, x0, y0, x0 + 369, y0 + 234) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, x0 + 185, y0 + 4, 15u, "Fractales por el metodo de plasma") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_group_box(framebuffer, fonts, x0 + 5, y0 + 32, x0 + 364, y0 + 72, 8u, 0u, "Metodo de dibujo") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
@@ -81,8 +89,8 @@ static fractus_status fractus_app_render_plasma_menu(
         framebuffer,
         fonts,
         FRACTUS_FONT_SMALL,
-        320,
-        307,
+        x0 + 185,
+        y0 + 186,
         0u,
         "Selecciona el algoritmo que se utilizara para generar el dibujo.");
 }
@@ -98,31 +106,32 @@ fractus_status fractus_app_run_plasma_menu_view(
     fractus_app_plasma_fields *plasma_fields,
     fractus_app_view *view)
 {
-    static const fractus_app_menu_entry plasma_menu_controls[] = {
-        {FRACTUS_APP_RECT(210, 167, 310, 187), 8u, 0u, "Rectangulos"},
-        {FRACTUS_APP_RECT(330, 167, 430, 187), 8u, 0u, "Circulos"},
-        {FRACTUS_APP_RECT(210, 325, 310, 345), 6u, 8u, "Dibujar"},
-        {FRACTUS_APP_RECT(330, 325, 430, 345), 0u, 15u, "Cancelar"}
+    const int32_t x0 = plasma_x0;
+    const int32_t y0 = plasma_y0;
+    const fractus_app_menu_entry plasma_menu_controls[] = {
+        {FRACTUS_APP_RECT(x0 + 75, y0 + 43, x0 + 175, y0 + 63), 8u, 0u, "Rectangulos"},
+        {FRACTUS_APP_RECT(x0 + 195, y0 + 43, x0 + 295, y0 + 63), 8u, 0u, "Circulos"},
+        {FRACTUS_APP_RECT(x0 + 135, y0 + 204, x0 + 235, y0 + 224), 0u, 15u, "Volver"}
     };
-    fractus_ui_menu_option plasma_menu_options[FRACTUS_APP_ARRAY_COUNT(plasma_menu_controls)];
+    fractus_ui_menu_option dialog_options[FRACTUS_APP_ARRAY_COUNT(plasma_menu_controls)];
     int selected_menu = -1;
     int cancelled = 0;
 
     if (framebuffer == NULL || fonts == NULL || ui == NULL ||
-        plasma_rectangular_params == NULL || plasma_rectangular_pending == NULL || plasma_circular_params == NULL ||
-        plasma_circular_pending == NULL || plasma_fields == NULL || view == NULL) {
+        plasma_rectangular_params == NULL || plasma_rectangular_pending == NULL ||
+        plasma_circular_params == NULL || plasma_circular_pending == NULL ||
+        plasma_fields == NULL || view == NULL) {
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
 
-    fractus_app_build_options_from_entries(
-        plasma_menu_options,
-        plasma_menu_controls,
-        FRACTUS_APP_ARRAY_COUNT(plasma_menu_controls));
+    fractus_app_build_options_from_entries(dialog_options, plasma_menu_controls, FRACTUS_APP_ARRAY_COUNT(plasma_menu_controls));
 
+    /* 1. Contenedor exterior. */
+    /* 2. Textos y controles. */
     if (fractus_app_render_plasma_menu(
             framebuffer,
             fonts,
-            fractus_ui_active_menu_index(ui, plasma_menu_options, FRACTUS_APP_ARRAY_COUNT(plasma_menu_options)),
+            fractus_ui_active_menu_index(ui, dialog_options, FRACTUS_APP_ARRAY_COUNT(dialog_options)),
             plasma_menu_controls,
             FRACTUS_APP_ARRAY_COUNT(plasma_menu_controls),
             FRACTUS_APP_PLASMA_METHOD_NONE,
@@ -130,16 +139,31 @@ fractus_status fractus_app_run_plasma_menu_view(
         return FRACTUS_STATUS_ERROR;
     }
 
-    if (fractus_ui_menu(ui, plasma_menu_options, FRACTUS_APP_ARRAY_COUNT(plasma_menu_controls), &selected_menu, &cancelled)) {
-        if (cancelled || selected_menu == 3) {
+    /* 3. Teclado. No hay campos editables directos en este selector de modo */
+
+    /* 4. Raton y acciones de botones. */
+    if (fractus_ui_menu(ui, dialog_options, FRACTUS_APP_ARRAY_COUNT(dialog_options), &selected_menu, &cancelled)) {
+        if (cancelled || selected_menu == 2) {
             *view = FRACTUS_APP_VIEW_MAIN_MENU;
-        } else if (selected_menu == (int)FRACTUS_APP_PLASMA_METHOD_RECTANGLES) {
+        } else if (selected_menu == 0) {
             *plasma_rectangular_pending = *plasma_rectangular_params;
-            fractus_app_init_plasma_fields(plasma_fields, plasma_rectangular_pending->seed, plasma_rectangular_pending->dispersion, 0u, 0, 0);
+            fractus_app_init_plasma_fields(
+                plasma_fields,
+                plasma_rectangular_pending->seed,
+                plasma_rectangular_pending->dispersion,
+                plasma_circular_params->seed,
+                plasma_circular_params->circle_count,
+                plasma_circular_params->max_radius);
             *view = FRACTUS_APP_VIEW_PLASMA_RECTANGULAR_CONFIG;
-        } else if (selected_menu == (int)FRACTUS_APP_PLASMA_METHOD_CIRCLES) {
+        } else if (selected_menu == 1) {
             *plasma_circular_pending = *plasma_circular_params;
-            fractus_app_init_plasma_fields(plasma_fields, 0u, 0, plasma_circular_pending->seed, plasma_circular_pending->circle_count, plasma_circular_pending->max_radius);
+            fractus_app_init_plasma_fields(
+                plasma_fields,
+                plasma_rectangular_params->seed,
+                plasma_rectangular_params->dispersion,
+                plasma_circular_pending->seed,
+                plasma_circular_pending->circle_count,
+                plasma_circular_pending->max_radius);
             *view = FRACTUS_APP_VIEW_PLASMA_CIRCULAR_CONFIG;
         }
     }
@@ -151,13 +175,15 @@ static size_t fractus_app_build_plasma_rectangular_config_entries(
     fractus_app_menu_entry *entries,
     size_t capacity)
 {
-    static const fractus_app_menu_entry controls[] = {
-        {FRACTUS_APP_RECT(404, 213, 444, 233), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(449, 213, 489, 233), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(404, 239, 444, 259), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(449, 239, 489, 259), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(210, 325, 310, 345), 8u, 0u, "Dibujar"},
-        {FRACTUS_APP_RECT(330, 325, 430, 345), 0u, 15u, "Cancelar"}
+    const int32_t x0 = plasma_x0;
+    const int32_t y0 = plasma_y0;
+    const fractus_app_menu_entry controls[] = {
+        {FRACTUS_APP_RECT(x0 + 269, y0 + 96, x0 + 309, y0 + 116), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(x0 + 314, y0 + 96, x0 + 354, y0 + 116), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(x0 + 269, y0 + 122, x0 + 309, y0 + 142), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(x0 + 314, y0 + 122, x0 + 354, y0 + 142), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(x0 + 75, y0 + 204, x0 + 175, y0 + 224), 8u, 0u, "Dibujar"},
+        {FRACTUS_APP_RECT(x0 + 195, y0 + 204, x0 + 295, y0 + 224), 0u, 15u, "Cancelar"}
     };
 
     return fractus_app_copy_control_entries(
@@ -176,11 +202,13 @@ fractus_status fractus_app_run_plasma_rectangular_config_view(
     fractus_app_plasma_fields *fields,
     fractus_app_view *view)
 {
-    static const fractus_app_menu_entry plasma_menu_controls[] = {
-        {FRACTUS_APP_RECT(210, 167, 310, 187), 8u, 0u, "Rectangulos"},
-        {FRACTUS_APP_RECT(330, 167, 430, 187), 8u, 0u, "Circulos"},
-        {FRACTUS_APP_RECT(210, 325, 310, 345), 6u, 8u, "Dibujar"},
-        {FRACTUS_APP_RECT(330, 325, 430, 345), 0u, 15u, "Cancelar"}
+    const int32_t x0 = plasma_x0;
+    const int32_t y0 = plasma_y0;
+    const fractus_app_menu_entry plasma_menu_controls[] = {
+        {FRACTUS_APP_RECT(x0 + 75, y0 + 43, x0 + 175, y0 + 63), 8u, 0u, "Rectangulos"},
+        {FRACTUS_APP_RECT(x0 + 195, y0 + 43, x0 + 295, y0 + 63), 8u, 0u, "Circulos"},
+        {FRACTUS_APP_RECT(x0 + 75, y0 + 204, x0 + 175, y0 + 224), 6u, 8u, "Dibujar"},
+        {FRACTUS_APP_RECT(x0 + 195, y0 + 204, x0 + 295, y0 + 224), 0u, 15u, "Cancelar"}
     };
     fractus_app_menu_entry dialog_entries[FRACTUS_APP_DIALOG_BUTTON_CAPACITY];
     fractus_ui_menu_option dialog_options[FRACTUS_APP_DIALOG_BUTTON_CAPACITY];
@@ -206,16 +234,16 @@ fractus_status fractus_app_run_plasma_rectangular_config_view(
             FRACTUS_APP_ARRAY_COUNT(plasma_menu_controls),
             FRACTUS_APP_PLASMA_METHOD_RECTANGLES,
             0) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, 140, 203, 499, 299, 8u, 0u, "Parametros del conjunto mediante rectangulos") != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_group_box(framebuffer, fonts, x0 + 5, y0 + 80, x0 + 364, y0 + 178, 8u, 0u, "Parametros del conjunto mediante rectangulos") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
     /* 2. Textos y controles. */
-    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 218, 0u, "Semilla (1-999999)") != FRACTUS_STATUS_OK ||
+    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 101, 0u, "Semilla (1-999999)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->rectangular_seed) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 244, 0u, "Indice de dispersion (1-500)") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 127, 0u, "Indice de dispersion (1-500)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->rectangular_dispersion) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 320, 307, 0u, "Indices de dispersion bajos suavizan el gradiente; altos lo acentuan.") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 185, y0 + 186, 0u, "Indices de dispersion bajos suavizan el gradiente; altos lo acentuan.") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_button_list(
             framebuffer,
             fonts,
@@ -360,15 +388,17 @@ static size_t fractus_app_build_plasma_circular_config_entries(
     fractus_app_menu_entry *entries,
     size_t capacity)
 {
-    static const fractus_app_menu_entry controls[] = {
-        {FRACTUS_APP_RECT(404, 213, 444, 233), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(449, 213, 489, 233), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(404, 239, 444, 259), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(449, 239, 489, 259), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(404, 265, 444, 285), 8u, 0u, "-"},
-        {FRACTUS_APP_RECT(449, 265, 489, 285), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(210, 325, 310, 345), 8u, 0u, "Dibujar"},
-        {FRACTUS_APP_RECT(330, 325, 430, 345), 0u, 15u, "Cancelar"}
+    const int32_t x0 = plasma_x0;
+    const int32_t y0 = plasma_y0;
+    const fractus_app_menu_entry controls[] = {
+        {FRACTUS_APP_RECT(x0 + 269, y0 + 96, x0 + 309, y0 + 116), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(x0 + 314, y0 + 96, x0 + 354, y0 + 116), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(x0 + 269, y0 + 122, x0 + 309, y0 + 142), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(x0 + 314, y0 + 122, x0 + 354, y0 + 142), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(x0 + 269, y0 + 148, x0 + 309, y0 + 168), 8u, 0u, "-"},
+        {FRACTUS_APP_RECT(x0 + 314, y0 + 148, x0 + 354, y0 + 168), 8u, 0u, "+"},
+        {FRACTUS_APP_RECT(x0 + 75, y0 + 204, x0 + 175, y0 + 224), 8u, 0u, "Dibujar"},
+        {FRACTUS_APP_RECT(x0 + 195, y0 + 204, x0 + 295, y0 + 224), 0u, 15u, "Cancelar"}
     };
 
     return fractus_app_copy_control_entries(
@@ -387,11 +417,13 @@ fractus_status fractus_app_run_plasma_circular_config_view(
     fractus_app_plasma_fields *fields,
     fractus_app_view *view)
 {
-    static const fractus_app_menu_entry plasma_menu_controls[] = {
-        {FRACTUS_APP_RECT(210, 167, 310, 187), 8u, 0u, "Rectangulos"},
-        {FRACTUS_APP_RECT(330, 167, 430, 187), 8u, 0u, "Circulos"},
-        {FRACTUS_APP_RECT(210, 325, 310, 345), 6u, 8u, "Dibujar"},
-        {FRACTUS_APP_RECT(330, 325, 430, 345), 0u, 15u, "Cancelar"}
+    const int32_t x0 = plasma_x0;
+    const int32_t y0 = plasma_y0;
+    const fractus_app_menu_entry plasma_menu_controls[] = {
+        {FRACTUS_APP_RECT(x0 + 75, y0 + 43, x0 + 175, y0 + 63), 8u, 0u, "Rectangulos"},
+        {FRACTUS_APP_RECT(x0 + 195, y0 + 43, x0 + 295, y0 + 63), 8u, 0u, "Circulos"},
+        {FRACTUS_APP_RECT(x0 + 75, y0 + 204, x0 + 175, y0 + 224), 6u, 8u, "Dibujar"},
+        {FRACTUS_APP_RECT(x0 + 195, y0 + 204, x0 + 295, y0 + 224), 0u, 15u, "Cancelar"}
     };
     fractus_app_menu_entry dialog_entries[FRACTUS_APP_DIALOG_BUTTON_CAPACITY];
     fractus_ui_menu_option dialog_options[FRACTUS_APP_DIALOG_BUTTON_CAPACITY];
@@ -417,18 +449,18 @@ fractus_status fractus_app_run_plasma_circular_config_view(
             FRACTUS_APP_ARRAY_COUNT(plasma_menu_controls),
             FRACTUS_APP_PLASMA_METHOD_CIRCLES,
             0) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, 140, 203, 499, 299, 8u, 0u, "Parametros del conjunto mediante circulos") != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_group_box(framebuffer, fonts, x0 + 5, y0 + 80, x0 + 364, y0 + 178, 8u, 0u, "Parametros del conjunto mediante circulos") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
     /* 2. Textos y controles. */
-    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 218, 0u, "Semilla (1-999999)") != FRACTUS_STATUS_OK ||
+    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 101, 0u, "Semilla (1-999999)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->circular_seed) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 244, 0u, "Numero de circulos (5-5000)") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 127, 0u, "Numero de circulos (5-5000)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->circular_circles) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 150, 270, 0u, "Radio maximo (1-500)") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 153, 0u, "Radio maximo (1-500)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->circular_radius) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 320, 307, 0u, "Mas circulos y radios menores producen dibujos mas densos.") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 185, y0 + 186, 0u, "Mas circulos y radios menores producen dibujos mas densos.") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_button_list(
             framebuffer,
             fonts,

@@ -71,6 +71,16 @@ fractus_status fractus_app_load_legacy_assets(
     char *cfg_path,
     size_t cfg_path_size);
 
+void fractus_app_init_fractals_default_config_fields(
+    const fractus_legacy_config *config,
+    fractus_ui_numeric_field *iterations_field,
+    fractus_ui_numeric_field *escape_radius_field,
+    fractus_ui_numeric_field *biomorph_iterations_field,
+    fractus_ui_numeric_field *biomorph_radius_field,
+    fractus_ui_numeric_field *biomorph_cutoff_field,
+    fractus_ui_numeric_field *plasma_rect_seed_field,
+    fractus_ui_numeric_field *plasma_circ_seed_field);
+
 fractus_status fractus_app_run_fractals_default_config_view(
     fractus_framebuffer *framebuffer,
     const fractus_font_library *fonts,
