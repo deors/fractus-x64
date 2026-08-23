@@ -731,7 +731,7 @@ fractus_status fractus_app_run_video_config_view(
     /* 1. Contenedor exterior */
     if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_window(framebuffer, x0, y0, x0 + 319, y0 + 253) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, x0 + 160, y0 + 4, 15u, "Resolución de dibujo") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, x0 + 160, y0 + 4, 15u, "Resolución de los dibujos") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_group_box(framebuffer, fonts, x0 + 5, y0 + 32, x0 + 314, y0 + 197, 8u, 0u, "Modo de vídeo") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
