@@ -8,9 +8,9 @@ static int test_legacy_config_defaults(void)
     uint32_t i;
 
     TEST_ASSERT(fractus_legacy_config_init_default(&config) == FRACTUS_STATUS_OK, "Default config init failed");
-    TEST_ASSERT_EQUAL_INT(240, config.iterations, "Default iterations mismatch");
+    TEST_ASSERT_EQUAL_INT(250, config.iterations, "Default iterations mismatch");
     TEST_ASSERT_EQUAL_INT(4, config.escape_radius_squared, "Default escape radius mismatch");
-    TEST_ASSERT_EQUAL_INT(15, config.biomorph_iterations, "Default biomorph iterations mismatch");
+    TEST_ASSERT_EQUAL_INT(250, config.biomorph_iterations, "Default biomorph iterations mismatch");
     TEST_ASSERT_EQUAL_INT(100, config.biomorph_escape_radius_squared, "Default biomorph radius mismatch");
     TEST_ASSERT_EQUAL_INT(10, config.biomorph_cutoff, "Default biomorph cutoff mismatch");
     TEST_ASSERT_EQUAL_INT(1337, (int)config.plasma_rectangular_seed, "Default rectangular plasma seed mismatch");

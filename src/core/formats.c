@@ -315,9 +315,9 @@ fractus_status fractus_legacy_config_init_default(fractus_legacy_config *config)
         config->detvideo[i] = 1u;
     }
     config->drawing_video_mode = (uint8_t)FRACTUS_DRAWING_VIDEO_MODE_WINDOW_640X480;
-    config->iterations = 240;
+    config->iterations = 250;
     config->escape_radius_squared = 4;
-    config->biomorph_iterations = 15;
+    config->biomorph_iterations = 250;
     config->biomorph_escape_radius_squared = 100;
     config->biomorph_cutoff = 10;
     config->plasma_rectangular_seed = 1337u;
@@ -393,7 +393,7 @@ fractus_status fractus_legacy_config_load(
         if (fractus_read_i16_le(file, &biomorph_cutoff) == FRACTUS_STATUS_OK) {
             config->biomorph_cutoff = (biomorph_cutoff > 0) ? biomorph_cutoff : 1;
             if (fractus_read_i16_le(file, &biomorph_iterations_val) == FRACTUS_STATUS_OK) {
-                config->biomorph_iterations = (biomorph_iterations_val > 0) ? biomorph_iterations_val : 15;
+                config->biomorph_iterations = (biomorph_iterations_val > 0) ? biomorph_iterations_val : 250;
             }
             for (i = 0u; i < FRACTUS_LEGACY_PALETTE_DATA_COUNT; ++i) {
                 uint8_t r, g, b;
