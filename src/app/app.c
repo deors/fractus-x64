@@ -32,9 +32,9 @@ static const fractus_app_menu_entry fractus_app_main_menu_controls[] = {
     {FRACTUS_APP_RECT(327, 334, 629, 354), 5u, 15u, "Resolución de los dibujos"},
     {FRACTUS_APP_RECT(327, 354, 629, 374), 5u, 15u, "Parámetros por defecto de conjuntos fractales"},
     {FRACTUS_APP_RECT(327, 374, 629, 394), 5u, 15u, "Restaurar parámetros de los conjuntos"},
-    {FRACTUS_APP_RECT(10, 430, 130, 450), 8u, 0u, "Ayuda"},
-    {FRACTUS_APP_RECT(509, 430, 629, 450), 8u, 0u, "Acerca de..."},
-    {FRACTUS_APP_RECT(260, 430, 380, 450), 0u, 15u, "Salir del programa"}
+    {FRACTUS_APP_RECT(10, 448, 130, 468), 8u, 0u, "Ayuda"},
+    {FRACTUS_APP_RECT(509, 448, 629, 468), 8u, 0u, "Acerca de..."},
+    {FRACTUS_APP_RECT(260, 448, 380, 468), 0u, 15u, "Salir del programa"}
 };
 
 static fractus_status fractus_app_draw_main_menu_frame(
