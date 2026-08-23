@@ -298,6 +298,8 @@ static fractus_status fractus_app_run_main_menu_view(
                 lorenz_params,
                 legacy_config);
             fractus_app_log("runtime: default fractal parameters restored");
+        } else if (selected_menu == FRACTUS_APP_MENU_ABOUT_INDEX) {
+            *view = FRACTUS_APP_VIEW_ABOUT;
         }
     }
 
@@ -374,6 +376,89 @@ static fractus_status fractus_app_run_error_view(
         (void)selected_menu;
         (void)cancelled;
         error_message[0] = '\0';
+        *view = FRACTUS_APP_VIEW_MAIN_MENU;
+    }
+
+    return FRACTUS_STATUS_OK;
+}
+
+static const int32_t about_x0 = 85;
+static const int32_t about_y0 = 110;
+
+static fractus_status fractus_app_render_about(
+    fractus_framebuffer *framebuffer,
+    const fractus_font_library *fonts,
+    const fractus_app_menu_entry *entries,
+    size_t entry_count,
+    int active_index)
+{
+    const int32_t x0 = about_x0;
+    const int32_t y0 = about_y0;
+
+    if (framebuffer == NULL || fonts == NULL || entries == NULL) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_window(framebuffer, x0, y0, x0 + 469, y0 + 259) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, x0 + 235, y0 + 4, 15u, "Acerca de Fractus-x64") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_group_box(framebuffer, fonts, x0 + 5, y0 + 32, x0 + 464, y0 + 220, 8u, 0u, "Información") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_FRANCE, x0 + 235, y0 + 46, 0u, "Fractus-x64") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_COURIER, x0 + 235, y0 + 76, 0u, "Suite de generación de conjuntos fractales") != FRACTUS_STATUS_OK ||
+        fractus_graphics_line(framebuffer, x0 + 15, y0 + 96, x0 + 454, y0 + 96, 7u) != FRACTUS_STATUS_OK ||
+        fractus_graphics_line(framebuffer, x0 + 15, y0 + 97, x0 + 454, y0 + 97, 15u) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 235, y0 + 106, 0u, "Port a x64 de la suite original para MS-DOS, creada") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 235, y0 + 120, 0u, "en 1997 sobre Turbo C para 16-bits (CPUs 386/486 y VGA/SVGA).") != FRACTUS_STATUS_OK ||
+        fractus_graphics_line(framebuffer, x0 + 15, y0 + 140, x0 + 454, y0 + 140, 7u) != FRACTUS_STATUS_OK ||
+        fractus_graphics_line(framebuffer, x0 + 15, y0 + 141, x0 + 454, y0 + 141, 15u) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, x0 + 235, y0 + 150, 0u, "(c) 1997 - 2026") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_COURIER, x0 + 235, y0 + 174, 0u, "Autor: @deors (Jorge Hidalgo)") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 235, y0 + 198, 0u, "https://github.com/deors/fractus-x64") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_button_list(framebuffer, fonts, entries, entry_count, active_index) != FRACTUS_STATUS_OK) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    return FRACTUS_STATUS_OK;
+}
+
+static fractus_status fractus_app_run_about_view(
+    fractus_framebuffer *framebuffer,
+    const fractus_font_library *fonts,
+    fractus_ui_context *ui,
+    fractus_app_view *view)
+{
+    const int32_t x0 = about_x0;
+    const int32_t y0 = about_y0;
+    const fractus_app_menu_entry dialog_entries[] = {
+        {FRACTUS_APP_RECT(x0 + 185, y0 + 229, x0 + 285, y0 + 249), 0u, 15u, "Volver"}
+    };
+    fractus_ui_menu_option dialog_options[FRACTUS_APP_ARRAY_COUNT(dialog_entries)];
+    int selected_menu = -1;
+    int cancelled = 0;
+
+    if (framebuffer == NULL || fonts == NULL || ui == NULL || view == NULL) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    fractus_app_build_options_from_entries(dialog_options, dialog_entries, FRACTUS_APP_ARRAY_COUNT(dialog_entries));
+
+    /* 1. Contenedor exterior. */
+    /* 2. Textos y controles. */
+    if (fractus_app_render_about(
+            framebuffer,
+            fonts,
+            dialog_entries,
+            FRACTUS_APP_ARRAY_COUNT(dialog_entries),
+            fractus_ui_active_menu_index(ui, dialog_options, FRACTUS_APP_ARRAY_COUNT(dialog_options))) != FRACTUS_STATUS_OK) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    /* 3. Teclado. No hay campos editables directos en esta ventana. */
+
+    /* 4. Raton y acciones de botones. */
+    if (fractus_ui_menu(ui, dialog_options, FRACTUS_APP_ARRAY_COUNT(dialog_options), &selected_menu, &cancelled)) {
+        (void)selected_menu;
+        (void)cancelled;
         *view = FRACTUS_APP_VIEW_MAIN_MENU;
     }
 
@@ -1028,6 +1113,15 @@ int fractus_app_run(void)
                         runtime_error_message,
                         &view) != FRACTUS_STATUS_OK) {
                     fractus_app_log("runtime: error dialog failed");
+                    running = 0;
+                }
+            } else if (view == FRACTUS_APP_VIEW_ABOUT) {
+                if (fractus_app_run_about_view(
+                        &core.ui_framebuffer,
+                        &fonts,
+                        &ui,
+                        &view) != FRACTUS_STATUS_OK) {
+                    fractus_app_log("runtime: about dialog failed");
                     running = 0;
                 }
             } else {

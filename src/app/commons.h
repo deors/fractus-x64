@@ -88,7 +88,8 @@ typedef enum fractus_app_view {
     FRACTUS_APP_VIEW_PALETTE_COPY_TARGETS,
     FRACTUS_APP_VIEW_PALETTE_GRADIENT_FIRST,
     FRACTUS_APP_VIEW_PALETTE_GRADIENT_SECOND,
-    FRACTUS_APP_VIEW_ERROR
+    FRACTUS_APP_VIEW_ERROR,
+    FRACTUS_APP_VIEW_ABOUT
 } fractus_app_view;
 
 typedef fractus_ui_button fractus_app_menu_entry;
