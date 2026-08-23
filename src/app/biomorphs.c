@@ -53,8 +53,8 @@ static size_t fractus_app_build_biomorph_config_entries(
         {FRACTUS_APP_RECT(325, 291, 397, 311), 8u, 0u, "z^3 + c"},
         {FRACTUS_APP_RECT(410, 291, 482, 311), 8u, 0u, "z^4 + c"},
         {FRACTUS_APP_RECT(240, 315, 312, 335), 8u, 0u, "z^5 + c"},
-        {FRACTUS_APP_RECT(325, 315, 397, 335), 8u, 0u, "sen(z)+c"},
-        {FRACTUS_APP_RECT(410, 315, 482, 335), 8u, 0u, "e^z + c"},
+        {FRACTUS_APP_RECT(325, 315, 397, 335), 8u, 0u, "sen(z) + c"},
+        {FRACTUS_APP_RECT(410, 315, 482, 335), 8u, 0u, "exp(z) + c"},
         {FRACTUS_APP_RECT(225, 339, 287, 359), 8u, 0u, "Re OR Im"},
         {FRACTUS_APP_RECT(292, 339, 364, 359), 8u, 0u, "Re AND Im"},
         {FRACTUS_APP_RECT(369, 339, 426, 359), 8u, 0u, "Solo Re"},
@@ -80,18 +80,18 @@ fractus_status fractus_app_run_biomorph_config_view(
     fractus_app_view *view)
 {
     const fractus_ui_radio_option eq_options[] = {
-        {FRACTUS_APP_RECT(240, 291, 312, 311), "z^2 + c"},
-        {FRACTUS_APP_RECT(325, 291, 397, 311), "z^3 + c"},
-        {FRACTUS_APP_RECT(410, 291, 482, 311), "z^4 + c"},
-        {FRACTUS_APP_RECT(240, 315, 312, 335), "z^5 + c"},
-        {FRACTUS_APP_RECT(325, 315, 397, 335), "sen(z)+c"},
-        {FRACTUS_APP_RECT(410, 315, 482, 335), "e^z + c"}
+        {FRACTUS_APP_RECT(295, 291, 312, 311), "z^2 + c"},
+        {FRACTUS_APP_RECT(365, 291, 397, 311), "z^3 + c"},
+        {FRACTUS_APP_RECT(430, 291, 482, 311), "z^4 + c"},
+        {FRACTUS_APP_RECT(295, 315, 312, 335), "z^5 + c"},
+        {FRACTUS_APP_RECT(365, 315, 397, 335), "sen(z) + c"},
+        {FRACTUS_APP_RECT(430, 315, 482, 335), "exp(z) + c"}
     };
     const fractus_ui_radio_option trap_options[] = {
-        {FRACTUS_APP_RECT(225, 339, 287, 359), "Re OR Im"},
-        {FRACTUS_APP_RECT(292, 339, 364, 359), "Re AND Im"},
-        {FRACTUS_APP_RECT(369, 339, 426, 359), "Solo Re"},
-        {FRACTUS_APP_RECT(431, 339, 489, 359), "Solo Im"}
+        {FRACTUS_APP_RECT(230, 339, 287, 359), "Re OR Im"},
+        {FRACTUS_APP_RECT(295, 339, 364, 359), "Re AND Im"},
+        {FRACTUS_APP_RECT(365, 339, 426, 359), "Solo Re"},
+        {FRACTUS_APP_RECT(430, 339, 489, 359), "Solo Im"}
     };
     fractus_app_menu_entry dialog_entries[FRACTUS_APP_DIALOG_BUTTON_CAPACITY];
     fractus_ui_menu_option dialog_options[FRACTUS_APP_DIALOG_BUTTON_CAPACITY];
