@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define FRACTUS_FONT_GLYPH_COUNT 97u
+#define FRACTUS_FONT_GLYPH_COUNT 120u
 
 typedef struct fractus_font_archive_slice {
     size_t offset;
@@ -17,10 +17,10 @@ static const uint8_t fractus_font_magic[13] = {
     'M', 'H', 'I', 'D', 'S', ' ', 'F', 'u', 'e', 'n', 't', 'e', 0x1a
 };
 static const fractus_font_archive_slice fractus_font_archive_layout[FRACTUS_FONT_COUNT] = {
-    {13685u, 33891u},
-    {0u, 13685u},
-    {47576u, 4746u},
-    {52322u, 11948u}
+    {16685u, 41085u}, /* france */
+    {0u, 16685u},     /* arial */
+    {57770u, 5940u},  /* small */
+    {63710u, 14777u}  /* courier */
 };
 static const char *fractus_font_face_names[FRACTUS_FONT_COUNT] = {
     "france",
@@ -78,39 +78,71 @@ static int fractus_font_decode_next_glyph(
         return 0;
     }
 
-    /* 1. Secuencia UTF-8 de 2 bytes que comienza con 0xC3 (Latin-1 Supplement: Acentos, Ñ, etc.) */
+    /* 1. Secuencia UTF-8 de 2 bytes que comienza con 0xC3 (Acentos, Ñ, dieresis) */
     if (b0 == 0xC3u && text[*offset + 1] != '\0') {
         uint8_t b1 = (uint8_t)text[*offset + 1];
         *offset += 2u;
 
-        /* Acentos minusculas y enes presentes en fractus.fon */
-        if (b1 == 0xA1u) { *index = 92u; return 1; } /* á */
-        if (b1 == 0xA9u) { *index = 93u; return 1; } /* é */
-        if (b1 == 0xADu) { *index = 94u; return 1; } /* í */
-        if (b1 == 0xB3u) { *index = 95u; return 1; } /* ó */
-        if (b1 == 0xBAu) { *index = 96u; return 1; } /* ú */
-        if (b1 == 0xB1u) { *index = 51u; return 1; } /* ñ */
-        if (b1 == 0x91u) { *index = 14u; return 1; } /* Ñ */
+        if (b1 == 0x81u) { *index = 101u; return 1; } /* Á */
+        if (b1 == 0x89u) { *index = 102u; return 1; } /* É */
+        if (b1 == 0x8Du) { *index = 103u; return 1; } /* Í */
+        if (b1 == 0x91u) { *index = 14u;  return 1; } /* Ñ */
+        if (b1 == 0x93u) { *index = 104u; return 1; } /* Ó */
+        if (b1 == 0x9Au) { *index = 105u; return 1; } /* Ú */
+        if (b1 == 0x9Cu) { *index = 107u; return 1; } /* Ü */
 
-        /* Fallbacks para mayusculas con tilde y dieresis */
-        if (b1 == 0x81u) { *index = 0u;  return 1; } /* Á -> A */
-        if (b1 == 0x89u) { *index = 4u;  return 1; } /* É -> E */
-        if (b1 == 0x8Du) { *index = 8u;  return 1; } /* Í -> I */
-        if (b1 == 0x93u) { *index = 15u; return 1; } /* Ó -> O */
-        if (b1 == 0x9Au) { *index = 20u; return 1; } /* Ú -> U */
-        if (b1 == 0x9Cu) { *index = 20u; return 1; } /* Ü -> U */
-        if (b1 == 0xBCu) { *index = 58u; return 1; } /* ü -> u */
+        if (b1 == 0xA1u) { *index = 92u;  return 1; } /* á */
+        if (b1 == 0xA9u) { *index = 93u;  return 1; } /* é */
+        if (b1 == 0xADu) { *index = 94u;  return 1; } /* í */
+        if (b1 == 0xB1u) { *index = 51u;  return 1; } /* ñ */
+        if (b1 == 0xB3u) { *index = 95u;  return 1; } /* ó */
+        if (b1 == 0xBAu) { *index = 96u;  return 1; } /* ú */
+        if (b1 == 0xBCu) { *index = 106u; return 1; } /* ü */
 
         return 0;
     }
 
-    /* 2. Secuencia UTF-8 de 2 bytes que comienza con 0xC2 (Puntuacion espanola) */
+    /* 2. Secuencia UTF-8 de 2 bytes que comienza con 0xC2 (Puntuacion espanola y superindices 1, 2, 3) */
     if (b0 == 0xC2u && text[*offset + 1] != '\0') {
+        uint8_t b1 = (uint8_t)text[*offset + 1];
         *offset += 2u;
+
+        if (b1 == 0xBFu) { *index = 108u; return 1; } /* ¿ */
+        if (b1 == 0xA1u) { *index = 109u; return 1; } /* ¡ */
+        if (b1 == 0xBAu || b1 == 0xB0u) { *index = 110u; return 1; } /* º / ° */
+        if (b1 == 0xAAu) { *index = 111u; return 1; } /* ª */
+        if (b1 == 0xB9u) { *index = 112u; return 1; } /* ¹ */
+        if (b1 == 0xB2u) { *index = 113u; return 1; } /* ² */
+        if (b1 == 0xB3u) { *index = 114u; return 1; } /* ³ */
+
         return 0;
     }
 
-    /* 3. Secuencia UTF-8 multibyte de 3 o 4 bytes */
+    /* 3. Secuencias UTF-8 de 2 bytes para superindices x e y (0xCB 0xA3 / 0xCA 0xB8) */
+    if (b0 == 0xCBu && (uint8_t)text[*offset + 1] == 0xA3u) {
+        *offset += 2u;
+        *index = 117u; /* ˣ */
+        return 1;
+    }
+    if (b0 == 0xCAu && (uint8_t)text[*offset + 1] == 0xB8u) {
+        *offset += 2u;
+        *index = 118u; /* ʸ */
+        return 1;
+    }
+
+    /* 4. Secuencias UTF-8 de 3 bytes para superindices 4, 5 y z */
+    if (b0 == 0xE2u && (uint8_t)text[*offset + 1] == 0x81u) {
+        uint8_t b2 = (uint8_t)text[*offset + 2];
+        if (b2 == 0xB4u) { *offset += 3u; *index = 115u; return 1; } /* ⁴ */
+        if (b2 == 0xB5u) { *offset += 3u; *index = 116u; return 1; } /* ⁵ */
+    }
+    if (b0 == 0xE1u && (uint8_t)text[*offset + 1] == 0xB6u && (uint8_t)text[*offset + 2] == 0xBBu) {
+        *offset += 3u;
+        *index = 119u; /* ᶻ */
+        return 1;
+    }
+
+    /* 5. Secuencia UTF-8 multibyte generica de 3 o 4 bytes (desconocida: saltar) */
     if ((b0 & 0xE0u) == 0xE0u) {
         size_t skip = ((b0 & 0xF0u) == 0xF0u) ? 4u : 3u;
         while (skip > 0u && text[*offset] != '\0') {
@@ -120,7 +152,7 @@ static int fractus_font_decode_next_glyph(
         return 0;
     }
 
-    /* 4. Caracteres ASCII estandar de 1 byte */
+    /* 6. Caracteres ASCII estandar de 1 byte (0..127) */
     *offset += 1u;
 
     if (b0 == 32u) {
@@ -158,6 +190,21 @@ static int fractus_font_decode_next_glyph(
         return 1;
     }
 
+    if (b0 == 94u) {
+        *index = 97u; /* ^ */
+        return 1;
+    }
+
+    if (b0 == 95u) {
+        *index = 98u; /* _ */
+        return 1;
+    }
+
+    if (b0 == 96u) {
+        *index = 99u; /* ` */
+        return 1;
+    }
+
     if (b0 >= 97u && b0 <= 110u) {
         *index = (uint32_t)(b0 - 97u + 37u);
         return 1;
@@ -173,21 +220,35 @@ static int fractus_font_decode_next_glyph(
         return 1;
     }
 
-    /* 5. Fallback para caracteres de 1 solo byte en ISO-8859-1 / Windows-1252 */
-    if (b0 == 0xE1u) { *index = 92u; return 1; } /* á */
-    if (b0 == 0xE9u) { *index = 93u; return 1; } /* é */
-    if (b0 == 0xEDu) { *index = 94u; return 1; } /* í */
-    if (b0 == 0xF3u) { *index = 95u; return 1; } /* ó */
-    if (b0 == 0xFAu) { *index = 96u; return 1; } /* ú */
-    if (b0 == 0xF1u) { *index = 51u; return 1; } /* ñ */
-    if (b0 == 0xD1u) { *index = 14u; return 1; } /* Ñ */
-    if (b0 == 0xC1u) { *index = 0u;  return 1; } /* Á -> A */
-    if (b0 == 0xC9u) { *index = 4u;  return 1; } /* É -> E */
-    if (b0 == 0xCDu) { *index = 8u;  return 1; } /* Í -> I */
-    if (b0 == 0xD3u) { *index = 15u; return 1; } /* Ó -> O */
-    if (b0 == 0xDAu) { *index = 20u; return 1; } /* Ú -> U */
-    if (b0 == 0xDCu) { *index = 20u; return 1; } /* Ü -> U */
-    if (b0 == 0xFCu) { *index = 58u; return 1; } /* ü -> u */
+    if (b0 == 126u) {
+        *index = 100u; /* ~ */
+        return 1;
+    }
+
+    /* 7. Fallback para caracteres de 1 solo byte en ISO-8859-1 / Windows-1252 */
+    if (b0 == 0xC1u) { *index = 101u; return 1; } /* Á */
+    if (b0 == 0xC9u) { *index = 102u; return 1; } /* É */
+    if (b0 == 0xCDu) { *index = 103u; return 1; } /* Í */
+    if (b0 == 0xD1u) { *index = 14u;  return 1; } /* Ñ */
+    if (b0 == 0xD3u) { *index = 104u; return 1; } /* Ó */
+    if (b0 == 0xDAu) { *index = 105u; return 1; } /* Ú */
+    if (b0 == 0xDCu) { *index = 107u; return 1; } /* Ü */
+
+    if (b0 == 0xE1u) { *index = 92u;  return 1; } /* á */
+    if (b0 == 0xE9u) { *index = 93u;  return 1; } /* é */
+    if (b0 == 0xEDu) { *index = 94u;  return 1; } /* í */
+    if (b0 == 0xF1u) { *index = 51u;  return 1; } /* ñ */
+    if (b0 == 0xF3u) { *index = 95u;  return 1; } /* ó */
+    if (b0 == 0xFAu) { *index = 96u;  return 1; } /* ú */
+    if (b0 == 0xFCu) { *index = 106u; return 1; } /* ü */
+
+    if (b0 == 0xBFu) { *index = 108u; return 1; } /* ¿ */
+    if (b0 == 0xA1u) { *index = 109u; return 1; } /* ¡ */
+    if (b0 == 0xBAu || b0 == 0xB0u) { *index = 110u; return 1; } /* º / ° */
+    if (b0 == 0xAAu) { *index = 111u; return 1; } /* ª */
+    if (b0 == 0xB9u) { *index = 112u; return 1; } /* ¹ */
+    if (b0 == 0xB2u) { *index = 113u; return 1; } /* ² */
+    if (b0 == 0xB3u) { *index = 114u; return 1; } /* ³ */
 
     return 0;
 }

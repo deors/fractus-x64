@@ -14,11 +14,13 @@ typedef enum fractus_font_kind {
     FRACTUS_FONT_COUNT = 4
 } fractus_font_kind;
 
+#define FRACTUS_FONT_GLYPH_CAPACITY 128u
+
 typedef struct fractus_font_face {
     uint16_t file_type;
     uint16_t glyph_height;
-    uint16_t glyph_widths[97];
-    uint32_t glyph_offsets[97];
+    uint16_t glyph_widths[FRACTUS_FONT_GLYPH_CAPACITY];
+    uint32_t glyph_offsets[FRACTUS_FONT_GLYPH_CAPACITY];
     uint8_t *data;
     size_t data_size;
     int initialized;
