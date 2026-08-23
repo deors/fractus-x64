@@ -35,6 +35,7 @@ typedef enum fractus_app_lorenz_dialog_action {
     FRACTUS_APP_LORENZ_PROJ_XZ,
     FRACTUS_APP_LORENZ_PROJ_XY,
     FRACTUS_APP_LORENZ_PROJ_YZ,
+    FRACTUS_APP_LORENZ_PROJ_3D,
     FRACTUS_APP_LORENZ_DRAW,
     FRACTUS_APP_LORENZ_CANCEL
 } fractus_app_lorenz_dialog_action;
@@ -45,6 +46,14 @@ typedef struct fractus_app_lorenz_fields {
     fractus_ui_numeric_field beta;
     fractus_ui_numeric_field dt;
     fractus_ui_numeric_field iterations;
+    fractus_ui_numeric_field rot_x;
+    fractus_ui_numeric_field rot_y;
+    fractus_ui_numeric_field rot_z;
+    int is_dragging_3d;
+    fractus_point_i32 drag_start_pos;
+    double drag_start_rot_x;
+    double drag_start_rot_y;
+    double drag_start_rot_z;
 } fractus_app_lorenz_fields;
 
 typedef struct fractus_app_attractor_fields {
@@ -57,7 +66,10 @@ void fractus_app_init_lorenz_fields(
     double rho,
     double beta,
     double dt,
-    uint32_t iterations);
+    uint32_t iterations,
+    double rot_x,
+    double rot_y,
+    double rot_z);
 
 const char *fractus_app_attractor_method_name(fractus_app_attractor_method method);
 

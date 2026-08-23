@@ -506,6 +506,9 @@ int fractus_app_run(void)
     lorenz_params.dt = 0.01;
     lorenz_params.iterations = 10000u;
     lorenz_params.projection = FRACTUS_LORENZ_PROJECTION_XZ;
+    lorenz_params.rot_x = 0.0;
+    lorenz_params.rot_y = 0.0;
+    lorenz_params.rot_z = 0.0;
     lorenz_params.palette_offset = 16u;
     lorenz_params.palette_span = 240u;
     lorenz_pending = lorenz_params;

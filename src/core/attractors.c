@@ -82,6 +82,42 @@ static void fractus_lorenz_plot_line(
     }
 }
 
+void fractus_lorenz_project_point_3d(
+    double x,
+    double y,
+    double z,
+    double rot_x_deg,
+    double rot_y_deg,
+    double rot_z_deg,
+    double *out_u,
+    double *out_v)
+{
+    const double deg_to_rad = 3.14159265358979323846 / 180.0;
+    double a = rot_x_deg * deg_to_rad;
+    double b = rot_y_deg * deg_to_rad;
+    double c = rot_z_deg * deg_to_rad;
+
+    /* 1. Yaw around Z axis */
+    double x1 = x * cos(b) - y * sin(b);
+    double y1 = x * sin(b) + y * cos(b);
+    double z1 = z;
+
+    /* 2. Pitch around X axis */
+    double x2 = x1;
+    double z2 = y1 * sin(a) + z1 * cos(a);
+
+    /* 3. Roll in screen plane */
+    double u = x2 * cos(c) - z2 * sin(c);
+    double v = x2 * sin(c) + z2 * cos(c);
+
+    if (out_u != NULL) {
+        *out_u = u;
+    }
+    if (out_v != NULL) {
+        *out_v = v;
+    }
+}
+
 fractus_status fractus_fractal_render_lorenz(
     fractus_framebuffer *framebuffer,
     const fractus_lorenz_params *params)
@@ -105,6 +141,7 @@ fractus_status fractus_fractal_render_lorenz(
     double c_focus, c_z, d_max;
     uint8_t pal_offset;
     uint8_t pal_span;
+    const uint32_t sample_steps = (params != NULL && params->iterations > 20000u) ? 20000u : (params != NULL ? params->iterations : 10000u);
 
     if (framebuffer == NULL || !framebuffer->initialized || params == NULL) {
         return FRACTUS_STATUS_INVALID_ARGUMENT;
@@ -128,7 +165,6 @@ fractus_status fractus_fractal_render_lorenz(
     /* 2. Muestreo para determinar limites reales con simetria horizontal estricta */
     {
         double sx = x, sy = y, sz = z;
-        const uint32_t sample_steps = (params->iterations > 20000u) ? 20000u : params->iterations;
         for (i = 0u; i < sample_steps; ++i) {
             fractus_lorenz_rk4_step(&sx, &sy, &sz, params->sigma, params->rho, params->beta, params->dt);
             if (sx < x_min_s) x_min_s = sx;
@@ -166,6 +202,34 @@ fractus_status fractus_fractal_render_lorenz(
         h_span = y_span;
         v_span = z_span;
         v_center = z_center;
+    } else if (params->projection == FRACTUS_LORENZ_PROJECTION_CUSTOM) {
+        double u_min_s = 1e9, u_max_s = -1e9;
+        double v_min_s = 1e9, v_max_s = -1e9;
+        double sx = x, sy = y, sz = z;
+
+        for (i = 0u; i < sample_steps; ++i) {
+            double u1, v1, u2, v2;
+            fractus_lorenz_rk4_step(&sx, &sy, &sz, params->sigma, params->rho, params->beta, params->dt);
+            fractus_lorenz_project_point_3d(sx, sy, sz - z_center, params->rot_x, params->rot_y, params->rot_z, &u1, &v1);
+            fractus_lorenz_project_point_3d(-sx, -sy, sz - z_center, params->rot_x, params->rot_y, params->rot_z, &u2, &v2);
+            if (u1 < u_min_s) u_min_s = u1;
+            if (u1 > u_max_s) u_max_s = u1;
+            if (u2 < u_min_s) u_min_s = u2;
+            if (u2 > u_max_s) u_max_s = u2;
+            if (v1 < v_min_s) v_min_s = v1;
+            if (v1 > v_max_s) v_max_s = v1;
+            if (v2 < v_min_s) v_min_s = v2;
+            if (v2 > v_max_s) v_max_s = v2;
+        }
+
+        {
+            double u_max_abs = (fabs(u_min_s) > fabs(u_max_s) ? fabs(u_min_s) : fabs(u_max_s)) * 1.15;
+            h_span = 2.0 * u_max_abs;
+            v_span = (v_max_s - v_min_s) * 1.15;
+            v_center = (v_min_s + v_max_s) * 0.5;
+            if (h_span < 1e-4) h_span = 50.0;
+            if (v_span < 1e-4) v_span = 50.0;
+        }
     } else { /* FRACTUS_LORENZ_PROJECTION_XZ */
         h_span = x_span;
         v_span = z_span;
@@ -206,6 +270,14 @@ fractus_status fractus_fractal_render_lorenz(
             prev_py1 = (int32_t)(v_offset_px - z * scale + 0.5);
             prev_px2 = (int32_t)(h_offset_px - y * scale + 0.5);
             prev_py2 = prev_py1;
+        } else if (params->projection == FRACTUS_LORENZ_PROJECTION_CUSTOM) {
+            double u1, v1, u2, v2;
+            fractus_lorenz_project_point_3d(x, y, z - z_center, params->rot_x, params->rot_y, params->rot_z, &u1, &v1);
+            fractus_lorenz_project_point_3d(-x, -y, z - z_center, params->rot_x, params->rot_y, params->rot_z, &u2, &v2);
+            prev_px1 = (int32_t)(h_offset_px + u1 * scale + 0.5);
+            prev_py1 = (int32_t)(v_offset_px - v1 * scale + 0.5);
+            prev_px2 = (int32_t)(h_offset_px + u2 * scale + 0.5);
+            prev_py2 = (int32_t)(v_offset_px - v2 * scale + 0.5);
         } else { /* X-Z */
             prev_px1 = (int32_t)(h_offset_px + x * scale + 0.5);
             prev_py1 = (int32_t)(v_offset_px - z * scale + 0.5);
@@ -232,6 +304,14 @@ fractus_status fractus_fractal_render_lorenz(
                 py1 = (int32_t)(v_offset_px - z * scale + 0.5);
                 px2 = (int32_t)(h_offset_px - y * scale + 0.5);
                 py2 = py1;
+            } else if (params->projection == FRACTUS_LORENZ_PROJECTION_CUSTOM) {
+                double u1, v1, u2, v2;
+                fractus_lorenz_project_point_3d(x, y, z - z_center, params->rot_x, params->rot_y, params->rot_z, &u1, &v1);
+                fractus_lorenz_project_point_3d(-x, -y, z - z_center, params->rot_x, params->rot_y, params->rot_z, &u2, &v2);
+                px1 = (int32_t)(h_offset_px + u1 * scale + 0.5);
+                py1 = (int32_t)(v_offset_px - v1 * scale + 0.5);
+                px2 = (int32_t)(h_offset_px + u2 * scale + 0.5);
+                py2 = (int32_t)(v_offset_px - v2 * scale + 0.5);
             } else { /* X-Z */
                 px1 = (int32_t)(h_offset_px + x * scale + 0.5);
                 py1 = (int32_t)(v_offset_px - z * scale + 0.5);

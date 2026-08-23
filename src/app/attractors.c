@@ -2,6 +2,7 @@
 #include "app/files.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static const fractus_app_menu_entry fractus_app_attractor_method_buttons[] = {
@@ -50,13 +51,139 @@ const char *fractus_app_attractor_method_name(fractus_app_attractor_method metho
     }
 }
 
+static void fractus_app_draw_line(
+    fractus_framebuffer *framebuffer,
+    int32_t x0,
+    int32_t y0,
+    int32_t x1,
+    int32_t y1,
+    uint8_t color,
+    fractus_rect_i32 clip)
+{
+    int32_t dx = abs(x1 - x0);
+    int32_t dy = -abs(y1 - y0);
+    int32_t sx = (x0 < x1) ? 1 : -1;
+    int32_t sy = (y0 < y1) ? 1 : -1;
+    int32_t err = dx + dy;
+    int32_t clip_x2 = clip.x + clip.width;
+    int32_t clip_y2 = clip.y + clip.height;
+    int32_t pitch = (int32_t)framebuffer->pitch_pixels;
+
+    while (1) {
+        if (x0 >= clip.x && x0 < clip_x2 && y0 >= clip.y && y0 < clip_y2) {
+            framebuffer->index_pixels[(size_t)y0 * (size_t)pitch + (size_t)x0] = color;
+        }
+        if (x0 == x1 && y0 == y1) {
+            break;
+        }
+        {
+            int32_t e2 = 2 * err;
+            if (e2 >= dy) {
+                err += dy;
+                x0 += sx;
+            }
+            if (e2 <= dx) {
+                err += dx;
+                y0 += sy;
+            }
+        }
+    }
+}
+
+static void fractus_app_draw_3d_axes(
+    fractus_framebuffer *framebuffer,
+    const fractus_font_library *fonts,
+    fractus_rect_i32 box,
+    double rot_x,
+    double rot_y,
+    double rot_z,
+    int is_active)
+{
+    int32_t cx = box.x + box.width / 2;
+    int32_t cy = box.y + box.height / 2;
+    const double L_axis = 22.0;
+    const double L_label = 30.0;
+    double ux, vx, uy, vy, uz, vz;
+    double lx, ly;
+    int32_t px_x, py_x, px_y, py_y, px_z, py_z;
+    int32_t lbl_x, lbl_y;
+
+    /* 1. Fondo y marco 3D */
+    (void)fractus_ui_fill_edges(framebuffer, box.x, box.y, box.x + box.width, box.y + box.height, 0u, 0u);
+    (void)fractus_ui_draw_frame(framebuffer, box.x, box.y, box.x + box.width, box.y + box.height);
+
+    /* 2. Proyeccion 3D de las lineas de los ejes */
+    fractus_lorenz_project_point_3d(L_axis, 0.0, 0.0, rot_x, rot_y, rot_z, &ux, &vx);
+    fractus_lorenz_project_point_3d(0.0, L_axis, 0.0, rot_x, rot_y, rot_z, &uy, &vy);
+    fractus_lorenz_project_point_3d(0.0, 0.0, L_axis, rot_x, rot_y, rot_z, &uz, &vz);
+
+    px_x = cx + (int32_t)(ux + (ux >= 0.0 ? 0.5 : -0.5));
+    py_x = cy - (int32_t)(vx + (vx >= 0.0 ? 0.5 : -0.5));
+    px_y = cx + (int32_t)(uy + (uy >= 0.0 ? 0.5 : -0.5));
+    py_y = cy - (int32_t)(vy + (vy >= 0.0 ? 0.5 : -0.5));
+    px_z = cx + (int32_t)(uz + (uz >= 0.0 ? 0.5 : -0.5));
+    py_z = cy - (int32_t)(vz + (vz >= 0.0 ? 0.5 : -0.5));
+
+    /* 3. Semiejes negativos atenuados */
+    fractus_app_draw_line(framebuffer, cx, cy, cx - (int32_t)(ux * 0.6), cy + (int32_t)(vx * 0.6), 8u, box);
+    fractus_app_draw_line(framebuffer, cx, cy, cx - (int32_t)(uy * 0.6), cy + (int32_t)(vy * 0.6), 8u, box);
+    fractus_app_draw_line(framebuffer, cx, cy, cx - (int32_t)(uz * 0.6), cy + (int32_t)(vz * 0.6), 8u, box);
+
+    /* 4. Semiejes positivos con colores distintivos */
+    fractus_app_draw_line(framebuffer, cx, cy, px_x, py_x, 12u, box); /* X: Rojo */
+    fractus_app_draw_line(framebuffer, cx, cy, px_y, py_y, 10u, box); /* Y: Verde */
+    fractus_app_draw_line(framebuffer, cx, cy, px_z, py_z, 11u, box); /* Z: Cyan */
+
+    /* 5. Punto de origen */
+    if (cx >= box.x && cx < box.x + box.width && cy >= box.y && cy < box.y + box.height) {
+        framebuffer->index_pixels[(size_t)cy * framebuffer->pitch_pixels + (size_t)cx] = 15u;
+    }
+
+    /* 6. Etiquetas separadas de los extremos de los ejes */
+    /* Eje X */
+    fractus_lorenz_project_point_3d(L_label, 0.0, 0.0, rot_x, rot_y, rot_z, &lx, &ly);
+    lbl_x = cx + (int32_t)(lx + (lx >= 0.0 ? 0.5 : -0.5)) - 2;
+    lbl_y = cy - (int32_t)(ly + (ly >= 0.0 ? 0.5 : -0.5)) - 4;
+    if (lbl_x < box.x + 3) lbl_x = box.x + 3;
+    if (lbl_x > box.x + box.width - 9) lbl_x = box.x + box.width - 9;
+    if (lbl_y < box.y + 3) lbl_y = box.y + 3;
+    if (lbl_y > box.y + box.height - 18) lbl_y = box.y + box.height - 18;
+    (void)fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, lbl_x, lbl_y, 12u, "X");
+
+    /* Eje Y */
+    fractus_lorenz_project_point_3d(0.0, L_label, 0.0, rot_x, rot_y, rot_z, &lx, &ly);
+    lbl_x = cx + (int32_t)(lx + (lx >= 0.0 ? 0.5 : -0.5)) - 2;
+    lbl_y = cy - (int32_t)(ly + (ly >= 0.0 ? 0.5 : -0.5)) - 4;
+    if (lbl_x < box.x + 3) lbl_x = box.x + 3;
+    if (lbl_x > box.x + box.width - 9) lbl_x = box.x + box.width - 9;
+    if (lbl_y < box.y + 3) lbl_y = box.y + 3;
+    if (lbl_y > box.y + box.height - 18) lbl_y = box.y + box.height - 18;
+    (void)fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, lbl_x, lbl_y, 10u, "Y");
+
+    /* Eje Z */
+    fractus_lorenz_project_point_3d(0.0, 0.0, L_label, rot_x, rot_y, rot_z, &lx, &ly);
+    lbl_x = cx + (int32_t)(lx + (lx >= 0.0 ? 0.5 : -0.5)) - 2;
+    lbl_y = cy - (int32_t)(ly + (ly >= 0.0 ? 0.5 : -0.5)) - 4;
+    if (lbl_x < box.x + 3) lbl_x = box.x + 3;
+    if (lbl_x > box.x + box.width - 9) lbl_x = box.x + box.width - 9;
+    if (lbl_y < box.y + 3) lbl_y = box.y + 3;
+    if (lbl_y > box.y + box.height - 18) lbl_y = box.y + box.height - 18;
+    (void)fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, lbl_x, lbl_y, 11u, "Z");
+
+    /* 7. Texto en la esquina inferior */
+    (void)fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, cx, box.y + box.height - 13, is_active ? 0u : 7u, "Proyeccion 3D");
+}
+
 void fractus_app_init_lorenz_fields(
     fractus_app_lorenz_fields *fields,
     double sigma,
     double rho,
     double beta,
     double dt,
-    uint32_t iterations)
+    uint32_t iterations,
+    double rot_x,
+    double rot_y,
+    double rot_z)
 {
     if (fields == NULL) {
         return;
@@ -67,6 +194,9 @@ void fractus_app_init_lorenz_fields(
     (void)fractus_ui_numeric_field_init_float(&fields->beta, (fractus_rect_i32){385, 156, 60, 20}, beta, 0.10, 20.00, 2);
     (void)fractus_ui_numeric_field_init_float(&fields->dt, (fractus_rect_i32){385, 182, 60, 20}, dt, 0.001, 0.100, 3);
     (void)fractus_ui_numeric_field_init_int(&fields->iterations, (fractus_rect_i32){385, 208, 60, 20}, (int32_t)iterations, 1000, 99999);
+    (void)fractus_ui_numeric_field_init_float(&fields->rot_x, (fractus_rect_i32){440, 264, 65, 20}, rot_x, -180.0, 180.0, 1);
+    (void)fractus_ui_numeric_field_init_float(&fields->rot_y, (fractus_rect_i32){440, 288, 65, 20}, rot_y, -180.0, 180.0, 1);
+    (void)fractus_ui_numeric_field_init_float(&fields->rot_z, (fractus_rect_i32){440, 312, 65, 20}, rot_z, -180.0, 180.0, 1);
 }
 
 static size_t fractus_app_build_lorenz_config_entries(
@@ -84,9 +214,10 @@ static size_t fractus_app_build_lorenz_config_entries(
         {FRACTUS_APP_RECT(485, 182, 515, 202), 8u, 0u, "+"},
         {FRACTUS_APP_RECT(450, 208, 480, 228), 8u, 0u, "-"},
         {FRACTUS_APP_RECT(485, 208, 515, 228), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(355, 236, 405, 256), 8u, 0u, "X-Z"},
-        {FRACTUS_APP_RECT(410, 236, 460, 256), 8u, 0u, "X-Y"},
-        {FRACTUS_APP_RECT(465, 236, 515, 256), 8u, 0u, "Y-Z"},
+        {FRACTUS_APP_RECT(340, 236, 380, 256), 8u, 0u, "X-Z"},
+        {FRACTUS_APP_RECT(385, 236, 425, 256), 8u, 0u, "X-Y"},
+        {FRACTUS_APP_RECT(430, 236, 470, 256), 8u, 0u, "Y-Z"},
+        {FRACTUS_APP_RECT(475, 236, 515, 256), 8u, 0u, "3D"},
         {FRACTUS_APP_RECT(210, 395, 310, 415), 8u, 0u, "Dibujar"},
         {FRACTUS_APP_RECT(330, 395, 430, 415), 0u, 15u, "Cancelar"}
     };
@@ -249,7 +380,10 @@ fractus_status fractus_app_run_attractors_menu_view(
                 lorenz_pending->rho,
                 lorenz_pending->beta,
                 lorenz_pending->dt,
-                lorenz_pending->iterations);
+                lorenz_pending->iterations,
+                lorenz_pending->rot_x,
+                lorenz_pending->rot_y,
+                lorenz_pending->rot_z);
             *view = FRACTUS_APP_VIEW_ATTRACTORS_CONFIG;
         }
     }
@@ -267,17 +401,20 @@ static fractus_status fractus_app_run_lorenz_config_view(
     fractus_app_view *view)
 {
     const fractus_ui_radio_option proj_options[] = {
-        {FRACTUS_APP_RECT(355, 236, 405, 256), "X-Z"},
-        {FRACTUS_APP_RECT(410, 236, 460, 256), "X-Y"},
-        {FRACTUS_APP_RECT(465, 236, 515, 256), "Y-Z"}
+        {FRACTUS_APP_RECT(340, 236, 380, 256), "X-Z"},
+        {FRACTUS_APP_RECT(385, 236, 425, 256), "X-Y"},
+        {FRACTUS_APP_RECT(430, 236, 470, 256), "Y-Z"},
+        {FRACTUS_APP_RECT(475, 236, 515, 256), "3D"}
     };
     fractus_app_menu_entry dialog_entries[FRACTUS_APP_DIALOG_BUTTON_CAPACITY];
     fractus_ui_menu_option dialog_options[FRACTUS_APP_DIALOG_BUTTON_CAPACITY];
+    fractus_rect_i32 box_3d = {248, 262, 90, 80};
     size_t dialog_entry_count;
     int selected_menu = -1;
     int cancelled = 0;
     int skip_mouse_input = 0;
     int active_index;
+    int is_3d_active;
 
     if (framebuffer == NULL || fonts == NULL || ui == NULL ||
         params == NULL || pending == NULL || fields == NULL || view == NULL) {
@@ -287,6 +424,7 @@ static fractus_status fractus_app_run_lorenz_config_view(
     dialog_entry_count = fractus_app_build_lorenz_config_entries(dialog_entries, FRACTUS_APP_ARRAY_COUNT(dialog_entries));
     fractus_app_build_options_from_entries(dialog_options, dialog_entries, dialog_entry_count);
     active_index = fractus_ui_active_menu_index(ui, dialog_options, dialog_entry_count);
+    is_3d_active = (pending->projection == FRACTUS_LORENZ_PROJECTION_CUSTOM);
 
     /* 1. Base y panel derecho */
     if (fractus_app_render_attractors_base(
@@ -314,15 +452,28 @@ static fractus_status fractus_app_run_lorenz_config_view(
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->dt) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 248, 212, 0u, "Iteraciones (1000-99999)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->iterations) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 248, 240, 0u, "Proyeccion planar") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 248, 240, 0u, "Proyeccion") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_radio_list(
             framebuffer,
             fonts,
             proj_options,
             FRACTUS_APP_ARRAY_COUNT(proj_options),
             (int)pending->projection,
-            (active_index >= FRACTUS_APP_LORENZ_PROJ_XZ && active_index <= FRACTUS_APP_LORENZ_PROJ_YZ) ?
-                active_index - FRACTUS_APP_LORENZ_PROJ_XZ : -1) != FRACTUS_STATUS_OK ||
+            (active_index >= FRACTUS_APP_LORENZ_PROJ_XZ && active_index <= FRACTUS_APP_LORENZ_PROJ_3D) ?
+                active_index - FRACTUS_APP_LORENZ_PROJ_XZ : -1) != FRACTUS_STATUS_OK) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    /* 3. Selector de perspectiva 3D interactivo */
+    fractus_app_draw_3d_axes(framebuffer, fonts, box_3d, pending->rot_x, pending->rot_y, pending->rot_z, is_3d_active);
+
+    /* 4. Campos numericos de rotacion */
+    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 372, 268, 0u, "Angulo X") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->rot_x) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 372, 292, 0u, "Angulo Y") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->rot_y) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, 372, 316, 0u, "Angulo Z") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->rot_z) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, 378, 348, 7u, "Punto inicial: (0.1, 0.0, 0.0)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_centered(
             framebuffer,
@@ -347,8 +498,56 @@ static fractus_status fractus_app_run_lorenz_config_view(
         return FRACTUS_STATUS_ERROR;
     }
 
-    /* 3. Gestion de foco y edicion de campos */
-    if (ui->release_pending && ui->release_event.buttons.left) {
+    /* 5. Interaccion con el selector 3D (arrastre con raton) */
+    if (ui->press_pending && fractus_ui_point_in_rect(ui->press_event.position, box_3d)) {
+        fields->is_dragging_3d = (ui->press_event.buttons.right) ? 2 : 1;
+        fields->drag_start_pos = ui->press_event.position;
+        fields->drag_start_rot_x = pending->rot_x;
+        fields->drag_start_rot_y = pending->rot_y;
+        fields->drag_start_rot_z = pending->rot_z;
+        pending->projection = FRACTUS_LORENZ_PROJECTION_CUSTOM;
+    }
+
+    if (fields->is_dragging_3d != 0) {
+        if (!ui->buttons_down.left && !ui->buttons_down.right) {
+            fields->is_dragging_3d = 0;
+        } else {
+            int32_t dx = ui->pointer_position.x - fields->drag_start_pos.x;
+            int32_t dy = ui->pointer_position.y - fields->drag_start_pos.y;
+
+            if (fields->is_dragging_3d == 1) {
+                double nx = fields->drag_start_rot_x - (double)dy * 1.5;
+                double ny = fields->drag_start_rot_y + (double)dx * 1.5;
+                while (nx > 180.0) nx -= 360.0;
+                while (nx < -180.0) nx += 360.0;
+                while (ny > 180.0) ny -= 360.0;
+                while (ny < -180.0) ny += 360.0;
+                pending->rot_x = nx;
+                pending->rot_y = ny;
+            } else if (fields->is_dragging_3d == 2) {
+                double nz = fields->drag_start_rot_z + (double)dx * 1.5;
+                while (nz > 180.0) nz -= 360.0;
+                while (nz < -180.0) nz += 360.0;
+                pending->rot_z = nz;
+            }
+
+            pending->projection = FRACTUS_LORENZ_PROJECTION_CUSTOM;
+            fractus_app_init_lorenz_fields(
+                fields,
+                pending->sigma,
+                pending->rho,
+                pending->beta,
+                pending->dt,
+                pending->iterations,
+                pending->rot_x,
+                pending->rot_y,
+                pending->rot_z);
+            skip_mouse_input = 1;
+        }
+    }
+
+    /* 6. Gestion de foco y edicion de campos */
+    if (ui->release_pending && ui->release_event.buttons.left && !fields->is_dragging_3d) {
         fractus_point_i32 click_pos = ui->release_event.position;
         fractus_ui_numeric_field *clicked_field = NULL;
 
@@ -368,6 +567,12 @@ static fractus_status fractus_app_run_lorenz_config_view(
             clicked_field = &fields->dt;
         } else if (fractus_ui_point_in_rect(click_pos, fields->iterations.bounds)) {
             clicked_field = &fields->iterations;
+        } else if (fractus_ui_point_in_rect(click_pos, fields->rot_x.bounds)) {
+            clicked_field = &fields->rot_x;
+        } else if (fractus_ui_point_in_rect(click_pos, fields->rot_y.bounds)) {
+            clicked_field = &fields->rot_y;
+        } else if (fractus_ui_point_in_rect(click_pos, fields->rot_z.bounds)) {
+            clicked_field = &fields->rot_z;
         }
 
         if (clicked_field != NULL) {
@@ -388,8 +593,29 @@ static fractus_status fractus_app_run_lorenz_config_view(
             if (fields->iterations.editing && fractus_ui_numeric_field_get_int(&fields->iterations, &ival) == FRACTUS_STATUS_OK) {
                 pending->iterations = (uint32_t)ival;
             }
+            if (fields->rot_x.editing && fractus_ui_numeric_field_get_float(&fields->rot_x, &fval) == FRACTUS_STATUS_OK) {
+                pending->rot_x = fval;
+                pending->projection = FRACTUS_LORENZ_PROJECTION_CUSTOM;
+            }
+            if (fields->rot_y.editing && fractus_ui_numeric_field_get_float(&fields->rot_y, &fval) == FRACTUS_STATUS_OK) {
+                pending->rot_y = fval;
+                pending->projection = FRACTUS_LORENZ_PROJECTION_CUSTOM;
+            }
+            if (fields->rot_z.editing && fractus_ui_numeric_field_get_float(&fields->rot_z, &fval) == FRACTUS_STATUS_OK) {
+                pending->rot_z = fval;
+                pending->projection = FRACTUS_LORENZ_PROJECTION_CUSTOM;
+            }
 
-            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations);
+            fractus_app_init_lorenz_fields(
+                fields,
+                pending->sigma,
+                pending->rho,
+                pending->beta,
+                pending->dt,
+                pending->iterations,
+                pending->rot_x,
+                pending->rot_y,
+                pending->rot_z);
 
             if (clicked_field == &fields->sigma) {
                 (void)fractus_ui_numeric_field_begin_edit(&fields->sigma);
@@ -401,6 +627,12 @@ static fractus_status fractus_app_run_lorenz_config_view(
                 (void)fractus_ui_numeric_field_begin_edit(&fields->dt);
             } else if (clicked_field == &fields->iterations) {
                 (void)fractus_ui_numeric_field_begin_edit(&fields->iterations);
+            } else if (clicked_field == &fields->rot_x) {
+                (void)fractus_ui_numeric_field_begin_edit(&fields->rot_x);
+            } else if (clicked_field == &fields->rot_y) {
+                (void)fractus_ui_numeric_field_begin_edit(&fields->rot_y);
+            } else if (clicked_field == &fields->rot_z) {
+                (void)fractus_ui_numeric_field_begin_edit(&fields->rot_z);
             }
         } else {
             double fval;
@@ -420,11 +652,32 @@ static fractus_status fractus_app_run_lorenz_config_view(
             if (fields->iterations.editing && fractus_ui_numeric_field_get_int(&fields->iterations, &ival) == FRACTUS_STATUS_OK) {
                 pending->iterations = (uint32_t)ival;
             }
-            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations);
+            if (fields->rot_x.editing && fractus_ui_numeric_field_get_float(&fields->rot_x, &fval) == FRACTUS_STATUS_OK) {
+                pending->rot_x = fval;
+                pending->projection = FRACTUS_LORENZ_PROJECTION_CUSTOM;
+            }
+            if (fields->rot_y.editing && fractus_ui_numeric_field_get_float(&fields->rot_y, &fval) == FRACTUS_STATUS_OK) {
+                pending->rot_y = fval;
+                pending->projection = FRACTUS_LORENZ_PROJECTION_CUSTOM;
+            }
+            if (fields->rot_z.editing && fractus_ui_numeric_field_get_float(&fields->rot_z, &fval) == FRACTUS_STATUS_OK) {
+                pending->rot_z = fval;
+                pending->projection = FRACTUS_LORENZ_PROJECTION_CUSTOM;
+            }
+            fractus_app_init_lorenz_fields(
+                fields,
+                pending->sigma,
+                pending->rho,
+                pending->beta,
+                pending->dt,
+                pending->iterations,
+                pending->rot_x,
+                pending->rot_y,
+                pending->rot_z);
         }
     }
 
-    /* Edicion activa por teclado */
+    /* 7. Edicion activa por teclado */
     {
         int edit_accepted = 0;
         int edit_cancelled = 0;
@@ -435,6 +688,9 @@ static fractus_status fractus_app_run_lorenz_config_view(
         else if (fields->beta.editing) active_field = &fields->beta;
         else if (fields->dt.editing) active_field = &fields->dt;
         else if (fields->iterations.editing) active_field = &fields->iterations;
+        else if (fields->rot_x.editing) active_field = &fields->rot_x;
+        else if (fields->rot_y.editing) active_field = &fields->rot_y;
+        else if (fields->rot_z.editing) active_field = &fields->rot_z;
 
         if (active_field != NULL) {
             if (fractus_ui_numeric_field_handle_input(active_field, ui, fonts, &edit_accepted, &edit_cancelled) == FRACTUS_STATUS_OK) {
@@ -451,17 +707,44 @@ static fractus_status fractus_app_run_lorenz_config_view(
                         pending->dt = fval;
                     } else if (active_field == &fields->iterations && fractus_ui_numeric_field_get_int(active_field, &ival) == FRACTUS_STATUS_OK) {
                         pending->iterations = (uint32_t)ival;
+                    } else if (active_field == &fields->rot_x && fractus_ui_numeric_field_get_float(active_field, &fval) == FRACTUS_STATUS_OK) {
+                        pending->rot_x = fval;
+                        pending->projection = FRACTUS_LORENZ_PROJECTION_CUSTOM;
+                    } else if (active_field == &fields->rot_y && fractus_ui_numeric_field_get_float(active_field, &fval) == FRACTUS_STATUS_OK) {
+                        pending->rot_y = fval;
+                        pending->projection = FRACTUS_LORENZ_PROJECTION_CUSTOM;
+                    } else if (active_field == &fields->rot_z && fractus_ui_numeric_field_get_float(active_field, &fval) == FRACTUS_STATUS_OK) {
+                        pending->rot_z = fval;
+                        pending->projection = FRACTUS_LORENZ_PROJECTION_CUSTOM;
                     }
-                    fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations);
+                    fractus_app_init_lorenz_fields(
+                        fields,
+                        pending->sigma,
+                        pending->rho,
+                        pending->beta,
+                        pending->dt,
+                        pending->iterations,
+                        pending->rot_x,
+                        pending->rot_y,
+                        pending->rot_z);
                 } else if (edit_cancelled) {
-                    fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations);
+                    fractus_app_init_lorenz_fields(
+                        fields,
+                        pending->sigma,
+                        pending->rho,
+                        pending->beta,
+                        pending->dt,
+                        pending->iterations,
+                        pending->rot_x,
+                        pending->rot_y,
+                        pending->rot_z);
                 }
             }
             skip_mouse_input = 1;
         }
     }
 
-    /* 4. Raton y acciones de botones y radio list */
+    /* 8. Raton y acciones de botones y radio list */
     if (!skip_mouse_input && fractus_ui_menu(ui, dialog_options, dialog_entry_count, &selected_menu, &cancelled)) {
         if (cancelled || selected_menu == FRACTUS_APP_LORENZ_CANCEL) {
             *view = FRACTUS_APP_VIEW_ATTRACTORS_MENU;
@@ -470,40 +753,60 @@ static fractus_status fractus_app_run_lorenz_config_view(
             *view = FRACTUS_APP_VIEW_LORENZ;
         } else if (selected_menu == FRACTUS_APP_LORENZ_SIGMA_DEC) {
             pending->sigma = fractus_app_clamp_f64(pending->sigma - 0.5, 0.10, 50.00);
-            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations);
+            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations, pending->rot_x, pending->rot_y, pending->rot_z);
         } else if (selected_menu == FRACTUS_APP_LORENZ_SIGMA_INC) {
             pending->sigma = fractus_app_clamp_f64(pending->sigma + 0.5, 0.10, 50.00);
-            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations);
+            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations, pending->rot_x, pending->rot_y, pending->rot_z);
         } else if (selected_menu == FRACTUS_APP_LORENZ_RHO_DEC) {
             pending->rho = fractus_app_clamp_f64(pending->rho - 1.0, 0.10, 100.00);
-            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations);
+            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations, pending->rot_x, pending->rot_y, pending->rot_z);
         } else if (selected_menu == FRACTUS_APP_LORENZ_RHO_INC) {
             pending->rho = fractus_app_clamp_f64(pending->rho + 1.0, 0.10, 100.00);
-            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations);
+            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations, pending->rot_x, pending->rot_y, pending->rot_z);
         } else if (selected_menu == FRACTUS_APP_LORENZ_BETA_DEC) {
             pending->beta = fractus_app_clamp_f64(pending->beta - 0.1, 0.10, 20.00);
-            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations);
+            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations, pending->rot_x, pending->rot_y, pending->rot_z);
         } else if (selected_menu == FRACTUS_APP_LORENZ_BETA_INC) {
             pending->beta = fractus_app_clamp_f64(pending->beta + 0.1, 0.10, 20.00);
-            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations);
+            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations, pending->rot_x, pending->rot_y, pending->rot_z);
         } else if (selected_menu == FRACTUS_APP_LORENZ_DT_DEC) {
             pending->dt = fractus_app_clamp_f64(pending->dt - 0.001, 0.001, 0.100);
-            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations);
+            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations, pending->rot_x, pending->rot_y, pending->rot_z);
         } else if (selected_menu == FRACTUS_APP_LORENZ_DT_INC) {
             pending->dt = fractus_app_clamp_f64(pending->dt + 0.001, 0.001, 0.100);
-            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations);
+            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations, pending->rot_x, pending->rot_y, pending->rot_z);
         } else if (selected_menu == FRACTUS_APP_LORENZ_ITERATIONS_DEC) {
             pending->iterations = (pending->iterations > 1000u) ? (pending->iterations - 1000u) : 1000u;
-            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations);
+            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations, pending->rot_x, pending->rot_y, pending->rot_z);
         } else if (selected_menu == FRACTUS_APP_LORENZ_ITERATIONS_INC) {
             pending->iterations = (pending->iterations <= 98999u) ? (pending->iterations + 1000u) : 99999u;
-            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations);
+            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations, pending->rot_x, pending->rot_y, pending->rot_z);
         } else if (selected_menu == FRACTUS_APP_LORENZ_PROJ_XZ) {
             pending->projection = FRACTUS_LORENZ_PROJECTION_XZ;
+            pending->rot_x = 0.0;
+            pending->rot_y = 0.0;
+            pending->rot_z = 0.0;
+            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations, pending->rot_x, pending->rot_y, pending->rot_z);
         } else if (selected_menu == FRACTUS_APP_LORENZ_PROJ_XY) {
             pending->projection = FRACTUS_LORENZ_PROJECTION_XY;
+            pending->rot_x = 90.0;
+            pending->rot_y = 0.0;
+            pending->rot_z = 0.0;
+            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations, pending->rot_x, pending->rot_y, pending->rot_z);
         } else if (selected_menu == FRACTUS_APP_LORENZ_PROJ_YZ) {
             pending->projection = FRACTUS_LORENZ_PROJECTION_YZ;
+            pending->rot_x = 0.0;
+            pending->rot_y = 90.0;
+            pending->rot_z = 0.0;
+            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations, pending->rot_x, pending->rot_y, pending->rot_z);
+        } else if (selected_menu == FRACTUS_APP_LORENZ_PROJ_3D) {
+            pending->projection = FRACTUS_LORENZ_PROJECTION_CUSTOM;
+            if (pending->rot_x == 0.0 && pending->rot_y == 0.0 && pending->rot_z == 0.0) {
+                pending->rot_x = 35.0;
+                pending->rot_y = 45.0;
+                pending->rot_z = 0.0;
+            }
+            fractus_app_init_lorenz_fields(fields, pending->sigma, pending->rho, pending->beta, pending->dt, pending->iterations, pending->rot_x, pending->rot_y, pending->rot_z);
         }
     }
 
