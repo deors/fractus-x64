@@ -11,15 +11,15 @@ static const fractus_app_menu_entry fractus_app_main_menu_controls[] = {
     {FRACTUS_APP_RECT(10, 70, 312, 90), 11u, 0u, "Conjunto de Benoit B. Mandelbrot"},
     {FRACTUS_APP_RECT(10, 90, 312, 110), 11u, 0u, "Conjuntos de Gaston Julia"},
     {FRACTUS_APP_RECT(10, 110, 312, 130), 11u, 0u, "Biomorfos de Clifford A. Pickover"},
-    {FRACTUS_APP_RECT(10, 130, 312, 150), 11u, 0u, "Fractales por el metodo de plasma"},
-    {FRACTUS_APP_RECT(10, 150, 312, 170), 11u, 0u, "Atractores dinamicos"},
+    {FRACTUS_APP_RECT(10, 130, 312, 150), 11u, 0u, "Fractales por el método de plasma"},
+    {FRACTUS_APP_RECT(10, 150, 312, 170), 11u, 0u, "Atractores dinámicos"},
     {FRACTUS_APP_RECT(10, 170, 312, 190), 11u, 0u, "Curvas fractales sencillas"},
     {FRACTUS_APP_RECT(10, 190, 312, 210), 11u, 0u, "Otros conjuntos fractales"},
     {FRACTUS_APP_RECT(10, 210, 312, 230), 11u, 0u, "Modelos fractales naturales"},
     {FRACTUS_APP_RECT(10, 230, 312, 250), 11u, 0u, "Lenguajes 0-L"},
-    {FRACTUS_APP_RECT(10, 250, 312, 270), 11u, 0u, "Sistemas de funcion iterada (IFS)"},
+    {FRACTUS_APP_RECT(10, 250, 312, 270), 11u, 0u, "Sistemas de función iterada (IFS)"},
     {FRACTUS_APP_RECT(327, 70, 629, 90), 3u, 15u, "Cargar un dibujo"},
-    {FRACTUS_APP_RECT(327, 90, 629, 110), 3u, 15u, "Grabar automaticamente el dibujo siguiente"},
+    {FRACTUS_APP_RECT(327, 90, 629, 110), 3u, 15u, "Grabar automáticamente el dibujo siguiente"},
     {FRACTUS_APP_RECT(327, 130, 629, 150), 3u, 15u, "Cargar una paleta"},
     {FRACTUS_APP_RECT(327, 150, 629, 170), 3u, 15u, "Grabar la paleta actual"},
     {FRACTUS_APP_RECT(327, 170, 629, 190), 3u, 15u, "Cargar la paleta de un dibujo"},
@@ -29,9 +29,9 @@ static const fractus_app_menu_entry fractus_app_main_menu_controls[] = {
     {FRACTUS_APP_RECT(327, 250, 629, 270), 3u, 15u, "Copiar un color de la paleta"},
     {FRACTUS_APP_RECT(327, 270, 629, 290), 3u, 15u, "Crear un gradiente"},
     {FRACTUS_APP_RECT(327, 290, 629, 310), 3u, 15u, "Restaurar la paleta por defecto"},
-    {FRACTUS_APP_RECT(327, 334, 629, 354), 5u, 15u, "Resolucion de los dibujos"},
-    {FRACTUS_APP_RECT(327, 354, 629, 374), 5u, 15u, "Parametros por defecto de conjuntos fractales"},
-    {FRACTUS_APP_RECT(327, 374, 629, 394), 5u, 15u, "Restaurar parametros de los conjuntos"},
+    {FRACTUS_APP_RECT(327, 334, 629, 354), 5u, 15u, "Resolución de los dibujos"},
+    {FRACTUS_APP_RECT(327, 354, 629, 374), 5u, 15u, "Parámetros por defecto de conjuntos fractales"},
+    {FRACTUS_APP_RECT(327, 374, 629, 394), 5u, 15u, "Restaurar parámetros de los conjuntos"},
     {FRACTUS_APP_RECT(10, 430, 130, 450), 8u, 0u, "Ayuda"},
     {FRACTUS_APP_RECT(509, 430, 629, 450), 8u, 0u, "Acerca de..."},
     {FRACTUS_APP_RECT(260, 430, 380, 450), 0u, 15u, "Salir del programa"}
@@ -51,8 +51,8 @@ static fractus_status fractus_app_draw_main_menu_frame(
         fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_FRANCE, 320, 5, 0u, "Fractus I") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 30, 0u, "Dibujo de conjuntos fractales") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_group_box(framebuffer, fonts, 5, 60, 318, 275, 8u, 0u, "Tipos de conjuntos") != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, 322, 60, 635, 316, 8u, 0u, "Graficos y colores") != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, 322, 324, 635, 400, 8u, 0u, "Configuracion por defecto") != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_group_box(framebuffer, fonts, 322, 60, 635, 316, 8u, 0u, "Gráficos y colores") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_group_box(framebuffer, fonts, 322, 324, 635, 400, 8u, 0u, "Configuración por defecto") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 

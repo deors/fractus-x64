@@ -418,7 +418,7 @@ fractus_status fractus_app_run_fractals_default_config_view(
     /* 1. Contenedor exterior y paneles por tipo de conjunto fractal */
     if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_window(framebuffer, x0, y0, x0 + 369, y0 + 346) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, x0 + 185, y0 + 4, 15u, "Parametros por defecto de conjuntos fractales") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, x0 + 185, y0 + 4, 15u, "Parámetros por defecto de conjuntos fractales") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_group_box(framebuffer, fonts, x0 + 5, y0 + 32, x0 + 364, y0 + 104, 8u, 0u, "Mandelbrot y Julia") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_group_box(framebuffer, fonts, x0 + 5, y0 + 112, x0 + 364, y0 + 210, 8u, 0u, "Biomorfos de Pickover") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_group_box(framebuffer, fonts, x0 + 5, y0 + 218, x0 + 364, y0 + 290, 8u, 0u, "Plasmas") != FRACTUS_STATUS_OK) {
@@ -426,11 +426,11 @@ fractus_status fractus_app_run_fractals_default_config_view(
     }
 
     /* 2. Textos de etiquetas, campos numericos, tip y botones */
-    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 53, 0u, "Iteraciones maximas (1-1000)") != FRACTUS_STATUS_OK ||
+    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 53, 0u, "Iteraciones máximas (1-1000)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, iterations_field) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 79, 0u, "Radio de escape al cuadrado (4-1000)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, escape_radius_field) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 133, 0u, "Iteraciones maximas (1-1000)") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 133, 0u, "Iteraciones máximas (1-1000)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, biomorph_iterations_field) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 159, 0u, "Radio de escape al cuadrado (4-1000)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, biomorph_radius_field) != FRACTUS_STATUS_OK ||
@@ -440,7 +440,7 @@ fractus_status fractus_app_run_fractals_default_config_view(
         fractus_ui_draw_numeric_field(framebuffer, fonts, plasma_rect_seed_field) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 265, 0u, "Semilla plasma circular (1-999999)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, plasma_circ_seed_field) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 185, y0 + 298, 0u, "Los valores por defecto de los parametros clave se guardan en fractus.cfg.") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 185, y0 + 298, 0u, "Los valores por defecto de los parámetros clave se guardan en fractus.cfg.") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_button_list(
             framebuffer,
             fonts,
@@ -699,8 +699,8 @@ fractus_status fractus_app_run_video_config_view(
     /* 1. Contenedor exterior */
     if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_window(framebuffer, x0, y0, x0 + 319, y0 + 253) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, x0 + 160, y0 + 4, 15u, "Resolucion de dibujo") != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, x0 + 5, y0 + 32, x0 + 314, y0 + 197, 8u, 0u, "Modo de video") != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, x0 + 160, y0 + 4, 15u, "Resolución de dibujo") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_group_box(framebuffer, fonts, x0 + 5, y0 + 32, x0 + 314, y0 + 197, 8u, 0u, "Modo de vídeo") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
@@ -712,7 +712,7 @@ fractus_status fractus_app_run_video_config_view(
             FRACTUS_DRAWING_VIDEO_MODE_COUNT,
             (int)config_draft->drawing_video_mode,
             (active_index >= 0 && active_index < (int)FRACTUS_DRAWING_VIDEO_MODE_COUNT) ? active_index : -1) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 160, y0 + 205, 0u, "La resolucion elegida se guardara en fractus.cfg.") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 160, y0 + 205, 0u, "La resolución elegida se guardará en fractus.cfg.") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_button_list(
             framebuffer,
             fonts,

@@ -6,7 +6,7 @@
 static void print_usage(const char *program_name)
 {
     fprintf(stderr, "Uso: %s <fichero.drsg> [fichero.bmp]\n", program_name);
-    fprintf(stderr, "Convierte un grafico en formato DRSG (o legacy MHG) a BMP indexado de 8 bits con paleta.\n");
+    fprintf(stderr, "Convierte un gráfico en formato DRSG (o legacy MHG) a BMP indexado de 8 bits con paleta.\n");
 }
 
 static void replace_or_append_extension(const char *input, const char *new_ext, char *output, size_t output_size)
@@ -66,7 +66,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    printf("Convertido con exito: '%s' (%ux%u) -> '%s'\n",
+    printf("Convertido con éxito: '%s' (%ux%u) -> '%s'\n",
         input_path, image.size.width, image.size.height, output_path);
 
     fractus_indexed_image_shutdown(&image);

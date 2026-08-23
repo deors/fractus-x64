@@ -1499,7 +1499,7 @@ static fractus_status fractus_app_render_palette_view_current(
         framebuffer,
         fonts,
         "Paleta actual",
-        "La paleta .drsp usa trios de bytes RGB con valores VGA 0-63 por canal, no 0-255.",
+        "La paleta .drsp usa tríos de bytes RGB con valores VGA 0-63 por canal, no 0-255.",
         back_pressed);
 }
 
@@ -1524,7 +1524,7 @@ static fractus_status fractus_app_render_palette_color_edit(
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
 
-    snprintf(buffer, sizeof(buffer), "Indice de la paleta a modificar %u", (unsigned)palette_index);
+    snprintf(buffer, sizeof(buffer), "Índice de la paleta a modificar %u", (unsigned)palette_index);
 
     if (fractus_app_render_palette_screen(
             framebuffer,
@@ -1538,7 +1538,7 @@ static fractus_status fractus_app_render_palette_color_edit(
         fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 185, y0 + 138, 0u, "Ajuste los canales RGB con valores VGA entre 0 y 63 y pulse Guardar.") != FRACTUS_STATUS_OK ||
         fractus_graphics_fill_rect(framebuffer, preview, (uint8_t)palette_index) != FRACTUS_STATUS_OK ||
         fractus_graphics_rect(framebuffer, preview, 15u) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 282, y0 + 114, 0u, "Previsualizacion") != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 282, y0 + 114, 0u, "Previsualización") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
@@ -1942,7 +1942,7 @@ fractus_status fractus_app_run_palette_copy_targets_view(
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
 
-    snprintf(source_text, sizeof(source_text), "Origen: indice %u. Seleccione destinos con el boton izquierdo. Pulse boton derecho para dejar de copiar.", (unsigned)palette_copy_source_index);
+    snprintf(source_text, sizeof(source_text), "Origen: índice %u. Seleccione destinos con el botón izquierdo. Pulse botón derecho para dejar de copiar.", (unsigned)palette_copy_source_index);
 
     /* 1. Contenedor exterior. */
     /* 2. Textos y controles. */
@@ -2026,13 +2026,13 @@ fractus_status fractus_app_run_palette_gradient_second_view(
 {
     uint32_t picked_index;
     int cancelled = 0;
-    char first_text[96];
+    char first_text[160];
 
     if (framebuffer == NULL || fonts == NULL || ui == NULL || legacy_config == NULL || view == NULL) {
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
 
-    snprintf(first_text, sizeof(first_text), "Primer color: indice %u. Seleccione el segundo color del gradiente. Boton derecho para cancelar.", (unsigned)palette_gradient_first_index);
+    snprintf(first_text, sizeof(first_text), "Primer color: índice %u. Seleccione el segundo color del gradiente. Botón derecho para cancelar.", (unsigned)palette_gradient_first_index);
 
     /* 1. Contenedor exterior. */
     /* 2. Textos y controles. */

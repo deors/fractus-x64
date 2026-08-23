@@ -254,7 +254,7 @@ static fractus_status fractus_app_render_attractors_base(
 
     if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_window(framebuffer, x0, y0, x0 + 409, y0 + 370) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, x0 + 205, y0 + 4, 15u, "Atractores dinamicos") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, x0 + 205, y0 + 4, 15u, "Atractores dinámicos") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_group_box(framebuffer, fonts, x0 + 5, y0 + 32, x0 + 115, y0 + 314, 8u, 0u, "Tipo de atractor") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
@@ -453,7 +453,7 @@ static fractus_status fractus_app_run_lorenz_config_view(
             fonts,
             x0 + 123, y0 + 32, x0 + 404, y0 + 314,
             8u, 0u,
-            "Parametros del atractor de Lorenz") != FRACTUS_STATUS_OK) {
+            "Parámetros del atractor de Lorenz") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
@@ -468,7 +468,7 @@ static fractus_status fractus_app_run_lorenz_config_view(
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->dt) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 133, y0 + 157, 0u, "Iteraciones (1000-99999)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->iterations) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 133, y0 + 183, 0u, "Proyeccion") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 133, y0 + 183, 0u, "Proyección") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_radio_list(
             framebuffer,
             fonts,
@@ -484,11 +484,11 @@ static fractus_status fractus_app_run_lorenz_config_view(
     fractus_app_draw_3d_axes(framebuffer, fonts, box_3d, pending->rot_x, pending->rot_y, pending->rot_z, is_3d_active);
 
     /* 4. Campos numericos de rotacion */
-    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 240, y0 + 213, 0u, "Angulo X") != FRACTUS_STATUS_OK ||
+    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 240, y0 + 213, 0u, "Ángulo X") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->rot_x) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 240, y0 + 239, 0u, "Angulo Y") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 240, y0 + 239, 0u, "Ángulo Y") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->rot_y) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 240, y0 + 265, 0u, "Angulo Z") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 240, y0 + 265, 0u, "Ángulo Z") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->rot_z) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 309, y0 + 290, 7u, "Punto inicial: (0.1, 0.0, 0.0)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_centered(
@@ -888,7 +888,7 @@ fractus_status fractus_app_render_lorenz(
     return fractus_app_draw_drawing_footer_ex(
         framebuffer,
         fonts,
-        "ESC o boton derecho: menu - G: grabar dibujo - F: flujo",
+        "ESC o botón derecho: menú - G: grabar dibujo - F: flujo",
         saved_filename,
         0);
 }

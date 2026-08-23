@@ -6,7 +6,7 @@
 static void print_usage(const char *program_name)
 {
     fprintf(stderr, "Uso: %s <fichero.drsg> <paleta.drsp> <salida.drsg>\n", program_name);
-    fprintf(stderr, "Modifica la paleta de un grafico DRSG con una paleta DRSP y guarda el resultado en un segundo DRSG.\n");
+    fprintf(stderr, "Modifica la paleta de un gráfico DRSG con una paleta DRSP y guarda el resultado en un segundo DRSG.\n");
 }
 
 int main(int argc, char **argv)
@@ -66,7 +66,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    printf("Grafico modificado con exito: '%s' + paleta '%s' -> '%s'\n",
+    printf("Gráfico modificado con éxito: '%s' + paleta '%s' -> '%s'\n",
         graphic_input, palette_input, output_path);
 
     fractus_indexed_image_shutdown(&image);

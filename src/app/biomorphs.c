@@ -61,12 +61,12 @@ static size_t fractus_app_build_biomorph_config_entries(
         {FRACTUS_APP_RECT(x0 + 314, y0 + 230, x0 + 354, y0 + 250), 8u, 0u, "+"},
         {FRACTUS_APP_RECT(x0 + 269, y0 + 256, x0 + 309, y0 + 276), 8u, 0u, "-"},
         {FRACTUS_APP_RECT(x0 + 314, y0 + 256, x0 + 354, y0 + 276), 8u, 0u, "+"},
-        {FRACTUS_APP_RECT(x0 + 105, y0 + 282, x0 + 177, y0 + 302), 8u, 0u, "z^2 + c"},
-        {FRACTUS_APP_RECT(x0 + 190, y0 + 282, x0 + 262, y0 + 302), 8u, 0u, "z^3 + c"},
-        {FRACTUS_APP_RECT(x0 + 275, y0 + 282, x0 + 347, y0 + 302), 8u, 0u, "z^4 + c"},
-        {FRACTUS_APP_RECT(x0 + 105, y0 + 306, x0 + 177, y0 + 326), 8u, 0u, "z^5 + c"},
-        {FRACTUS_APP_RECT(x0 + 190, y0 + 306, x0 + 262, y0 + 326), 8u, 0u, "sen(z) + c"},
-        {FRACTUS_APP_RECT(x0 + 275, y0 + 306, x0 + 347, y0 + 326), 8u, 0u, "exp(z) + c"},
+        {FRACTUS_APP_RECT(x0 + 105, y0 + 282, x0 + 177, y0 + 302), 8u, 0u, "z² + c"},
+        {FRACTUS_APP_RECT(x0 + 190, y0 + 282, x0 + 262, y0 + 302), 8u, 0u, "z³ + c"},
+        {FRACTUS_APP_RECT(x0 + 275, y0 + 282, x0 + 347, y0 + 302), 8u, 0u, "z⁴ + c"},
+        {FRACTUS_APP_RECT(x0 + 105, y0 + 306, x0 + 177, y0 + 326), 8u, 0u, "z⁵ + c"},
+        {FRACTUS_APP_RECT(x0 + 190, y0 + 306, x0 + 262, y0 + 326), 8u, 0u, "sen z + c"},
+        {FRACTUS_APP_RECT(x0 + 275, y0 + 306, x0 + 347, y0 + 326), 8u, 0u, "eᶻ + c"},
         {FRACTUS_APP_RECT(x0 + 90, y0 + 332, x0 + 152, y0 + 352), 8u, 0u, "Re OR Im"},
         {FRACTUS_APP_RECT(x0 + 157, y0 + 332, x0 + 229, y0 + 352), 8u, 0u, "Re AND Im"},
         {FRACTUS_APP_RECT(x0 + 234, y0 + 332, x0 + 291, y0 + 352), 8u, 0u, "Solo Re"},
@@ -94,12 +94,12 @@ fractus_status fractus_app_run_biomorph_config_view(
     const int32_t x0 = biomorph_x0;
     const int32_t y0 = biomorph_y0;
     const fractus_ui_radio_option eq_options[] = {
-        {FRACTUS_APP_RECT(x0 + 160, y0 + 282, x0 + 177, y0 + 302), "z^2 + c"},
-        {FRACTUS_APP_RECT(x0 + 230, y0 + 282, x0 + 262, y0 + 302), "z^3 + c"},
-        {FRACTUS_APP_RECT(x0 + 295, y0 + 282, x0 + 347, y0 + 302), "z^4 + c"},
-        {FRACTUS_APP_RECT(x0 + 160, y0 + 306, x0 + 177, y0 + 326), "z^5 + c"},
-        {FRACTUS_APP_RECT(x0 + 230, y0 + 306, x0 + 262, y0 + 326), "sen(z) + c"},
-        {FRACTUS_APP_RECT(x0 + 295, y0 + 306, x0 + 347, y0 + 326), "exp(z) + c"}
+        {FRACTUS_APP_RECT(x0 + 160, y0 + 282, x0 + 177, y0 + 302), "z² + c"},
+        {FRACTUS_APP_RECT(x0 + 230, y0 + 282, x0 + 262, y0 + 302), "z³ + c"},
+        {FRACTUS_APP_RECT(x0 + 295, y0 + 282, x0 + 347, y0 + 302), "z⁴ + c"},
+        {FRACTUS_APP_RECT(x0 + 160, y0 + 306, x0 + 177, y0 + 326), "z⁵ + c"},
+        {FRACTUS_APP_RECT(x0 + 230, y0 + 306, x0 + 262, y0 + 326), "sen z + c"},
+        {FRACTUS_APP_RECT(x0 + 295, y0 + 306, x0 + 347, y0 + 326), "eᶻ + c"}
     };
     const fractus_ui_radio_option trap_options[] = {
         {FRACTUS_APP_RECT(x0 + 95, y0 + 332, x0 + 152, y0 + 352), "Re OR Im"},
@@ -128,30 +128,30 @@ fractus_status fractus_app_run_biomorph_config_view(
     if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_window(framebuffer, x0, y0, x0 + 369, y0 + 418) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, x0 + 185, y0 + 4, 15u, "Biomorfos de Clifford A. Pickover") != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, x0 + 5, y0 + 32, x0 + 364, y0 + 362, 8u, 0u, "Parametros del biomorfo") != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_group_box(framebuffer, fonts, x0 + 5, y0 + 32, x0 + 364, y0 + 362, 8u, 0u, "Parámetros del biomorfo") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
     /* 2. Textos y controles. */
-    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 53, 0u, "Minimo valor real") != FRACTUS_STATUS_OK ||
+    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 53, 0u, "Mínimo valor real") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->xmin) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 79, 0u, "Maximo valor real") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 79, 0u, "Máximo valor real") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->xmax) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 105, 0u, "Minimo valor imaginario") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 105, 0u, "Mínimo valor imaginario") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->ymin) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 131, 0u, "Maximo valor imaginario") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 131, 0u, "Máximo valor imaginario") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->ymax) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 157, 0u, "Constante real") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->constant_real) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 183, 0u, "Constante imaginaria") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->constant_imag) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 209, 0u, "Iteraciones maximas (1-1000)") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 209, 0u, "Iteraciones máximas (1-1000)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->max_iterations) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 235, 0u, "Radio de escape al cuadrado (4-1000)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->escape_radius_squared) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 261, 0u, "Umbral de escape (1-100)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->cutoff) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 287, 0u, "Ecuacion") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 287, 0u, "Ecuación") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_radio_list(
             framebuffer,
             fonts,
@@ -160,7 +160,7 @@ fractus_status fractus_app_run_biomorph_config_view(
             (int)pending->equation,
             (active_index >= FRACTUS_APP_BIOMORPH_EQ_0 && active_index <= FRACTUS_APP_BIOMORPH_EQ_5) ?
                 active_index - FRACTUS_APP_BIOMORPH_EQ_0 : -1) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 337, 0u, "Condicion") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 337, 0u, "Condición") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_radio_list(
             framebuffer,
             fonts,
@@ -464,7 +464,7 @@ fractus_status fractus_app_render_biomorph(
     return fractus_app_draw_drawing_footer_ex(
         framebuffer,
         fonts,
-        "Biomorfo inicial - ESC o boton derecho: menu - G: grabar dibujo - F: flujo",
+        "Biomorfo inicial - ESC o botón derecho: menú - G: grabar dibujo - F: flujo",
         saved_filename,
         0);
 }

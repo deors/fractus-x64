@@ -50,7 +50,7 @@ static fractus_status fractus_app_render_mandelbrot_menu(
     if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_window(framebuffer, x0, y0, x0 + 369, y0 + 338) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, x0 + 185, y0 + 4, 15u, "Conjunto de Benoit B. Mandelbrot") != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, x0 + 5, y0 + 32, x0 + 364, y0 + 72, 8u, 0u, "Metodo de dibujo") != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_group_box(framebuffer, fonts, x0 + 5, y0 + 32, x0 + 364, y0 + 72, 8u, 0u, "Método de dibujo") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
@@ -94,7 +94,7 @@ static fractus_status fractus_app_render_mandelbrot_menu(
         x0 + 185,
         y0 + 290,
         0u,
-        "Selecciona el algoritmo que se utilizara para generar el dibujo.");
+        "Selecciona el algoritmo que se utilizará para generar el dibujo.");
 }
 
 fractus_status fractus_app_run_mandelbrot_menu_view(
@@ -113,7 +113,7 @@ fractus_status fractus_app_run_mandelbrot_menu_view(
     const int32_t y0 = mandel_y0;
     const fractus_app_menu_entry mandel_menu_controls[] = {
         {FRACTUS_APP_RECT(x0 + 13, y0 + 43, x0 + 179, y0 + 63), 8u, 0u, "Tiempo de escape"},
-        {FRACTUS_APP_RECT(x0 + 190, y0 + 43, x0 + 356, y0 + 63), 8u, 0u, "Estimacion de distancias"},
+        {FRACTUS_APP_RECT(x0 + 190, y0 + 43, x0 + 356, y0 + 63), 8u, 0u, "Estimación de distancias"},
         {FRACTUS_APP_RECT(x0 + 135, y0 + 308, x0 + 235, y0 + 328), 0u, 15u, "Volver"}
     };
     fractus_ui_menu_option dialog_options[FRACTUS_APP_ARRAY_COUNT(mandel_menu_controls)];
@@ -234,7 +234,7 @@ static fractus_status fractus_app_run_mandelbrot_generic_config_view(
     const int32_t y0 = mandel_y0;
     const fractus_app_menu_entry mandel_menu_controls[] = {
         {FRACTUS_APP_RECT(x0 + 13, y0 + 43, x0 + 179, y0 + 63), 8u, 0u, "Tiempo de escape"},
-        {FRACTUS_APP_RECT(x0 + 190, y0 + 43, x0 + 356, y0 + 63), 8u, 0u, "Estimacion de distancias"},
+        {FRACTUS_APP_RECT(x0 + 190, y0 + 43, x0 + 356, y0 + 63), 8u, 0u, "Estimación de distancias"},
         {FRACTUS_APP_RECT(x0 + 75, y0 + 308, x0 + 175, y0 + 328), 6u, 8u, "Dibujar"},
         {FRACTUS_APP_RECT(x0 + 195, y0 + 308, x0 + 295, y0 + 328), 0u, 15u, "Cancelar"}
     };
@@ -281,15 +281,15 @@ static fractus_status fractus_app_run_mandelbrot_generic_config_view(
     }
 
     /* 2. Textos y controles. */
-    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 101, 0u, "Minimo valor real") != FRACTUS_STATUS_OK ||
+    if (fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 101, 0u, "Mínimo valor real") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->xmin) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 127, 0u, "Maximo valor real") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 127, 0u, "Máximo valor real") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->xmax) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 153, 0u, "Minimo valor imaginario") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 153, 0u, "Mínimo valor imaginario") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->ymin) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 179, 0u, "Maximo valor imaginario") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 179, 0u, "Máximo valor imaginario") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->ymax) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 205, 0u, "Iteraciones maximas (1-1000)") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 205, 0u, "Iteraciones máximas (1-1000)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->max_iterations) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 231, 0u, "Radio de escape al cuadrado (4-1000)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->escape_radius_squared) != FRACTUS_STATUS_OK ||
@@ -519,8 +519,8 @@ fractus_status fractus_app_run_mandelbrot_config_view(
         fonts,
         ui,
         FRACTUS_APP_MANDEL_METHOD_ESCAPE,
-        "Parametros del conjunto mediante tiempo de escape",
-        "Clasico",
+        "Parámetros del conjunto mediante tiempo de escape",
+        "Clásico",
         "Suave",
         &pending->xmin,
         &pending->xmax,
@@ -567,7 +567,7 @@ fractus_status fractus_app_run_mandelbrot_dem_config_view(
         fonts,
         ui,
         FRACTUS_APP_MANDEL_METHOD_DEM,
-        "Parametros del conjunto mediante estimacion de distancias",
+        "Parámetros del conjunto mediante estimación de distancias",
         "Contorno",
         "Gradiente",
         &pending->xmin,
@@ -622,7 +622,7 @@ fractus_status fractus_app_render_mandelbrot(
     return fractus_app_draw_drawing_footer_ex(
         framebuffer,
         fonts,
-        "ESC/boton derecho: menu - G: grabar - S: seleccionar zona - F: flujo",
+        "ESC / botón derecho: menú - G: grabar - S: seleccionar zona - F: flujo",
         saved_filename,
         1);
 }
@@ -657,7 +657,7 @@ fractus_status fractus_app_render_mandelbrot_dem(
     return fractus_app_draw_drawing_footer_ex(
         framebuffer,
         fonts,
-        "ESC/boton derecho: menu - G: grabar - S: seleccionar zona - F: flujo",
+        "ESC / botón derecho: menú - G: grabar - S: seleccionar zona - F: flujo",
         saved_filename,
         1);
 }

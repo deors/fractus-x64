@@ -6,7 +6,7 @@
 static void print_usage(const char *program_name)
 {
     fprintf(stderr, "Uso: %s <fichero.drsg> [fichero.drsp]\n", program_name);
-    fprintf(stderr, "Extrae la paleta de colores de un grafico DRSG (o legacy MHG) y la guarda como DRSP.\n");
+    fprintf(stderr, "Extrae la paleta de colores de un gráfico DRSG (o legacy MHG) y la guarda como DRSP.\n");
 }
 
 static void replace_or_append_extension(const char *input, const char *new_ext, char *output, size_t output_size)
@@ -66,7 +66,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    printf("Paleta extraida con exito: '%s' -> '%s'\n", input_path, output_path);
+    printf("Paleta extraída con éxito: '%s' -> '%s'\n", input_path, output_path);
 
     fractus_indexed_image_shutdown(&image);
     return 0;
