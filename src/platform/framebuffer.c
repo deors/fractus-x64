@@ -49,8 +49,8 @@ fractus_status fractus_palette_init_default(fractus_palette *palette)
 
     fractus_palette_set_original_base(palette);
 
-    for (i = 16u; i < FRACTUS_PALETTE_SIZE; ++i) {
-        const uint8_t t = (uint8_t)(i - 16u);
+    for (i = FRACTUS_PALETTE_OFFSET; i < FRACTUS_PALETTE_SIZE; ++i) {
+        const uint8_t t = (uint8_t)(i - FRACTUS_PALETTE_OFFSET);
 
         palette->entries[i] = fractus_rgba8(
             t,
@@ -148,14 +148,14 @@ fractus_status fractus_framebuffer_clear(
     fractus_framebuffer *framebuffer,
     uint8_t color_index)
 {
-    size_t index_count;
+    size_t count;
 
-    if (framebuffer == NULL || !framebuffer->initialized) {
+    if (framebuffer == NULL || !framebuffer->initialized || framebuffer->index_pixels == NULL) {
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
 
-    index_count = (size_t)framebuffer->size.width * (size_t)framebuffer->size.height;
-    memset(framebuffer->index_pixels, color_index, index_count);
+    count = (size_t)framebuffer->size.width * (size_t)framebuffer->size.height;
+    memset(framebuffer->index_pixels, color_index, count);
     framebuffer->pixels_dirty = 1;
     return FRACTUS_STATUS_OK;
 }
@@ -166,15 +166,15 @@ fractus_status fractus_framebuffer_set_pixel(
     uint32_t y,
     uint8_t color_index)
 {
-    if (framebuffer == NULL || !framebuffer->initialized) {
+    size_t offset;
+
+    if (framebuffer == NULL || !framebuffer->initialized ||
+        x >= framebuffer->size.width || y >= framebuffer->size.height) {
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
 
-    if (x >= framebuffer->size.width || y >= framebuffer->size.height) {
-        return FRACTUS_STATUS_INVALID_ARGUMENT;
-    }
-
-    framebuffer->index_pixels[(size_t)y * framebuffer->pitch_pixels + x] = color_index;
+    offset = (size_t)y * (size_t)framebuffer->pitch_pixels + (size_t)x;
+    framebuffer->index_pixels[offset] = color_index;
     framebuffer->pixels_dirty = 1;
     return FRACTUS_STATUS_OK;
 }
@@ -185,24 +185,27 @@ fractus_status fractus_framebuffer_get_pixel(
     uint32_t y,
     uint8_t *color_index)
 {
-    if (framebuffer == NULL || !framebuffer->initialized || color_index == NULL) {
+    size_t offset;
+
+    if (framebuffer == NULL || !framebuffer->initialized || color_index == NULL ||
+        x >= framebuffer->size.width || y >= framebuffer->size.height) {
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
 
-    if (x >= framebuffer->size.width || y >= framebuffer->size.height) {
-        return FRACTUS_STATUS_INVALID_ARGUMENT;
-    }
-
-    *color_index = framebuffer->index_pixels[(size_t)y * framebuffer->pitch_pixels + x];
+    offset = (size_t)y * (size_t)framebuffer->pitch_pixels + (size_t)x;
+    *color_index = framebuffer->index_pixels[offset];
     return FRACTUS_STATUS_OK;
 }
 
 fractus_status fractus_framebuffer_sync_rgba(fractus_framebuffer *framebuffer)
 {
-    uint32_t x;
-    uint32_t y;
+    size_t total_pixels;
+    size_t i;
+    const uint8_t *src;
+    uint8_t *dst;
 
-    if (framebuffer == NULL || !framebuffer->initialized) {
+    if (framebuffer == NULL || !framebuffer->initialized ||
+        framebuffer->index_pixels == NULL || framebuffer->rgba_pixels == NULL) {
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
 
@@ -210,18 +213,19 @@ fractus_status fractus_framebuffer_sync_rgba(fractus_framebuffer *framebuffer)
         return FRACTUS_STATUS_OK;
     }
 
-    for (y = 0u; y < framebuffer->size.height; ++y) {
-        for (x = 0u; x < framebuffer->size.width; ++x) {
-            const size_t pixel_index = (size_t)y * framebuffer->pitch_pixels + x;
-            const size_t rgba_index = pixel_index * 4u;
-            const fractus_color_rgba8 color =
-                framebuffer->palette.entries[framebuffer->index_pixels[pixel_index]];
+    total_pixels = (size_t)framebuffer->size.width * (size_t)framebuffer->size.height;
+    src = framebuffer->index_pixels;
+    dst = framebuffer->rgba_pixels;
 
-            framebuffer->rgba_pixels[rgba_index + 0u] = color.r;
-            framebuffer->rgba_pixels[rgba_index + 1u] = color.g;
-            framebuffer->rgba_pixels[rgba_index + 2u] = color.b;
-            framebuffer->rgba_pixels[rgba_index + 3u] = color.a;
-        }
+    for (i = 0u; i < total_pixels; ++i) {
+        const uint8_t index = src[i];
+        const fractus_color_rgba8 color = framebuffer->palette.entries[index];
+        const size_t out_index = i * 4u;
+
+        dst[out_index + 0u] = color.r;
+        dst[out_index + 1u] = color.g;
+        dst[out_index + 2u] = color.b;
+        dst[out_index + 3u] = color.a;
     }
 
     framebuffer->pixels_dirty = 0;
@@ -235,37 +239,29 @@ fractus_status fractus_palette_cycle(
     uint32_t span,
     int direction)
 {
-    uint32_t start;
-    uint32_t end;
+    fractus_color_rgba8 temp[FRACTUS_PALETTE_SIZE];
     uint32_t i;
-    fractus_color_rgba8 temp;
 
-    if (palette == NULL || span < 2u || offset >= FRACTUS_PALETTE_SIZE) {
-        return FRACTUS_STATUS_INVALID_ARGUMENT;
-    }
-
-    start = offset;
-    end = start + span - 1u;
-    if (end >= FRACTUS_PALETTE_SIZE) {
-        end = FRACTUS_PALETTE_SIZE - 1u;
-    }
-
-    if (start >= end) {
+    if (palette == NULL || span < 2u || offset >= FRACTUS_PALETTE_SIZE || (offset + span) > FRACTUS_PALETTE_SIZE) {
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
 
     if (direction >= 0) {
-        temp = palette->entries[end];
-        for (i = end; i > start; --i) {
-            palette->entries[i] = palette->entries[i - 1u];
+        const fractus_color_rgba8 last = palette->entries[offset + span - 1u];
+        for (i = 0u; i < span - 1u; ++i) {
+            temp[offset + i + 1u] = palette->entries[offset + i];
         }
-        palette->entries[start] = temp;
+        temp[offset] = last;
     } else {
-        temp = palette->entries[start];
-        for (i = start; i < end; ++i) {
-            palette->entries[i] = palette->entries[i + 1u];
+        const fractus_color_rgba8 first = palette->entries[offset];
+        for (i = 0u; i < span - 1u; ++i) {
+            temp[offset + i] = palette->entries[offset + i + 1u];
         }
-        palette->entries[end] = temp;
+        temp[offset + span - 1u] = first;
+    }
+
+    for (i = 0u; i < span; ++i) {
+        palette->entries[offset + i] = temp[offset + i];
     }
 
     return FRACTUS_STATUS_OK;
@@ -284,9 +280,10 @@ fractus_status fractus_framebuffer_cycle_palette(
     }
 
     status = fractus_palette_cycle(&framebuffer->palette, offset, span, direction);
-    if (status == FRACTUS_STATUS_OK) {
-        framebuffer->palette_dirty = 1;
+    if (status != FRACTUS_STATUS_OK) {
+        return status;
     }
 
-    return status;
+    framebuffer->palette_dirty = 1;
+    return FRACTUS_STATUS_OK;
 }

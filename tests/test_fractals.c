@@ -14,7 +14,7 @@ static int test_mandelbrot_rendering(void)
     /* Mandelbrot escape-time (Color mode 0 and 1) */
     mandel_params = (fractus_mandelbrot_params){
         -2.0, 0.5, -1.25, 1.25,
-        100u, 4.0, 0u, 16u, 240u,
+        100u, 4.0, 0u, FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN,
         FRACTUS_MANDELBROT_COLOR_ESCAPE
     };
     TEST_ASSERT(fractus_fractal_render_mandelbrot(&fb, &mandel_params) == FRACTUS_STATUS_OK, "Mandelbrot color mode 0 failed");
@@ -25,7 +25,7 @@ static int test_mandelbrot_rendering(void)
     /* Mandelbrot DEM (Distance Estimation Method) */
     dem_params = (fractus_mandelbrot_dem_params){
         -2.0, 0.5, -1.25, 1.25,
-        100u, 100.0, 0u, 16u, 240u,
+        100u, 100.0, 0u, FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN,
         FRACTUS_MANDELBROT_DEM_COLOR_BOUNDARY
     };
     TEST_ASSERT(fractus_fractal_render_mandelbrot_dem(&fb, &dem_params) == FRACTUS_STATUS_OK, "Mandelbrot DEM color mode 0 failed");
@@ -50,7 +50,7 @@ static int test_julia_rendering(void)
     julia_params = (fractus_julia_params){
         -1.5, 1.5, -1.2, 1.2,
         -0.7, 0.27015,
-        100u, 4.0, 0u, 16u, 240u,
+        100u, 4.0, 0u, FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN,
         FRACTUS_JULIA_COLOR_ESCAPE
     };
     TEST_ASSERT(fractus_fractal_render_julia(&fb, &julia_params) == FRACTUS_STATUS_OK, "Julia color mode 0 failed");
@@ -62,7 +62,7 @@ static int test_julia_rendering(void)
     dem_params = (fractus_julia_dem_params){
         -1.5, 1.5, -1.2, 1.2,
         -0.7, 0.27015,
-        100u, 100.0, 0u, 16u, 240u,
+        100u, 100.0, 0u, FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN,
         FRACTUS_JULIA_DEM_COLOR_BOUNDARY
     };
     TEST_ASSERT(fractus_fractal_render_julia_dem(&fb, &dem_params) == FRACTUS_STATUS_OK, "Julia DEM color mode 0 failed");
@@ -88,7 +88,7 @@ static int test_plasma_rendering(void)
 
     /* Rectangular plasma */
     rect_params = (fractus_plasma_params){
-        1337u, 25, 16u, 240u
+        1337u, 25, FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN
     };
     TEST_ASSERT(fractus_fractal_render_plasma(&fb1, &rect_params) == FRACTUS_STATUS_OK, "Plasma rectangular render failed");
     TEST_ASSERT(fractus_fractal_render_plasma(&fb2, &rect_params) == FRACTUS_STATUS_OK, "Plasma rectangular render 2 failed");
@@ -105,7 +105,7 @@ static int test_plasma_rendering(void)
 
     /* Circular plasma */
     circ_params = (fractus_plasma_circular_params){
-        1337u, 50, 40, 16u, 240u
+        1337u, 50, 40, FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN
     };
     TEST_ASSERT(fractus_fractal_render_plasma_circular(&fb1, &circ_params) == FRACTUS_STATUS_OK, "Plasma circular render failed");
     TEST_ASSERT(fractus_fractal_render_plasma_circular(&fb2, &circ_params) == FRACTUS_STATUS_OK, "Plasma circular render 2 failed");
@@ -141,27 +141,27 @@ static int test_palette_cycling(void)
 
     original_entry_0 = fb.palette.entries[0];
     original_entry_15 = fb.palette.entries[15];
-    original_entry_16 = fb.palette.entries[16];
+    original_entry_16 = fb.palette.entries[FRACTUS_PALETTE_OFFSET];
     original_entry_255 = fb.palette.entries[255];
 
     /* Cycle forward 1 step */
-    TEST_ASSERT(fractus_framebuffer_cycle_palette(&fb, 16u, 240u, 1) == FRACTUS_STATUS_OK, "Cycle palette forward failed");
+    TEST_ASSERT(fractus_framebuffer_cycle_palette(&fb, FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN, 1) == FRACTUS_STATUS_OK, "Cycle palette forward failed");
     TEST_ASSERT_EQUAL_INT(original_entry_0.r, fb.palette.entries[0].r, "Entry 0 should be unchanged");
     TEST_ASSERT_EQUAL_INT(original_entry_15.r, fb.palette.entries[15].r, "Entry 15 should be unchanged");
-    TEST_ASSERT_EQUAL_INT(original_entry_255.r, fb.palette.entries[16].r, "Entry 16 should have old entry 255");
-    TEST_ASSERT_EQUAL_INT(original_entry_16.r, fb.palette.entries[17].r, "Entry 17 should have old entry 16");
+    TEST_ASSERT_EQUAL_INT(original_entry_255.r, fb.palette.entries[FRACTUS_PALETTE_OFFSET].r, "Entry 16 should have old entry 255");
+    TEST_ASSERT_EQUAL_INT(original_entry_16.r, fb.palette.entries[FRACTUS_PALETTE_OFFSET + 1u].r, "Entry 17 should have old entry 16");
 
     /* Cycle 239 more times to complete a full 240-step loop */
-    for (i = 0; i < 239u; ++i) {
-        TEST_ASSERT(fractus_framebuffer_cycle_palette(&fb, 16u, 240u, 1) == FRACTUS_STATUS_OK, "Cycle palette step failed");
+    for (i = 0; i < FRACTUS_PALETTE_SPAN - 1u; ++i) {
+        TEST_ASSERT(fractus_framebuffer_cycle_palette(&fb, FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN, 1) == FRACTUS_STATUS_OK, "Cycle palette step failed");
     }
-    TEST_ASSERT_EQUAL_INT(original_entry_16.r, fb.palette.entries[16].r, "Entry 16 should match original after full loop");
+    TEST_ASSERT_EQUAL_INT(original_entry_16.r, fb.palette.entries[FRACTUS_PALETTE_OFFSET].r, "Entry 16 should match original after full loop");
     TEST_ASSERT_EQUAL_INT(original_entry_255.r, fb.palette.entries[255].r, "Entry 255 should match original after full loop");
 
     /* Test invalid arguments */
-    TEST_ASSERT(fractus_framebuffer_cycle_palette(NULL, 16u, 240u, 1) == FRACTUS_STATUS_INVALID_ARGUMENT, "Null check failed");
-    TEST_ASSERT(fractus_framebuffer_cycle_palette(&fb, 16u, 1u, 1) == FRACTUS_STATUS_INVALID_ARGUMENT, "Span < 2 check failed");
-    TEST_ASSERT(fractus_palette_cycle(NULL, 16u, 240u, 1) == FRACTUS_STATUS_INVALID_ARGUMENT, "Palette null check failed");
+    TEST_ASSERT(fractus_framebuffer_cycle_palette(NULL, FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN, 1) == FRACTUS_STATUS_INVALID_ARGUMENT, "Null check failed");
+    TEST_ASSERT(fractus_framebuffer_cycle_palette(&fb, FRACTUS_PALETTE_OFFSET, 1u, 1) == FRACTUS_STATUS_INVALID_ARGUMENT, "Span < 2 check failed");
+    TEST_ASSERT(fractus_palette_cycle(NULL, FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN, 1) == FRACTUS_STATUS_INVALID_ARGUMENT, "Palette null check failed");
 
     fractus_framebuffer_shutdown(&fb);
     return 1;
@@ -181,7 +181,7 @@ static int test_lorenz_rendering(void)
         10.0, 28.0, 8.0 / 3.0, 0.01,
         1000u, FRACTUS_LORENZ_PROJECTION_XZ,
         35.0, 45.0, 0.0,
-        16u, 240u
+        FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN
     };
 
     TEST_ASSERT(fractus_fractal_render_lorenz(&fb, &params) == FRACTUS_STATUS_OK, "Lorenz XZ rendering failed");
@@ -193,7 +193,7 @@ static int test_lorenz_rendering(void)
     TEST_ASSERT(fractus_fractal_render_lorenz(&fb, &params) == FRACTUS_STATUS_OK, "Lorenz 3D rendering failed");
 
     for (i = 0; i < (uint32_t)(fb.size.height * fb.pitch_pixels); ++i) {
-        if (fb.index_pixels[i] >= 16u) {
+        if (fb.index_pixels[i] >= FRACTUS_PALETTE_OFFSET) {
             has_non_zero_pixel = 1;
             break;
         }

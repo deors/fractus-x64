@@ -517,7 +517,7 @@ fractus_status fractus_legacy_palette_load(
         return FRACTUS_STATUS_ERROR;
     }
 
-    for (i = 16u; i < FRACTUS_PALETTE_SIZE; ++i) {
+    for (i = FRACTUS_PALETTE_OFFSET; i < FRACTUS_PALETTE_SIZE; ++i) {
         uint8_t r;
         uint8_t g;
         uint8_t b;
@@ -560,7 +560,7 @@ fractus_status fractus_legacy_palette_save(
         return FRACTUS_STATUS_ERROR;
     }
 
-    for (i = 16u; i < FRACTUS_PALETTE_SIZE; ++i) {
+    for (i = FRACTUS_PALETTE_OFFSET; i < FRACTUS_PALETTE_SIZE; ++i) {
         if (fractus_write_u8(file, fractus_to_legacy_6bit(palette->entries[i].r)) != FRACTUS_STATUS_OK ||
             fractus_write_u8(file, fractus_to_legacy_6bit(palette->entries[i].g)) != FRACTUS_STATUS_OK ||
             fractus_write_u8(file, fractus_to_legacy_6bit(palette->entries[i].b)) != FRACTUS_STATUS_OK) {

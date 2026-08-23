@@ -13,8 +13,8 @@ static int test_biomorph_validation(void)
     params = (fractus_biomorph_params){
         -2.0, 2.0, -1.5, 1.5,
         -0.6, 0.55,
-        240u, 1000.0, 1.0,
-        0u, 16u, 240u,
+        250u, 1000.0, 1.0,
+        0u, FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN,
         FRACTUS_BIOMORPH_EQ_Z2,
         FRACTUS_BIOMORPH_TRAP_RE_OR_IM
     };
@@ -29,7 +29,7 @@ static int test_biomorph_validation(void)
     /* Invalid max_iterations */
     params.max_iterations = 0u;
     TEST_ASSERT(fractus_fractal_render_biomorph(&fb, &params) == FRACTUS_STATUS_INVALID_ARGUMENT, "0 iterations should fail");
-    params.max_iterations = 240u;
+    params.max_iterations = 250u;
 
     /* Invalid escape_radius_squared */
     params.escape_radius_squared = 0.0;
@@ -61,7 +61,7 @@ static int test_biomorph_all_24_combinations(void)
                 -2.0, 2.0, -1.5, 1.5,
                 -0.6, 0.55,
                 100u, 1000.0, 1.0,
-                0u, 16u, 240u,
+                0u, FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN,
                 (fractus_biomorph_equation)eq,
                 (fractus_biomorph_trap_mode)trap
             };
@@ -88,7 +88,7 @@ static int test_biomorph_numerical_stability(void)
         -10.0, 10.0, -10.0, 10.0,
         1.5, -0.8,
         200u, 10000.0, 2.0,
-        0u, 16u, 240u,
+        0u, FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN,
         FRACTUS_BIOMORPH_EQ_SIN_Z,
         FRACTUS_BIOMORPH_TRAP_RE_OR_IM
     };
@@ -119,7 +119,7 @@ static int test_biomorph_trap_logic(void)
         -2.0, 2.0, -2.0, 2.0,
         0.0, 0.0,
         50u, 100.0, 1.0,
-        0u, 16u, 240u,
+        0u, FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN,
         FRACTUS_BIOMORPH_EQ_Z2,
         FRACTUS_BIOMORPH_TRAP_RE_OR_IM
     };

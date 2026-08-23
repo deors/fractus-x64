@@ -109,18 +109,14 @@ static fractus_status fractus_app_run_main_menu_view(
     fractus_legacy_config *legacy_config,
     fractus_legacy_config *config_draft,
     fractus_mandelbrot_params *mandelbrot_params,
-    fractus_mandelbrot_params *mandelbrot_pending,
     fractus_mandelbrot_dem_params *mandelbrot_dem_params,
     fractus_julia_params *julia_params,
-    fractus_julia_params *julia_pending,
     fractus_julia_dem_params *julia_dem_params,
     fractus_biomorph_params *biomorph_params,
     fractus_biomorph_params *biomorph_pending,
     fractus_plasma_params *plasma_rectangular_params,
     fractus_plasma_circular_params *plasma_circular_params,
     fractus_lorenz_params *lorenz_params,
-    fractus_lorenz_params *lorenz_pending,
-    fractus_app_attractor_fields *attractor_fields,
     fractus_app_attractor_method *attractor_selected_method,
     fractus_app_biomorph_fields *biomorph_fields,
     fractus_ui_numeric_field *iterations_field,
@@ -146,19 +142,41 @@ static fractus_status fractus_app_run_main_menu_view(
     int cancelled = 0;
     size_t i;
 
-    if (platform == NULL || framebuffer == NULL || fonts == NULL || ui == NULL ||
-        view == NULL || running == NULL || legacy_config == NULL || config_draft == NULL ||
-        mandelbrot_params == NULL || mandelbrot_pending == NULL || mandelbrot_dem_params == NULL ||
-        julia_params == NULL || julia_pending == NULL || julia_dem_params == NULL ||
-        biomorph_params == NULL || biomorph_pending == NULL ||
-        plasma_rectangular_params == NULL || plasma_circular_params == NULL ||
-        attractor_selected_method == NULL || biomorph_fields == NULL ||
-        iterations_field == NULL || escape_radius_field == NULL ||
-        biomorph_iterations_field == NULL || biomorph_radius_field == NULL ||
-        biomorph_cutoff_field == NULL || plasma_rect_seed_field == NULL || plasma_circ_seed_field == NULL ||
-        graphic_files == NULL || graphic_file_count == NULL || graphic_file_page == NULL || palette_files == NULL ||
-        palette_file_count == NULL || palette_file_page == NULL || runtime_error_message == NULL || cfg_path == NULL ||
-        save_next_graphic == NULL) {
+    if (platform == NULL
+        || framebuffer == NULL
+        || fonts == NULL
+        || ui == NULL
+        || view == NULL
+        || running == NULL
+        || legacy_config == NULL
+        || config_draft == NULL
+        || mandelbrot_params == NULL
+        || mandelbrot_dem_params == NULL
+        || julia_params == NULL
+        || julia_dem_params == NULL
+        || biomorph_params == NULL
+        || biomorph_pending == NULL
+        || plasma_rectangular_params == NULL
+        || plasma_circular_params == NULL
+        || lorenz_params == NULL
+        || attractor_selected_method == NULL
+        || biomorph_fields == NULL
+        || iterations_field == NULL
+        || escape_radius_field == NULL
+        || biomorph_iterations_field == NULL
+        || biomorph_radius_field == NULL
+        || biomorph_cutoff_field == NULL
+        || plasma_rect_seed_field == NULL
+        || plasma_circ_seed_field == NULL
+        || graphic_files == NULL
+        || graphic_file_count == NULL
+        || graphic_file_page == NULL
+        || palette_files == NULL
+        || palette_file_count == NULL
+        || palette_file_page == NULL
+        || runtime_error_message == NULL
+        || cfg_path == NULL
+        || save_next_graphic == NULL) {
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
 
@@ -279,35 +297,6 @@ static fractus_status fractus_app_run_main_menu_view(
                 plasma_circular_params,
                 lorenz_params,
                 legacy_config);
-            *mandelbrot_pending = *mandelbrot_params;
-            *julia_pending = *julia_params;
-            *biomorph_pending = *biomorph_params;
-            if (lorenz_params != NULL && lorenz_pending != NULL) {
-                *lorenz_pending = *lorenz_params;
-            }
-            fractus_app_init_biomorph_fields(
-                biomorph_fields,
-                biomorph_pending->xmin,
-                biomorph_pending->xmax,
-                biomorph_pending->ymin,
-                biomorph_pending->ymax,
-                biomorph_pending->constant_real,
-                biomorph_pending->constant_imag,
-                biomorph_pending->max_iterations,
-                biomorph_pending->escape_radius_squared,
-                biomorph_pending->cutoff);
-            if (lorenz_pending != NULL && attractor_fields != NULL) {
-                fractus_app_init_lorenz_fields(
-                    &attractor_fields->lorenz,
-                    lorenz_pending->sigma,
-                    lorenz_pending->rho,
-                    lorenz_pending->beta,
-                    lorenz_pending->dt,
-                    lorenz_pending->iterations,
-                    lorenz_pending->rot_x,
-                    lorenz_pending->rot_y,
-                    lorenz_pending->rot_z);
-            }
             fractus_app_log("runtime: default fractal parameters restored");
         }
     }
@@ -506,24 +495,12 @@ int fractus_app_run(void)
     memset(runtime_error_message, 0, sizeof(runtime_error_message));
     memset(selected_graphic_path, 0, sizeof(selected_graphic_path));
     attractor_selected_method = FRACTUS_APP_ATTRACTOR_METHOD_NONE;
-    lorenz_params.sigma = 10.0;
-    lorenz_params.rho = 28.0;
-    lorenz_params.beta = 8.0 / 3.0;
-    lorenz_params.dt = 0.01;
-    lorenz_params.iterations = 10000u;
-    lorenz_params.projection = FRACTUS_LORENZ_PROJECTION_XZ;
-    lorenz_params.rot_x = 0.0;
-    lorenz_params.rot_y = 0.0;
-    lorenz_params.rot_z = 0.0;
-    lorenz_params.palette_offset = 16u;
-    lorenz_params.palette_span = 240u;
-    lorenz_pending = lorenz_params;
     palette_original_color = fractus_app_rgb8(0u, 0u, 0u);
     palette_pending_color = fractus_app_rgb8(0u, 0u, 0u);
     palette_copy_color = fractus_app_rgb8(0u, 0u, 0u);
-    palette_selected_index = 16u;
-    palette_copy_source_index = 16u;
-    palette_gradient_first_index = 16u;
+    palette_selected_index = FRACTUS_PALETTE_OFFSET;
+    palette_copy_source_index = FRACTUS_PALETTE_OFFSET;
+    palette_gradient_first_index = FRACTUS_PALETTE_OFFSET;
     save_next_graphic = 0;
     current_drawing_saved = 1;
     drawing_presented_once = 0;
@@ -649,18 +626,14 @@ int fractus_app_run(void)
                         &legacy_config,
                         &config_draft,
                         &mandelbrot_params,
-                        &mandelbrot_pending,
                         &mandelbrot_dem_params,
                         &julia_params,
-                        &julia_pending,
                         &julia_dem_params,
                         &biomorph_params,
                         &biomorph_pending,
                         &plasma_rectangular_params,
                         &plasma_circular_params,
                         &lorenz_params,
-                        &lorenz_pending,
-                        &attractor_fields,
                         &attractor_selected_method,
                         &biomorph_fields,
                         &iterations_field,
@@ -1671,7 +1644,7 @@ int fractus_app_run(void)
         }
 
         if (present_is_drawing && palette_flow_active) {
-            (void)fractus_framebuffer_cycle_palette(&core.drawing_framebuffer, 16u, 240u, 1);
+            (void)fractus_framebuffer_cycle_palette(&core.drawing_framebuffer, FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN, 1);
         }
 
         if (fractus_framebuffer_sync_rgba(present_framebuffer) != FRACTUS_STATUS_OK) {

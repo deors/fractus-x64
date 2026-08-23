@@ -14,7 +14,7 @@ fractus_status fractus_app_apply_legacy_config(
     }
 
     for (i = 0u; i < FRACTUS_LEGACY_PALETTE_DATA_COUNT; ++i) {
-        framebuffer->palette.entries[i + 16u] = config->palette[i];
+        framebuffer->palette.entries[i + FRACTUS_PALETTE_OFFSET] = config->palette[i];
     }
 
     return FRACTUS_STATUS_OK;
@@ -110,8 +110,8 @@ void fractus_app_reset_fractal_parameters(
             mandel_iter,
             mandel_escape,
             0u,
-            16u,
-            240u,
+            FRACTUS_PALETTE_OFFSET,
+            FRACTUS_PALETTE_SPAN,
             FRACTUS_MANDELBROT_COLOR_ESCAPE
         };
     }
@@ -125,8 +125,8 @@ void fractus_app_reset_fractal_parameters(
             mandel_iter,
             mandel_escape,
             0u,
-            16u,
-            240u,
+            FRACTUS_PALETTE_OFFSET,
+            FRACTUS_PALETTE_SPAN,
             FRACTUS_MANDELBROT_DEM_COLOR_BOUNDARY
         };
     }
@@ -142,8 +142,8 @@ void fractus_app_reset_fractal_parameters(
             mandel_iter,
             mandel_escape,
             0u,
-            16u,
-            240u,
+            FRACTUS_PALETTE_OFFSET,
+            FRACTUS_PALETTE_SPAN,
             FRACTUS_JULIA_COLOR_ESCAPE
         };
     }
@@ -159,8 +159,8 @@ void fractus_app_reset_fractal_parameters(
             mandel_iter,
             mandel_escape,
             0u,
-            16u,
-            240u,
+            FRACTUS_PALETTE_OFFSET,
+            FRACTUS_PALETTE_SPAN,
             FRACTUS_JULIA_DEM_COLOR_BOUNDARY
         };
     }
@@ -177,8 +177,8 @@ void fractus_app_reset_fractal_parameters(
             bio_radius,
             bio_cutoff,
             0u,
-            16u,
-            240u,
+            FRACTUS_PALETTE_OFFSET,
+            FRACTUS_PALETTE_SPAN,
             FRACTUS_BIOMORPH_EQ_Z2,
             FRACTUS_BIOMORPH_TRAP_RE_OR_IM
         };
@@ -188,8 +188,8 @@ void fractus_app_reset_fractal_parameters(
         *plasma_rectangular_params = (fractus_plasma_params){
             rect_seed,
             5,
-            16u,
-            240u
+            FRACTUS_PALETTE_OFFSET,
+            FRACTUS_PALETTE_SPAN
         };
     }
 
@@ -198,8 +198,8 @@ void fractus_app_reset_fractal_parameters(
             circ_seed,
             320,
             90,
-            16u,
-            240u
+            FRACTUS_PALETTE_OFFSET,
+            FRACTUS_PALETTE_SPAN
         };
     }
 
@@ -214,8 +214,8 @@ void fractus_app_reset_fractal_parameters(
             0.0,
             0.0,
             0.0,
-            16u,
-            240u
+            FRACTUS_PALETTE_OFFSET,
+            FRACTUS_PALETTE_SPAN
         };
     }
 }
@@ -231,7 +231,7 @@ void fractus_app_capture_palette_to_config(
     }
 
     for (i = 0u; i < FRACTUS_LEGACY_PALETTE_DATA_COUNT; ++i) {
-        config->palette[i] = framebuffer->palette.entries[i + 16u];
+        config->palette[i] = framebuffer->palette.entries[i + FRACTUS_PALETTE_OFFSET];
     }
 }
 

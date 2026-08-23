@@ -150,8 +150,8 @@ fractus_status fractus_fractal_render_lorenz(
     width = (int32_t)framebuffer->size.width;
     height = (int32_t)framebuffer->size.height;
     pitch = (int32_t)framebuffer->pitch_pixels;
-    pal_offset = (params->palette_offset >= 16u) ? params->palette_offset : 16u;
-    pal_span = (params->palette_span >= 2u) ? params->palette_span : 240u;
+    pal_offset = (params->palette_offset >= FRACTUS_PALETTE_OFFSET) ? params->palette_offset : FRACTUS_PALETTE_OFFSET;
+    pal_span = (params->palette_span >= 2u) ? params->palette_span : FRACTUS_PALETTE_SPAN;
 
     if (width <= 0 || height <= 0 || params->iterations == 0u || params->dt <= 0.0) {
         return FRACTUS_STATUS_INVALID_ARGUMENT;

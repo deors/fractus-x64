@@ -95,7 +95,7 @@ static fractus_status fractus_app_set_palette_entry(
     uint32_t index,
     fractus_color_rgba8 color)
 {
-    if (framebuffer == NULL || index < 16u || index >= FRACTUS_PALETTE_SIZE) {
+    if (framebuffer == NULL || index < FRACTUS_PALETTE_OFFSET || index >= FRACTUS_PALETTE_SIZE) {
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
 
@@ -142,8 +142,8 @@ static fractus_status fractus_app_apply_palette_gradient(
     uint32_t i;
 
     if (framebuffer == NULL || config == NULL ||
-        first_index < 16u || first_index >= FRACTUS_PALETTE_SIZE ||
-        second_index < 16u || second_index >= FRACTUS_PALETTE_SIZE) {
+        first_index < FRACTUS_PALETTE_OFFSET || first_index >= FRACTUS_PALETTE_SIZE ||
+        second_index < FRACTUS_PALETTE_OFFSET || second_index >= FRACTUS_PALETTE_SIZE) {
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
 
@@ -239,7 +239,7 @@ fractus_status fractus_app_restore_default_palette(
     }
 
     for (i = 0u; i < FRACTUS_LEGACY_PALETTE_DATA_COUNT; ++i) {
-        framebuffer->palette.entries[i + 16u] = config->default_palette[i];
+        framebuffer->palette.entries[i + FRACTUS_PALETTE_OFFSET] = config->default_palette[i];
     }
     framebuffer->palette_dirty = 1;
 
@@ -1331,7 +1331,7 @@ fractus_status fractus_app_run_change_graphic_palette_palette_view(
 
 static fractus_status fractus_app_draw_palette_grid(fractus_framebuffer *framebuffer)
 {
-    uint32_t color_index = 16u;
+    uint32_t color_index = FRACTUS_PALETTE_OFFSET;
     int32_t row;
     int32_t column;
 
@@ -1390,7 +1390,7 @@ static int fractus_app_palette_index_at(fractus_point_i32 point, uint32_t *index
         return 0;
     }
 
-    *index = 16u + (uint32_t)(row * FRACTUS_APP_PALETTE_GRID_COLUMNS + column);
+    *index = FRACTUS_PALETTE_OFFSET + (uint32_t)(row * FRACTUS_APP_PALETTE_GRID_COLUMNS + column);
     return 1;
 }
 

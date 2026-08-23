@@ -4,6 +4,8 @@
 #include "platform/types.h"
 
 #define FRACTUS_PALETTE_SIZE 256u
+#define FRACTUS_PALETTE_OFFSET 16u
+#define FRACTUS_PALETTE_SPAN 240u
 
 typedef struct fractus_color_rgba8 {
     uint8_t r;
