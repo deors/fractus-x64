@@ -1607,8 +1607,6 @@ int fractus_app_run(void)
                     }
                 } else if (view == FRACTUS_APP_VIEW_BIOMORPH) {
                     fractus_size_u32 previous_drawing_size = core.drawing_framebuffer.size;
-                    zone_selection.active = 0;
-                    zone_selection.has_first_corner = 0;
                     present_framebuffer = &core.drawing_framebuffer;
                     present_is_drawing = 1;
                     if (fractus_app_ensure_drawing_framebuffer_size(&legacy_config, &core.drawing_framebuffer, &core.ui_framebuffer) != FRACTUS_STATUS_OK) {
@@ -1617,6 +1615,24 @@ int fractus_app_run(void)
                     } else {
                         if (previous_drawing_size.width != core.drawing_framebuffer.size.width ||
                             previous_drawing_size.height != core.drawing_framebuffer.size.height) {
+                            biomorph_needs_render = 1;
+                        }
+                        if (fractus_app_handle_zone_selection_input(
+                                &platform,
+                                &core.drawing_framebuffer,
+                                &ui,
+                                &biomorph_params.xmin,
+                                &biomorph_params.xmax,
+                                &biomorph_params.ymin,
+                                &biomorph_params.ymax,
+                                &zone_selection)) {
+                            current_drawing_saved = 0;
+                            drawing_presented_once = 0;
+                            save_next_graphic = 0;
+                            render_save_next_graphic = 0;
+                            save_requested_this_frame = 0;
+                            drawing_footer_visible = 0;
+                            graphic_metadata_panel_visible = 0;
                             biomorph_needs_render = 1;
                         }
                     }
@@ -1656,7 +1672,7 @@ int fractus_app_run(void)
                             }
                         }
                     }
-                    if (running && (drawing_footer_visible || graphic_metadata_panel_visible)) {
+                    if (running && (drawing_footer_visible || zone_selection.active || graphic_metadata_panel_visible)) {
                         if (fractus_app_copy_framebuffer_for_overlay(&zone_overlay_framebuffer, &core.drawing_framebuffer) != FRACTUS_STATUS_OK) {
                             fractus_app_log("runtime: biomorph overlay copy failed");
                             running = 0;
@@ -1665,9 +1681,12 @@ int fractus_app_run(void)
                                 (void)fractus_app_draw_drawing_footer_ex(
                                     &zone_overlay_framebuffer,
                                     &fonts,
-                                    "Biomorfo inicial - ESC o botón derecho: menú - G: grabar - M: metadatos - F: flujo",
+                                    "ESC / botón derecho: menú - G: grabar - S: seleccionar zona - M: metadatos - F: flujo",
                                     last_saved_filename,
-                                    0);
+                                    1);
+                            }
+                            if (zone_selection.active) {
+                                (void)fractus_app_draw_zone_selection_overlay(&platform, &zone_overlay_framebuffer, &ui, &zone_selection);
                             }
                             if (graphic_metadata_panel_visible) {
                                 fractus_graphic_metadata metadata = fractus_graphic_metadata_from_biomorph(

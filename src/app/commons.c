@@ -175,7 +175,8 @@ int fractus_app_view_supports_zone_selection(fractus_app_view view)
     return view == FRACTUS_APP_VIEW_MANDELBROT ||
            view == FRACTUS_APP_VIEW_MANDELBROT_DEM ||
            view == FRACTUS_APP_VIEW_JULIA ||
-           view == FRACTUS_APP_VIEW_JULIA_DEM;
+           view == FRACTUS_APP_VIEW_JULIA_DEM ||
+           view == FRACTUS_APP_VIEW_BIOMORPH;
 }
 
 fractus_status fractus_app_resolve_numbered_write_path(
