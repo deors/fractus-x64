@@ -118,7 +118,8 @@ fractus_status fractus_app_run_julia_menu_view(
     const fractus_app_menu_entry julia_menu_controls[] = {
         {FRACTUS_APP_RECT(x0 + 13, y0 + 43, x0 + 179, y0 + 63), 8u, 0u, "Tiempo de escape"},
         {FRACTUS_APP_RECT(x0 + 190, y0 + 43, x0 + 356, y0 + 63), 8u, 0u, "Estimación de distancias"},
-        {FRACTUS_APP_RECT(x0 + 135, y0 + 360, x0 + 235, y0 + 380), 0u, 15u, "Volver"}
+        {FRACTUS_APP_RECT(x0 + 75, y0 + 360, x0 + 175, y0 + 380), 8u, 7u, "Dibujar"},
+        {FRACTUS_APP_RECT(x0 + 195, y0 + 360, x0 + 295, y0 + 380), 0u, 15u, "Cancelar"}
     };
     fractus_ui_menu_option dialog_options[FRACTUS_APP_ARRAY_COUNT(julia_menu_controls)];
     int selected_menu = -1;
@@ -149,7 +150,7 @@ fractus_status fractus_app_run_julia_menu_view(
 
     /* 4. Raton y acciones de botones. */
     if (fractus_ui_menu(ui, dialog_options, FRACTUS_APP_ARRAY_COUNT(dialog_options), &selected_menu, &cancelled)) {
-        if (cancelled || selected_menu == 2) {
+        if (cancelled || selected_menu == 3) {
             *view = FRACTUS_APP_VIEW_MAIN_MENU;
         } else if (selected_menu == 0) {
             *julia_pending = *julia_params;
