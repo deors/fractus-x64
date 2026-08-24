@@ -743,6 +743,9 @@ size_t fractus_app_list_palette_files(
     return count;
 }
 
+static const int32_t browser_x0 = 170;
+static const int32_t browser_y0 = 76;
+
 static size_t fractus_app_build_palette_load_entries(
     fractus_app_menu_entry *entries,
     size_t capacity,
@@ -751,6 +754,8 @@ static size_t fractus_app_build_palette_load_entries(
     size_t page,
     size_t *visible_file_count)
 {
+    const int32_t x0 = browser_x0;
+    const int32_t y0 = browser_y0;
     size_t i;
     size_t first_file;
     size_t visible_count;
@@ -772,23 +777,20 @@ static size_t fractus_app_build_palette_load_entries(
         visible_count = FRACTUS_APP_PALETTE_FILE_PAGE_SIZE;
     }
 
-    y = 124;
+    y = y0 + 48;
     for (i = 0u; i < visible_count; ++i) {
-        fractus_app_set_button(&entries[i], 185, y, 455, y + 20, 8u, 0u, files[first_file + i].label);
+        fractus_app_set_button(&entries[i], x0 + 15, y, x0 + 285, y + 20, 8u, 0u, files[first_file + i].label);
         y += 24;
     }
 
     has_previous = page > 0u;
     has_next = first_file + visible_count < file_count;
-    fractus_app_set_button(&entries[visible_count], 185, 374, 225, 394, 8u, has_previous ? 0u : 7u, "<");
-    fractus_app_set_button(&entries[visible_count + 1u], 270, 374, 370, 394, 0u, 15u, "Cancelar");
-    fractus_app_set_button(&entries[visible_count + 2u], 415, 374, 455, 394, 8u, has_next ? 0u : 7u, ">");
+    fractus_app_set_button(&entries[visible_count], x0 + 15, y0 + 298, x0 + 55, y0 + 318, 8u, has_previous ? 0u : 7u, "<");
+    fractus_app_set_button(&entries[visible_count + 1u], x0 + 100, y0 + 298, x0 + 200, y0 + 318, 0u, 15u, "Cancelar");
+    fractus_app_set_button(&entries[visible_count + 2u], x0 + 245, y0 + 298, x0 + 285, y0 + 318, 8u, has_next ? 0u : 7u, ">");
     *visible_file_count = visible_count;
     return visible_count + 3u;
 }
-
-static const int32_t browser_x0 = 170;
-static const int32_t browser_y0 = 76;
 
 static size_t fractus_app_build_graphic_load_entries(
     fractus_app_menu_entry *entries,
