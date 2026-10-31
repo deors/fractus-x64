@@ -445,6 +445,171 @@ fractus_status fractus_app_copy_framebuffer_for_overlay(
     return FRACTUS_STATUS_OK;
 }
 
+static uint32_t fractus_app_drawing_text_scale(uint32_t height)
+{
+    if (height >= 2000u) {
+        return 4u;
+    }
+    if (height >= 1200u) {
+        return 3u;
+    }
+    if (height >= 720u) {
+        return 2u;
+    }
+    return 1u;
+}
+
+static void fractus_app_format_zoom(double zoom, char *buffer, size_t buffer_size)
+{
+    if (buffer == NULL || buffer_size == 0u) {
+        return;
+    }
+
+    if (zoom >= 1000000.0 || (zoom > 0.0 && zoom < 0.01)) {
+        (void)snprintf(buffer, buffer_size, "Zoom %.6gx", zoom);
+    } else {
+        (void)snprintf(buffer, buffer_size, "Zoom %.2fx", zoom);
+    }
+}
+
+fractus_status fractus_app_draw_drawing_hud(
+    fractus_framebuffer *framebuffer,
+    const fractus_font_library *fonts,
+    const fractus_app_drawing_hud *hud)
+{
+    char line_one[160];
+    char line_two[192];
+    char zoom_text[48];
+    char render_text[32];
+    char fps_text[24];
+    char index_text[48];
+    uint32_t scale;
+    int32_t text_height;
+    int32_t pad;
+    int32_t gap;
+    int32_t bar_height;
+    int32_t line_step;
+    int32_t swatch;
+    fractus_font_kind font;
+
+    if (framebuffer == NULL || fonts == NULL || hud == NULL || !framebuffer->initialized) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    if (framebuffer->size.height < 32u || framebuffer->size.width < 64u) {
+        return FRACTUS_STATUS_OK;
+    }
+
+    scale = fractus_app_drawing_text_scale(framebuffer->size.height);
+    font = (framebuffer->size.width <= 1024u) ? FRACTUS_FONT_SMALL : FRACTUS_FONT_ARIAL;
+    if (fractus_font_measure_text(fonts, font, "X", NULL, &text_height) != FRACTUS_STATUS_OK) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    text_height *= (int32_t)scale;
+    pad = (int32_t)(6u * scale);
+    gap = (int32_t)(3u * scale);
+    line_step = text_height + gap;
+    bar_height = pad + line_step + text_height + pad;
+    if (bar_height < 24) {
+        bar_height = 24;
+    }
+    if ((uint32_t)bar_height >= framebuffer->size.height) {
+        return FRACTUS_STATUS_OK;
+    }
+
+    if (hud->has_plane_point) {
+        (void)snprintf(line_one, sizeof(line_one), "X %.12g   Y %.12g", hud->plane_x, hud->plane_y);
+    } else {
+        (void)snprintf(line_one, sizeof(line_one), "X --   Y --");
+    }
+
+    if (hud->has_zoom && hud->zoom > 0.0) {
+        fractus_app_format_zoom(hud->zoom, zoom_text, sizeof(zoom_text));
+    } else {
+        (void)snprintf(zoom_text, sizeof(zoom_text), "Zoom --");
+    }
+
+    if (hud->has_render_time) {
+        (void)snprintf(render_text, sizeof(render_text), "Calculo %u ms", (unsigned)hud->render_ms);
+    } else {
+        (void)snprintf(render_text, sizeof(render_text), "Calculo --");
+    }
+
+    if (hud->fps > 0.0) {
+        (void)snprintf(fps_text, sizeof(fps_text), "%.0f fps", hud->fps);
+    } else {
+        (void)snprintf(fps_text, sizeof(fps_text), "-- fps");
+    }
+
+    if (hud->has_color) {
+        (void)snprintf(
+            index_text,
+            sizeof(index_text),
+            "Indice %u  RGB %u %u %u",
+            (unsigned)hud->color_index,
+            (unsigned)hud->color_r,
+            (unsigned)hud->color_g,
+            (unsigned)hud->color_b);
+    } else {
+        (void)snprintf(index_text, sizeof(index_text), "Indice --");
+    }
+
+    (void)snprintf(
+        line_two,
+        sizeof(line_two),
+        "%s   %s   %s   %s",
+        zoom_text,
+        render_text,
+        fps_text,
+        index_text);
+
+    if (fractus_graphics_fill_rect(
+            framebuffer,
+            (fractus_rect_i32){0, 0, (int32_t)framebuffer->size.width, bar_height},
+            7u) != FRACTUS_STATUS_OK ||
+        fractus_graphics_line(framebuffer, 0, 0, (int32_t)framebuffer->size.width - 1, 0, 15u) != FRACTUS_STATUS_OK ||
+        fractus_graphics_line(
+            framebuffer,
+            0,
+            bar_height - 1,
+            (int32_t)framebuffer->size.width - 1,
+            bar_height - 1,
+            0u) != FRACTUS_STATUS_OK) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    if (fractus_font_draw_text_scaled(
+            framebuffer, fonts, font, pad, pad, 15u, line_one, scale) != FRACTUS_STATUS_OK ||
+        fractus_font_draw_text_scaled(
+            framebuffer, fonts, font, pad, pad + line_step, 15u, line_two, scale) != FRACTUS_STATUS_OK) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    if (hud->has_color) {
+        swatch = text_height;
+        if (swatch < (int32_t)(8u * scale)) {
+            swatch = (int32_t)(8u * scale);
+        }
+        if (swatch + pad * 2 < (int32_t)framebuffer->size.width && swatch + pad * 2 < bar_height) {
+            int32_t swatch_x = (int32_t)framebuffer->size.width - swatch - pad;
+            int32_t swatch_y = (bar_height - swatch) / 2;
+            if (fractus_graphics_fill_rect(
+                    framebuffer,
+                    (fractus_rect_i32){swatch_x, swatch_y, swatch, swatch},
+                    hud->color_index) != FRACTUS_STATUS_OK ||
+                fractus_graphics_rect(
+                    framebuffer,
+                    (fractus_rect_i32){swatch_x, swatch_y, swatch, swatch},
+                    15u) != FRACTUS_STATUS_OK) {
+                return FRACTUS_STATUS_ERROR;
+            }
+        }
+    }
+
+    return FRACTUS_STATUS_OK;
+}
+
 fractus_status fractus_app_draw_drawing_footer(
     fractus_framebuffer *framebuffer,
     const fractus_font_library *fonts,
@@ -462,14 +627,7 @@ fractus_status fractus_app_draw_drawing_footer(
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
 
-    scale = 1u;
-    if (framebuffer->size.height >= 2000u) {
-        scale = 4u;
-    } else if (framebuffer->size.height >= 1200u) {
-        scale = 3u;
-    } else if (framebuffer->size.height >= 720u) {
-        scale = 2u;
-    }
+    scale = fractus_app_drawing_text_scale(framebuffer->size.height);
 
     if (fractus_font_measure_text(fonts, FRACTUS_FONT_ARIAL, text, &text_width, &text_height) != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
@@ -522,9 +680,9 @@ fractus_status fractus_app_draw_drawing_footer_ex(
 
     if (saved_filename != NULL && saved_filename[0] != '\0') {
         if (allow_selection) {
-            (void)snprintf(footer_buf, sizeof(footer_buf), "Grabado %s - ESC / botón derecho: menú - S: seleccionar zona - M: metadatos - F: flujo", saved_filename);
+            (void)snprintf(footer_buf, sizeof(footer_buf), "Grabado %s - ESC / botón derecho: menú - S: seleccionar zona - M: metadatos - F: flujo - I: información", saved_filename);
         } else {
-            (void)snprintf(footer_buf, sizeof(footer_buf), "Grabado %s - ESC o botón derecho: menú - M: metadatos - F: flujo", saved_filename);
+            (void)snprintf(footer_buf, sizeof(footer_buf), "Grabado %s - ESC o botón derecho: menú - M: metadatos - F: flujo - I: información", saved_filename);
         }
         text = footer_buf;
     }
@@ -826,7 +984,8 @@ int fractus_app_handle_zone_selection_input(
 fractus_status fractus_app_draw_graphic_metadata_panel(
     fractus_framebuffer *framebuffer,
     const fractus_font_library *fonts,
-    const fractus_graphic_metadata *metadata)
+    const fractus_graphic_metadata *metadata,
+    int above_footer)
 {
     char title[128];
     char lines[10][128];
@@ -974,24 +1133,33 @@ fractus_status fractus_app_draw_graphic_metadata_panel(
         break;
     }
 
-    fractus_font_kind font = (framebuffer->size.width <= 1024u && framebuffer->size.height <= 768u)
-        ? FRACTUS_FONT_SMALL
-        : FRACTUS_FONT_ARIAL;
-    int32_t pad_x = (font == FRACTUS_FONT_ARIAL) ? 12 : 8;
-    int32_t pad_y = (font == FRACTUS_FONT_ARIAL) ? 8 : 6;
-    int32_t title_margin = (font == FRACTUS_FONT_ARIAL) ? 10 : 7;
-    int32_t line_gap = (font == FRACTUS_FONT_ARIAL) ? 4 : 3;
+    uint32_t scale = fractus_app_drawing_text_scale(framebuffer->size.height);
+    fractus_font_kind font = (framebuffer->size.width <= 1024u) ? FRACTUS_FONT_SMALL : FRACTUS_FONT_ARIAL;
+    int32_t pad_x = (int32_t)(((font == FRACTUS_FONT_ARIAL) ? 12u : 8u) * scale);
+    int32_t pad_y = (int32_t)(((font == FRACTUS_FONT_ARIAL) ? 8u : 6u) * scale);
+    int32_t title_margin = (int32_t)(((font == FRACTUS_FONT_ARIAL) ? 10u : 7u) * scale);
+    int32_t line_gap = (int32_t)(((font == FRACTUS_FONT_ARIAL) ? 4u : 3u) * scale);
+    int32_t margin = (int32_t)(8u * scale);
     int32_t line_step;
+    int32_t bottom_reserve = margin;
+    int32_t sep_inset = (int32_t)(6u * scale);
 
-    (void)fractus_font_measure_text(fonts, font, title, &title_width, &text_height);
+    if (fractus_font_measure_text(fonts, font, title, &title_width, &text_height) != FRACTUS_STATUS_OK) {
+        return FRACTUS_STATUS_ERROR;
+    }
     if (text_height <= 0) {
         text_height = (font == FRACTUS_FONT_ARIAL) ? 14 : 9;
     }
+    title_width *= (int32_t)scale;
+    text_height *= (int32_t)scale;
     max_text_width = title_width;
     for (i = 0u; i < line_count; ++i) {
         int32_t w = 0;
         int32_t h = 0;
-        (void)fractus_font_measure_text(fonts, font, lines[i], &w, &h);
+        if (fractus_font_measure_text(fonts, font, lines[i], &w, &h) != FRACTUS_STATUS_OK) {
+            return FRACTUS_STATUS_ERROR;
+        }
+        w *= (int32_t)scale;
         if (w > max_text_width) {
             max_text_width = w;
         }
@@ -999,13 +1167,30 @@ fractus_status fractus_app_draw_graphic_metadata_panel(
 
     line_step = text_height + line_gap;
     panel_width = max_text_width + pad_x * 2;
-    if (panel_width < 220) {
-        panel_width = 220;
+    if (panel_width < (int32_t)(220u * scale)) {
+        panel_width = (int32_t)(220u * scale);
+    }
+    if (panel_width > (int32_t)framebuffer->size.width) {
+        panel_width = (int32_t)framebuffer->size.width;
     }
     panel_height = pad_y + text_height + title_margin + (int32_t)line_count * line_step + pad_y;
 
-    panel_x = (int32_t)framebuffer->size.width - panel_width - 8;
-    panel_y = (int32_t)framebuffer->size.height - panel_height - 28;
+    if (above_footer) {
+        int32_t footer_text_height = 0;
+        int32_t footer_height;
+        if (fractus_font_measure_text(fonts, FRACTUS_FONT_ARIAL, "X", NULL, &footer_text_height) != FRACTUS_STATUS_OK ||
+            footer_text_height <= 0) {
+            footer_text_height = 14;
+        }
+        footer_height = footer_text_height * (int32_t)scale + (int32_t)(12u * scale);
+        if (footer_height < 24) {
+            footer_height = 24;
+        }
+        bottom_reserve += footer_height;
+    }
+
+    panel_x = (int32_t)framebuffer->size.width - panel_width - margin;
+    panel_y = (int32_t)framebuffer->size.height - panel_height - bottom_reserve;
     if (panel_x < 0) {
         panel_x = 0;
     }
@@ -1026,17 +1211,17 @@ fractus_status fractus_app_draw_graphic_metadata_panel(
     (void)fractus_graphics_line(framebuffer, panel_x + panel_width - 1, panel_y + 1, panel_x + panel_width - 1, panel_y + panel_height - 1, 0u);
 
     /* Titulo del panel */
-    (void)fractus_ui_draw_text_left(framebuffer, fonts, font, panel_x + pad_x, panel_y + pad_y, 15u, title);
+    (void)fractus_font_draw_text_scaled(framebuffer, fonts, font, panel_x + pad_x, panel_y + pad_y, 15u, title, scale);
     {
         int32_t sep_y = panel_y + pad_y + text_height + title_margin / 2;
-        (void)fractus_graphics_line(framebuffer, panel_x + 6, sep_y, panel_x + panel_width - 7, sep_y, 8u);
-        (void)fractus_graphics_line(framebuffer, panel_x + 6, sep_y + 1, panel_x + panel_width - 7, sep_y + 1, 0u);
+        (void)fractus_graphics_line(framebuffer, panel_x + sep_inset, sep_y, panel_x + panel_width - sep_inset - 1, sep_y, 8u);
+        (void)fractus_graphics_line(framebuffer, panel_x + sep_inset, sep_y + 1, panel_x + panel_width - sep_inset - 1, sep_y + 1, 0u);
     }
 
     /* Lineas de parametros y coordenadas */
     line_y = panel_y + pad_y + text_height + title_margin;
     for (i = 0u; i < line_count; ++i) {
-        (void)fractus_ui_draw_text_left(framebuffer, fonts, font, panel_x + pad_x, line_y, 15u, lines[i]);
+        (void)fractus_font_draw_text_scaled(framebuffer, fonts, font, panel_x + pad_x, line_y, 15u, lines[i], scale);
         line_y += line_step;
     }
 

@@ -465,6 +465,222 @@ static fractus_status fractus_app_run_about_view(
     return FRACTUS_STATUS_OK;
 }
 
+static void fractus_app_note_render_time(
+    const fractus_platform_context *platform,
+    uint64_t started_ms,
+    uint32_t *last_render_ms,
+    int *has_render_time)
+{
+    uint64_t now_ms;
+    uint64_t elapsed;
+
+    if (platform == NULL || last_render_ms == NULL || has_render_time == NULL) {
+        return;
+    }
+
+    now_ms = fractus_platform_get_ticks_ms(platform);
+    elapsed = (now_ms >= started_ms) ? (now_ms - started_ms) : 0u;
+    if (elapsed > 4294967295u) {
+        elapsed = 4294967295u;
+    }
+    *last_render_ms = (uint32_t)elapsed;
+    *has_render_time = 1;
+}
+
+static void fractus_app_set_hud_plane(
+    fractus_app_drawing_hud *hud,
+    double xmin,
+    double xmax,
+    double ymin,
+    double ymax,
+    double reference_span,
+    int on_image,
+    uint32_t pixel_x,
+    uint32_t pixel_y,
+    uint32_t width,
+    uint32_t height)
+{
+    if (hud == NULL) {
+        return;
+    }
+
+    if (!(xmax > xmin) || !(ymax > ymin) || !(reference_span > 0.0)) {
+        return;
+    }
+
+    hud->has_zoom = 1;
+    hud->zoom = fractus_plane_zoom_level(reference_span, xmax - xmin);
+    if (on_image &&
+        fractus_plane_point_from_pixel(xmin, xmax, ymin, ymax, width, height, pixel_x, pixel_y, &hud->plane_x, &hud->plane_y)) {
+        hud->has_plane_point = 1;
+    }
+}
+
+static void fractus_app_fill_drawing_hud(
+    fractus_app_view view,
+    const fractus_platform_context *platform,
+    const fractus_framebuffer *drawing,
+    const fractus_ui_context *ui,
+    const fractus_mandelbrot_params *mandelbrot,
+    const fractus_mandelbrot_dem_params *mandelbrot_dem,
+    const fractus_julia_params *julia,
+    const fractus_julia_dem_params *julia_dem,
+    const fractus_biomorph_params *biomorph,
+    const fractus_plasma_params *plasma_rectangular,
+    const fractus_plasma_circular_params *plasma_circular,
+    const fractus_lorenz_params *lorenz,
+    const fractus_graphic_metadata *loaded_metadata,
+    int has_loaded_metadata,
+    uint32_t render_ms,
+    int has_render_time,
+    double fps,
+    fractus_app_drawing_hud *hud)
+{
+    fractus_point_i32 pixel = {0, 0};
+    int on_image = 0;
+    uint8_t color_index = 0u;
+
+    if (hud == NULL) {
+        return;
+    }
+
+    (void)plasma_rectangular;
+    (void)plasma_circular;
+    (void)lorenz;
+
+    memset(hud, 0, sizeof(*hud));
+    hud->fps = fps;
+    hud->render_ms = render_ms;
+    hud->has_render_time = has_render_time;
+
+    if (platform != NULL && drawing != NULL && ui != NULL &&
+        fractus_app_map_drawing_window_point(platform, drawing, ui->pointer_position, &pixel)) {
+        on_image = 1;
+        if (fractus_graphics_get_pixel(drawing, pixel.x, pixel.y, &color_index) == FRACTUS_STATUS_OK) {
+            hud->has_color = 1;
+            hud->color_index = color_index;
+            hud->color_r = drawing->palette.entries[color_index].r;
+            hud->color_g = drawing->palette.entries[color_index].g;
+            hud->color_b = drawing->palette.entries[color_index].b;
+        }
+    }
+
+    if (drawing == NULL) {
+        return;
+    }
+
+    switch (view) {
+    case FRACTUS_APP_VIEW_MANDELBROT:
+        if (mandelbrot != NULL) {
+            fractus_app_set_hud_plane(
+                hud, mandelbrot->xmin, mandelbrot->xmax, mandelbrot->ymin, mandelbrot->ymax,
+                FRACTUS_PLANE_MANDELBROT_REFERENCE_SPAN,
+                on_image, (uint32_t)pixel.x, (uint32_t)pixel.y, drawing->size.width, drawing->size.height);
+        }
+        break;
+    case FRACTUS_APP_VIEW_MANDELBROT_DEM:
+        if (mandelbrot_dem != NULL) {
+            fractus_app_set_hud_plane(
+                hud, mandelbrot_dem->xmin, mandelbrot_dem->xmax, mandelbrot_dem->ymin, mandelbrot_dem->ymax,
+                FRACTUS_PLANE_MANDELBROT_REFERENCE_SPAN,
+                on_image, (uint32_t)pixel.x, (uint32_t)pixel.y, drawing->size.width, drawing->size.height);
+        }
+        break;
+    case FRACTUS_APP_VIEW_JULIA:
+        if (julia != NULL) {
+            fractus_app_set_hud_plane(
+                hud, julia->xmin, julia->xmax, julia->ymin, julia->ymax,
+                FRACTUS_PLANE_JULIA_REFERENCE_SPAN,
+                on_image, (uint32_t)pixel.x, (uint32_t)pixel.y, drawing->size.width, drawing->size.height);
+        }
+        break;
+    case FRACTUS_APP_VIEW_JULIA_DEM:
+        if (julia_dem != NULL) {
+            fractus_app_set_hud_plane(
+                hud, julia_dem->xmin, julia_dem->xmax, julia_dem->ymin, julia_dem->ymax,
+                FRACTUS_PLANE_JULIA_REFERENCE_SPAN,
+                on_image, (uint32_t)pixel.x, (uint32_t)pixel.y, drawing->size.width, drawing->size.height);
+        }
+        break;
+    case FRACTUS_APP_VIEW_BIOMORPH:
+        if (biomorph != NULL) {
+            fractus_app_set_hud_plane(
+                hud, biomorph->xmin, biomorph->xmax, biomorph->ymin, biomorph->ymax,
+                FRACTUS_PLANE_BIOMORPH_REFERENCE_SPAN,
+                on_image, (uint32_t)pixel.x, (uint32_t)pixel.y, drawing->size.width, drawing->size.height);
+        }
+        break;
+    case FRACTUS_APP_VIEW_PLASMA_RECTANGULAR:
+    case FRACTUS_APP_VIEW_PLASMA_CIRCULAR:
+    case FRACTUS_APP_VIEW_LORENZ:
+        break;
+    case FRACTUS_APP_VIEW_GRAPHIC:
+        if (has_loaded_metadata && loaded_metadata != NULL) {
+            switch (loaded_metadata->kind) {
+            case FRACTUS_GRAPHIC_KIND_MANDELBROT:
+                fractus_app_set_hud_plane(
+                    hud,
+                    loaded_metadata->params.mandelbrot.xmin,
+                    loaded_metadata->params.mandelbrot.xmax,
+                    loaded_metadata->params.mandelbrot.ymin,
+                    loaded_metadata->params.mandelbrot.ymax,
+                    FRACTUS_PLANE_MANDELBROT_REFERENCE_SPAN,
+                    on_image, (uint32_t)pixel.x, (uint32_t)pixel.y, drawing->size.width, drawing->size.height);
+                break;
+            case FRACTUS_GRAPHIC_KIND_MANDELBROT_DEM:
+                fractus_app_set_hud_plane(
+                    hud,
+                    loaded_metadata->params.mandelbrot_dem.xmin,
+                    loaded_metadata->params.mandelbrot_dem.xmax,
+                    loaded_metadata->params.mandelbrot_dem.ymin,
+                    loaded_metadata->params.mandelbrot_dem.ymax,
+                    FRACTUS_PLANE_MANDELBROT_REFERENCE_SPAN,
+                    on_image, (uint32_t)pixel.x, (uint32_t)pixel.y, drawing->size.width, drawing->size.height);
+                break;
+            case FRACTUS_GRAPHIC_KIND_JULIA:
+                fractus_app_set_hud_plane(
+                    hud,
+                    loaded_metadata->params.julia.xmin,
+                    loaded_metadata->params.julia.xmax,
+                    loaded_metadata->params.julia.ymin,
+                    loaded_metadata->params.julia.ymax,
+                    FRACTUS_PLANE_JULIA_REFERENCE_SPAN,
+                    on_image, (uint32_t)pixel.x, (uint32_t)pixel.y, drawing->size.width, drawing->size.height);
+                break;
+            case FRACTUS_GRAPHIC_KIND_JULIA_DEM:
+                fractus_app_set_hud_plane(
+                    hud,
+                    loaded_metadata->params.julia_dem.xmin,
+                    loaded_metadata->params.julia_dem.xmax,
+                    loaded_metadata->params.julia_dem.ymin,
+                    loaded_metadata->params.julia_dem.ymax,
+                    FRACTUS_PLANE_JULIA_REFERENCE_SPAN,
+                    on_image, (uint32_t)pixel.x, (uint32_t)pixel.y, drawing->size.width, drawing->size.height);
+                break;
+            case FRACTUS_GRAPHIC_KIND_BIOMORPH:
+                fractus_app_set_hud_plane(
+                    hud,
+                    loaded_metadata->params.biomorph.xmin,
+                    loaded_metadata->params.biomorph.xmax,
+                    loaded_metadata->params.biomorph.ymin,
+                    loaded_metadata->params.biomorph.ymax,
+                    FRACTUS_PLANE_BIOMORPH_REFERENCE_SPAN,
+                    on_image, (uint32_t)pixel.x, (uint32_t)pixel.y, drawing->size.width, drawing->size.height);
+                break;
+            case FRACTUS_GRAPHIC_KIND_PLASMA_RECTANGULAR:
+            case FRACTUS_GRAPHIC_KIND_PLASMA_CIRCULAR:
+            case FRACTUS_GRAPHIC_KIND_LORENZ:
+            case FRACTUS_GRAPHIC_KIND_UNKNOWN:
+            default:
+                break;
+            }
+        }
+        break;
+    default:
+        break;
+    }
+}
+
 int fractus_app_run(void)
 {
     fractus_core core;
@@ -532,6 +748,12 @@ int fractus_app_run(void)
     int plasma_circular_needs_render;
     int lorenz_needs_render;
     int palette_flow_active;
+    int drawing_hud_visible;
+    int has_render_time;
+    uint32_t last_render_ms;
+    double frame_fps;
+    uint64_t previous_frame_ms;
+    uint64_t render_started_ms;
     int present_is_drawing;
     fractus_lorenz_params lorenz_params;
     fractus_lorenz_params lorenz_pending;
@@ -605,6 +827,12 @@ int fractus_app_run(void)
     plasma_circular_needs_render = 1;
     lorenz_needs_render = 1;
     palette_flow_active = 0;
+    drawing_hud_visible = 0;
+    has_render_time = 0;
+    last_render_ms = 0u;
+    frame_fps = 0.0;
+    previous_frame_ms = 0u;
+    render_started_ms = 0u;
     save_feedback_frames = 0u;
     fractus_app_log("startup: begin");
 
@@ -679,6 +907,12 @@ int fractus_app_run(void)
     palette_file_page = 0u;
 
     while (running) {
+        uint64_t now_ms = fractus_platform_get_ticks_ms(&platform);
+
+        if (previous_frame_ms != 0u && now_ms > previous_frame_ms) {
+            frame_fps = 1000.0 / (double)(now_ms - previous_frame_ms);
+        }
+        previous_frame_ms = now_ms;
         present_framebuffer = &core.ui_framebuffer;
         present_is_drawing = 0;
         fractus_ui_begin_frame(&ui);
@@ -1181,6 +1415,10 @@ int fractus_app_run(void)
                         if (fractus_app_view_supports_zone_selection(view)) {
                             has_assigned_action = 1;
                         }
+                    } else if (k == 'i' || k == 'I') {
+                        has_assigned_action = 1;
+                    } else if (k == 'h' || k == 'H') {
+                        has_assigned_action = 1;
                     }
 
                     if (!has_assigned_action) {
@@ -1207,6 +1445,18 @@ int fractus_app_run(void)
                     save_next_graphic = 1;
                     render_save_next_graphic = 1;
                     save_requested_this_frame = 1;
+                }
+
+                if (ui.key_press_pending &&
+                    (ui.key_pressed == 'i' || ui.key_pressed == 'I') &&
+                    (fractus_app_view_is_generated_drawing(view) || view == FRACTUS_APP_VIEW_GRAPHIC)) {
+                    drawing_hud_visible = !drawing_hud_visible;
+                }
+
+                if (ui.key_press_pending &&
+                    (ui.key_pressed == 'h' || ui.key_pressed == 'H') &&
+                    (fractus_app_view_is_generated_drawing(view) || view == FRACTUS_APP_VIEW_GRAPHIC)) {
+                    drawing_footer_visible = !drawing_footer_visible;
                 }
 
                 if (view == FRACTUS_APP_VIEW_MANDELBROT) {
@@ -1241,6 +1491,7 @@ int fractus_app_run(void)
                     }
                     if (running) {
                         if (mandelbrot_needs_render) {
+                            render_started_ms = fractus_platform_get_ticks_ms(&platform);
                             if (fractus_app_render_mandelbrot(
                                     &platform,
                                     &core.drawing_framebuffer,
@@ -1255,6 +1506,7 @@ int fractus_app_run(void)
                                 running = 0;
                             } else {
                                 mandelbrot_needs_render = 0;
+                                fractus_app_note_render_time(&platform, render_started_ms, &last_render_ms, &has_render_time);
                             }
                         } else if (render_save_next_graphic) {
                             fractus_graphic_metadata metadata = fractus_graphic_metadata_from_mandelbrot(
@@ -1284,7 +1536,7 @@ int fractus_app_run(void)
                                 (void)fractus_app_draw_drawing_footer_ex(
                                     &zone_overlay_framebuffer,
                                     &fonts,
-                                    "ESC / botón derecho: menú - G: grabar - S: seleccionar zona - M: metadatos - F: flujo",
+                                    "ESC / botón derecho: menú - G: grabar - S: seleccionar zona - M: metadatos - F: flujo - I: información",
                                     last_saved_filename,
                                     1);
                             }
@@ -1296,7 +1548,7 @@ int fractus_app_run(void)
                                     &mandelbrot_params,
                                     core.drawing_framebuffer.size.width,
                                     core.drawing_framebuffer.size.height);
-                                (void)fractus_app_draw_graphic_metadata_panel(&zone_overlay_framebuffer, &fonts, &metadata);
+                                (void)fractus_app_draw_graphic_metadata_panel(&zone_overlay_framebuffer, &fonts, &metadata, drawing_footer_visible);
                             }
                             present_framebuffer = &zone_overlay_framebuffer;
                             present_is_drawing = 1;
@@ -1334,6 +1586,7 @@ int fractus_app_run(void)
                     }
                     if (running) {
                         if (mandelbrot_dem_needs_render) {
+                            render_started_ms = fractus_platform_get_ticks_ms(&platform);
                             if (fractus_app_render_mandelbrot_dem(
                                     &platform,
                                     &core.drawing_framebuffer,
@@ -1348,6 +1601,7 @@ int fractus_app_run(void)
                                 running = 0;
                             } else {
                                 mandelbrot_dem_needs_render = 0;
+                                fractus_app_note_render_time(&platform, render_started_ms, &last_render_ms, &has_render_time);
                             }
                         } else if (render_save_next_graphic) {
                             fractus_graphic_metadata metadata = fractus_graphic_metadata_from_mandelbrot_dem(
@@ -1377,7 +1631,7 @@ int fractus_app_run(void)
                                 (void)fractus_app_draw_drawing_footer_ex(
                                     &zone_overlay_framebuffer,
                                     &fonts,
-                                    "ESC / botón derecho: menú - G: grabar - S: seleccionar zona - M: metadatos - F: flujo",
+                                    "ESC / botón derecho: menú - G: grabar - S: seleccionar zona - M: metadatos - F: flujo - I: información",
                                     last_saved_filename,
                                     1);
                             }
@@ -1389,7 +1643,7 @@ int fractus_app_run(void)
                                     &mandelbrot_dem_params,
                                     core.drawing_framebuffer.size.width,
                                     core.drawing_framebuffer.size.height);
-                                (void)fractus_app_draw_graphic_metadata_panel(&zone_overlay_framebuffer, &fonts, &metadata);
+                                (void)fractus_app_draw_graphic_metadata_panel(&zone_overlay_framebuffer, &fonts, &metadata, drawing_footer_visible);
                             }
                             present_framebuffer = &zone_overlay_framebuffer;
                             present_is_drawing = 1;
@@ -1427,6 +1681,7 @@ int fractus_app_run(void)
                     }
                     if (running) {
                         if (julia_needs_render) {
+                            render_started_ms = fractus_platform_get_ticks_ms(&platform);
                             if (fractus_app_render_julia(
                                     &platform,
                                     &core.drawing_framebuffer,
@@ -1441,6 +1696,7 @@ int fractus_app_run(void)
                                 running = 0;
                             } else {
                                 julia_needs_render = 0;
+                                fractus_app_note_render_time(&platform, render_started_ms, &last_render_ms, &has_render_time);
                             }
                         } else if (render_save_next_graphic) {
                             fractus_graphic_metadata metadata = fractus_graphic_metadata_from_julia(
@@ -1470,7 +1726,7 @@ int fractus_app_run(void)
                                 (void)fractus_app_draw_drawing_footer_ex(
                                     &zone_overlay_framebuffer,
                                     &fonts,
-                                    "ESC / botón derecho: menú - G: grabar - S: seleccionar zona - M: metadatos - F: flujo",
+                                    "ESC / botón derecho: menú - G: grabar - S: seleccionar zona - M: metadatos - F: flujo - I: información",
                                     last_saved_filename,
                                     1);
                             }
@@ -1482,7 +1738,7 @@ int fractus_app_run(void)
                                     &julia_params,
                                     core.drawing_framebuffer.size.width,
                                     core.drawing_framebuffer.size.height);
-                                (void)fractus_app_draw_graphic_metadata_panel(&zone_overlay_framebuffer, &fonts, &metadata);
+                                (void)fractus_app_draw_graphic_metadata_panel(&zone_overlay_framebuffer, &fonts, &metadata, drawing_footer_visible);
                             }
                             present_framebuffer = &zone_overlay_framebuffer;
                             present_is_drawing = 1;
@@ -1520,6 +1776,7 @@ int fractus_app_run(void)
                     }
                     if (running) {
                         if (julia_dem_needs_render) {
+                            render_started_ms = fractus_platform_get_ticks_ms(&platform);
                             if (fractus_app_render_julia_dem(
                                     &platform,
                                     &core.drawing_framebuffer,
@@ -1534,6 +1791,7 @@ int fractus_app_run(void)
                                 running = 0;
                             } else {
                                 julia_dem_needs_render = 0;
+                                fractus_app_note_render_time(&platform, render_started_ms, &last_render_ms, &has_render_time);
                             }
                         } else if (render_save_next_graphic) {
                             fractus_graphic_metadata metadata = fractus_graphic_metadata_from_julia_dem(
@@ -1563,7 +1821,7 @@ int fractus_app_run(void)
                                 (void)fractus_app_draw_drawing_footer_ex(
                                     &zone_overlay_framebuffer,
                                     &fonts,
-                                    "ESC / botón derecho: menú - G: grabar - S: seleccionar zona - M: metadatos - F: flujo",
+                                    "ESC / botón derecho: menú - G: grabar - S: seleccionar zona - M: metadatos - F: flujo - I: información",
                                     last_saved_filename,
                                     1);
                             }
@@ -1575,7 +1833,7 @@ int fractus_app_run(void)
                                     &julia_dem_params,
                                     core.drawing_framebuffer.size.width,
                                     core.drawing_framebuffer.size.height);
-                                (void)fractus_app_draw_graphic_metadata_panel(&zone_overlay_framebuffer, &fonts, &metadata);
+                                (void)fractus_app_draw_graphic_metadata_panel(&zone_overlay_framebuffer, &fonts, &metadata, drawing_footer_visible);
                             }
                             present_framebuffer = &zone_overlay_framebuffer;
                             present_is_drawing = 1;
@@ -1613,6 +1871,7 @@ int fractus_app_run(void)
                     }
                     if (running) {
                         if (biomorph_needs_render) {
+                            render_started_ms = fractus_platform_get_ticks_ms(&platform);
                             if (fractus_app_render_biomorph(
                                     &platform,
                                     &core.drawing_framebuffer,
@@ -1627,6 +1886,7 @@ int fractus_app_run(void)
                                 running = 0;
                             } else {
                                 biomorph_needs_render = 0;
+                                fractus_app_note_render_time(&platform, render_started_ms, &last_render_ms, &has_render_time);
                             }
                         } else if (render_save_next_graphic) {
                             fractus_graphic_metadata metadata = fractus_graphic_metadata_from_biomorph(
@@ -1656,7 +1916,7 @@ int fractus_app_run(void)
                                 (void)fractus_app_draw_drawing_footer_ex(
                                     &zone_overlay_framebuffer,
                                     &fonts,
-                                    "ESC / botón derecho: menú - G: grabar - S: seleccionar zona - M: metadatos - F: flujo",
+                                    "ESC / botón derecho: menú - G: grabar - S: seleccionar zona - M: metadatos - F: flujo - I: información",
                                     last_saved_filename,
                                     1);
                             }
@@ -1668,7 +1928,7 @@ int fractus_app_run(void)
                                     &biomorph_params,
                                     core.drawing_framebuffer.size.width,
                                     core.drawing_framebuffer.size.height);
-                                (void)fractus_app_draw_graphic_metadata_panel(&zone_overlay_framebuffer, &fonts, &metadata);
+                                (void)fractus_app_draw_graphic_metadata_panel(&zone_overlay_framebuffer, &fonts, &metadata, drawing_footer_visible);
                             }
                             present_framebuffer = &zone_overlay_framebuffer;
                             present_is_drawing = 1;
@@ -1691,6 +1951,7 @@ int fractus_app_run(void)
                     }
                     if (running) {
                         if (plasma_rectangular_needs_render) {
+                            render_started_ms = fractus_platform_get_ticks_ms(&platform);
                             if (fractus_app_render_plasma_rectangular(
                                     &platform,
                                     &core.drawing_framebuffer,
@@ -1705,6 +1966,7 @@ int fractus_app_run(void)
                                 running = 0;
                             } else {
                                 plasma_rectangular_needs_render = 0;
+                                fractus_app_note_render_time(&platform, render_started_ms, &last_render_ms, &has_render_time);
                             }
                         } else if (render_save_next_graphic) {
                             fractus_graphic_metadata metadata = fractus_graphic_metadata_from_plasma_rectangular(
@@ -1734,7 +1996,7 @@ int fractus_app_run(void)
                                 (void)fractus_app_draw_drawing_footer_ex(
                                     &zone_overlay_framebuffer,
                                     &fonts,
-                                    "ESC o botón derecho: menú - G: grabar - M: metadatos - F: flujo",
+                                    "ESC o botón derecho: menú - G: grabar - M: metadatos - F: flujo - I: información",
                                     last_saved_filename,
                                     0);
                             }
@@ -1743,7 +2005,7 @@ int fractus_app_run(void)
                                     &plasma_rectangular_params,
                                     core.drawing_framebuffer.size.width,
                                     core.drawing_framebuffer.size.height);
-                                (void)fractus_app_draw_graphic_metadata_panel(&zone_overlay_framebuffer, &fonts, &metadata);
+                                (void)fractus_app_draw_graphic_metadata_panel(&zone_overlay_framebuffer, &fonts, &metadata, drawing_footer_visible);
                             }
                             present_framebuffer = &zone_overlay_framebuffer;
                             present_is_drawing = 1;
@@ -1766,6 +2028,7 @@ int fractus_app_run(void)
                     }
                     if (running) {
                         if (plasma_circular_needs_render) {
+                            render_started_ms = fractus_platform_get_ticks_ms(&platform);
                             if (fractus_app_render_plasma_circular(
                                     &platform,
                                     &core.drawing_framebuffer,
@@ -1780,6 +2043,7 @@ int fractus_app_run(void)
                                 running = 0;
                             } else {
                                 plasma_circular_needs_render = 0;
+                                fractus_app_note_render_time(&platform, render_started_ms, &last_render_ms, &has_render_time);
                             }
                         } else if (render_save_next_graphic) {
                             fractus_graphic_metadata metadata = fractus_graphic_metadata_from_plasma_circular(
@@ -1809,7 +2073,7 @@ int fractus_app_run(void)
                                 (void)fractus_app_draw_drawing_footer_ex(
                                     &zone_overlay_framebuffer,
                                     &fonts,
-                                    "ESC o botón derecho: menú - G: grabar - M: metadatos - F: flujo",
+                                    "ESC o botón derecho: menú - G: grabar - M: metadatos - F: flujo - I: información",
                                     last_saved_filename,
                                     0);
                             }
@@ -1818,7 +2082,7 @@ int fractus_app_run(void)
                                     &plasma_circular_params,
                                     core.drawing_framebuffer.size.width,
                                     core.drawing_framebuffer.size.height);
-                                (void)fractus_app_draw_graphic_metadata_panel(&zone_overlay_framebuffer, &fonts, &metadata);
+                                (void)fractus_app_draw_graphic_metadata_panel(&zone_overlay_framebuffer, &fonts, &metadata, drawing_footer_visible);
                             }
                             present_framebuffer = &zone_overlay_framebuffer;
                             present_is_drawing = 1;
@@ -1841,6 +2105,7 @@ int fractus_app_run(void)
                     }
                     if (running) {
                         if (lorenz_needs_render) {
+                            render_started_ms = fractus_platform_get_ticks_ms(&platform);
                             if (fractus_app_render_lorenz(
                                     &platform,
                                     &core.drawing_framebuffer,
@@ -1855,6 +2120,7 @@ int fractus_app_run(void)
                                 running = 0;
                             } else {
                                 lorenz_needs_render = 0;
+                                fractus_app_note_render_time(&platform, render_started_ms, &last_render_ms, &has_render_time);
                             }
                         } else if (render_save_next_graphic) {
                             fractus_graphic_metadata metadata = fractus_graphic_metadata_from_lorenz(
@@ -1884,7 +2150,7 @@ int fractus_app_run(void)
                                 (void)fractus_app_draw_drawing_footer_ex(
                                     &zone_overlay_framebuffer,
                                     &fonts,
-                                    "ESC o botón derecho: menú - G: grabar - M: metadatos - F: flujo",
+                                    "ESC o botón derecho: menú - G: grabar - M: metadatos - F: flujo - I: información",
                                     last_saved_filename,
                                     0);
                             }
@@ -1893,7 +2159,7 @@ int fractus_app_run(void)
                                     &lorenz_params,
                                     core.drawing_framebuffer.size.width,
                                     core.drawing_framebuffer.size.height);
-                                (void)fractus_app_draw_graphic_metadata_panel(&zone_overlay_framebuffer, &fonts, &metadata);
+                                (void)fractus_app_draw_graphic_metadata_panel(&zone_overlay_framebuffer, &fonts, &metadata, drawing_footer_visible);
                             }
                             present_framebuffer = &zone_overlay_framebuffer;
                             present_is_drawing = 1;
@@ -1909,12 +2175,12 @@ int fractus_app_run(void)
                         } else {
                             if (drawing_footer_visible) {
                                 const char *footer_text = (has_loaded_graphic_metadata)
-                                    ? "ESC o botón derecho: menú - M: metadatos - F: flujo"
-                                    : "ESC o botón derecho: menú - F: flujo";
+                                    ? "ESC o botón derecho: menú - M: metadatos - F: flujo - I: información"
+                                    : "ESC o botón derecho: menú - F: flujo - I: información";
                                 (void)fractus_app_draw_drawing_footer(&zone_overlay_framebuffer, &fonts, footer_text);
                             }
                             if (has_loaded_graphic_metadata && graphic_metadata_panel_visible) {
-                                if (fractus_app_draw_graphic_metadata_panel(&zone_overlay_framebuffer, &fonts, &loaded_graphic_metadata) != FRACTUS_STATUS_OK) {
+                                if (fractus_app_draw_graphic_metadata_panel(&zone_overlay_framebuffer, &fonts, &loaded_graphic_metadata, drawing_footer_visible) != FRACTUS_STATUS_OK) {
                                     fractus_app_log("runtime: metadata panel render failed");
                                     running = 0;
                                 }
@@ -1944,6 +2210,7 @@ int fractus_app_run(void)
             if (previous_view == FRACTUS_APP_VIEW_GRAPHIC && view != FRACTUS_APP_VIEW_GRAPHIC) {
                 graphic_metadata_panel_visible = 0;
                 drawing_footer_visible = 0;
+                drawing_hud_visible = 0;
             }
 
             if (fractus_app_view_is_generated_drawing(previous_view) &&
@@ -1952,16 +2219,19 @@ int fractus_app_run(void)
                 last_saved_filename[0] = '\0';
                 graphic_metadata_panel_visible = 0;
                 drawing_footer_visible = 0;
+                drawing_hud_visible = 0;
                 (void)fractus_app_sync_framebuffer_palette(&core.drawing_framebuffer, &core.ui_framebuffer);
             }
 
             if (!fractus_app_view_is_generated_drawing(previous_view) &&
                 fractus_app_view_is_generated_drawing(view)) {
                 drawing_presented_once = 0;
+                has_render_time = 0;
                 palette_flow_active = 0;
                 last_saved_filename[0] = '\0';
                 graphic_metadata_panel_visible = 0;
                 drawing_footer_visible = 0;
+                drawing_hud_visible = 0;
                 (void)fractus_app_sync_framebuffer_palette(&core.drawing_framebuffer, &core.ui_framebuffer);
                 if (view == FRACTUS_APP_VIEW_MANDELBROT) {
                     mandelbrot_needs_render = 1;
@@ -1982,8 +2252,10 @@ int fractus_app_run(void)
                 }
             } else if (view == FRACTUS_APP_VIEW_GRAPHIC && previous_view != FRACTUS_APP_VIEW_GRAPHIC) {
                 drawing_presented_once = 1;
+                has_render_time = 0;
                 graphic_metadata_panel_visible = 0;
                 drawing_footer_visible = 0;
+                drawing_hud_visible = 0;
             }
         }
 
@@ -1995,21 +2267,57 @@ int fractus_app_run(void)
             (void)fractus_framebuffer_cycle_palette(&core.drawing_framebuffer, FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN, 1);
         }
 
-        if (present_is_drawing && save_feedback_frames > 0u) {
+        if (present_is_drawing &&
+            present_framebuffer != &core.drawing_framebuffer) {
+            present_framebuffer->palette = core.drawing_framebuffer.palette;
+            present_framebuffer->palette_dirty = 1;
+        }
+
+        if (present_is_drawing && (drawing_hud_visible || save_feedback_frames > 0u)) {
             if (present_framebuffer == &core.drawing_framebuffer) {
                 if (fractus_app_copy_framebuffer_for_overlay(&zone_overlay_framebuffer, &core.drawing_framebuffer) != FRACTUS_STATUS_OK) {
-                    fractus_app_log("runtime: save feedback copy failed");
+                    fractus_app_log("runtime: drawing overlay copy failed");
                     running = 0;
                     break;
                 }
                 present_framebuffer = &zone_overlay_framebuffer;
             }
-            if (fractus_app_draw_save_feedback(present_framebuffer, save_feedback_frames) != FRACTUS_STATUS_OK) {
-                fractus_app_log("runtime: save feedback failed");
-                running = 0;
-                break;
+            if (drawing_hud_visible) {
+                fractus_app_drawing_hud hud;
+
+                fractus_app_fill_drawing_hud(
+                    view,
+                    &platform,
+                    &core.drawing_framebuffer,
+                    &ui,
+                    &mandelbrot_params,
+                    &mandelbrot_dem_params,
+                    &julia_params,
+                    &julia_dem_params,
+                    &biomorph_params,
+                    &plasma_rectangular_params,
+                    &plasma_circular_params,
+                    &lorenz_params,
+                    &loaded_graphic_metadata,
+                    has_loaded_graphic_metadata,
+                    last_render_ms,
+                    has_render_time,
+                    frame_fps,
+                    &hud);
+                if (fractus_app_draw_drawing_hud(present_framebuffer, &fonts, &hud) != FRACTUS_STATUS_OK) {
+                    fractus_app_log("runtime: drawing hud failed");
+                    running = 0;
+                    break;
+                }
             }
-            --save_feedback_frames;
+            if (save_feedback_frames > 0u) {
+                if (fractus_app_draw_save_feedback(present_framebuffer, save_feedback_frames) != FRACTUS_STATUS_OK) {
+                    fractus_app_log("runtime: save feedback failed");
+                    running = 0;
+                    break;
+                }
+                --save_feedback_frames;
+            }
         }
 
         if (fractus_framebuffer_sync_rgba(present_framebuffer) != FRACTUS_STATUS_OK) {

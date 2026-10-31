@@ -199,10 +199,31 @@ fractus_status fractus_app_copy_framebuffer_for_overlay(
     fractus_framebuffer *target,
     const fractus_framebuffer *source);
 
+typedef struct fractus_app_drawing_hud {
+    int has_plane_point;
+    double plane_x;
+    double plane_y;
+    int has_zoom;
+    double zoom;
+    int has_render_time;
+    uint32_t render_ms;
+    double fps;
+    int has_color;
+    uint8_t color_index;
+    uint8_t color_r;
+    uint8_t color_g;
+    uint8_t color_b;
+} fractus_app_drawing_hud;
+
 fractus_status fractus_app_draw_drawing_footer(
     fractus_framebuffer *framebuffer,
     const fractus_font_library *fonts,
     const char *text);
+
+fractus_status fractus_app_draw_drawing_hud(
+    fractus_framebuffer *framebuffer,
+    const fractus_font_library *fonts,
+    const fractus_app_drawing_hud *hud);
 
 fractus_status fractus_app_draw_drawing_footer_ex(
     fractus_framebuffer *framebuffer,
@@ -254,6 +275,7 @@ int fractus_app_handle_zone_selection_input(
 fractus_status fractus_app_draw_graphic_metadata_panel(
     fractus_framebuffer *framebuffer,
     const fractus_font_library *fonts,
-    const fractus_graphic_metadata *metadata);
+    const fractus_graphic_metadata *metadata,
+    int above_footer);
 
 #endif

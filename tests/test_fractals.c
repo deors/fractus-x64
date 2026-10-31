@@ -1,4 +1,5 @@
 #include "test_common.h"
+#include "core/core.h"
 #include "core/fractal.h"
 #include "platform/framebuffer.h"
 
@@ -208,9 +209,42 @@ static int test_lorenz_rendering(void)
     return 1;
 }
 
+static int test_plane_point_and_zoom(void)
+{
+    double real_part = 0.0;
+    double imag_part = 0.0;
+
+    TEST_ASSERT(
+        fractus_plane_point_from_pixel(-2.4, 1.2, -1.2, 1.2, 3u, 3u, 0u, 0u, &real_part, &imag_part),
+        "Origin pixel should map");
+    TEST_ASSERT(fabs(real_part - (-2.4)) < 1e-12, "Origin real mismatch");
+    TEST_ASSERT(fabs(imag_part - 1.2) < 1e-12, "Origin imag mismatch");
+
+    TEST_ASSERT(
+        fractus_plane_point_from_pixel(-2.4, 1.2, -1.2, 1.2, 3u, 3u, 2u, 2u, &real_part, &imag_part),
+        "Far pixel should map");
+    TEST_ASSERT(fabs(real_part - 1.2) < 1e-12, "Far real mismatch");
+    TEST_ASSERT(fabs(imag_part - (-1.2)) < 1e-12, "Far imag mismatch");
+
+    TEST_ASSERT(
+        fractus_plane_point_from_pixel(-2.4, 1.2, -1.2, 1.2, 3u, 3u, 1u, 1u, &real_part, &imag_part),
+        "Center pixel should map");
+    TEST_ASSERT(fabs(real_part - (-0.6)) < 1e-12, "Center real mismatch");
+    TEST_ASSERT(fabs(imag_part - 0.0) < 1e-12, "Center imag mismatch");
+
+    TEST_ASSERT(!fractus_plane_point_from_pixel(-2.4, 1.2, -1.2, 1.2, 3u, 3u, 3u, 0u, &real_part, &imag_part),
+        "Pixel outside the image should fail");
+    TEST_ASSERT(fabs(fractus_plane_zoom_level(FRACTUS_PLANE_MANDELBROT_REFERENCE_SPAN, 1.8) - 2.0) < 1e-12,
+        "Zoom should be the reference span divided by the current span");
+    TEST_ASSERT(fractus_plane_zoom_level(0.0, 1.0) == 0.0, "Zero reference span should not zoom");
+
+    return 1;
+}
+
 int main(void)
 {
     printf("=== RUNNING FRACTAL TESTS ===\n");
+    TEST_RUN(test_plane_point_and_zoom);
     TEST_RUN(test_mandelbrot_rendering);
     TEST_RUN(test_julia_rendering);
     TEST_RUN(test_plasma_rendering);
