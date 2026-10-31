@@ -98,10 +98,16 @@ fractus_status fractus_platform_get_output_size(
 fractus_status fractus_platform_present(
     fractus_platform_context *platform,
     const fractus_platform_surface *surface);
+typedef enum fractus_platform_window_fit {
+    FRACTUS_PLATFORM_WINDOW_FIT_CONTENT = 0,
+    FRACTUS_PLATFORM_WINDOW_FIT_INTEGER = 1
+} fractus_platform_window_fit;
+
 fractus_status fractus_platform_set_video_mode(
     fractus_platform_context *platform,
     fractus_size_u32 size,
-    int fullscreen);
+    int fullscreen,
+    fractus_platform_window_fit fit);
 
 fractus_status fractus_platform_get_resource_path(
     const fractus_platform_context *platform,

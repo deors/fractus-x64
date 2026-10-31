@@ -287,6 +287,18 @@ fractus_status fractus_app_resolve_drawing_video_mode(
         *size = (fractus_size_u32){3840u, 2160u};
         *fullscreen = 1;
         break;
+    case FRACTUS_DRAWING_VIDEO_MODE_FULLSCREEN_1440X900:
+        *size = (fractus_size_u32){1440u, 900u};
+        *fullscreen = 1;
+        break;
+    case FRACTUS_DRAWING_VIDEO_MODE_FULLSCREEN_1920X1200:
+        *size = (fractus_size_u32){1920u, 1200u};
+        *fullscreen = 1;
+        break;
+    case FRACTUS_DRAWING_VIDEO_MODE_FULLSCREEN_2880X1800:
+        *size = (fractus_size_u32){2880u, 1800u};
+        *fullscreen = 1;
+        break;
     case FRACTUS_DRAWING_VIDEO_MODE_WINDOW_640X480:
     default:
         *size = (fractus_size_u32){640u, 480u};
@@ -359,13 +371,19 @@ fractus_status fractus_app_configure_platform_for_present(
         if (fractus_app_resolve_drawing_video_mode(config, &size, &fullscreen) != FRACTUS_STATUS_OK) {
             return FRACTUS_STATUS_ERROR;
         }
-    } else {
-        size.width = platform->config.logical_size.width * 2u;
-        size.height = platform->config.logical_size.height * 2u;
-        fullscreen = 0;
+        return fractus_platform_set_video_mode(
+            platform,
+            size,
+            fullscreen,
+            FRACTUS_PLATFORM_WINDOW_FIT_CONTENT);
     }
 
-    return fractus_platform_set_video_mode(platform, size, fullscreen);
+    size = platform->config.logical_size;
+    return fractus_platform_set_video_mode(
+        platform,
+        size,
+        0,
+        FRACTUS_PLATFORM_WINDOW_FIT_INTEGER);
 }
 
 void fractus_app_build_options_from_entries(

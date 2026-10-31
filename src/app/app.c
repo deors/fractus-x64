@@ -2079,8 +2079,9 @@ int fractus_app_run(void)
             fractus_app_log("runtime: present failed");
             (void)fractus_platform_set_video_mode(
                 &platform,
-                (fractus_size_u32){config.logical_size.width * 2u, config.logical_size.height * 2u},
-                0);
+                config.logical_size,
+                0,
+                FRACTUS_PLATFORM_WINDOW_FIT_INTEGER);
             (void)fractus_app_set_message(
                 runtime_error_message,
                 sizeof(runtime_error_message),

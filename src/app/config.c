@@ -329,7 +329,7 @@ static const int32_t fcfg_x0 = 135;
 static const int32_t fcfg_y0 = 66;
 
 static const int32_t vcfg_x0 = 160;
-static const int32_t vcfg_y0 = 113;
+static const int32_t vcfg_y0 = 86;
 
 static size_t fractus_app_build_fractals_config_entries(
     fractus_app_menu_entry *entries,
@@ -691,17 +691,33 @@ fractus_status fractus_app_run_video_config_view(
 {
     const int32_t x0 = vcfg_x0;
     const int32_t y0 = vcfg_y0;
+    static const uint8_t video_mode_order[FRACTUS_DRAWING_VIDEO_MODE_COUNT] = {
+        FRACTUS_DRAWING_VIDEO_MODE_WINDOW_640X480,
+        FRACTUS_DRAWING_VIDEO_MODE_WINDOW_800X600,
+        FRACTUS_DRAWING_VIDEO_MODE_WINDOW_1024X768,
+        FRACTUS_DRAWING_VIDEO_MODE_WINDOW_1280X960,
+        FRACTUS_DRAWING_VIDEO_MODE_FULLSCREEN_1280X720,
+        FRACTUS_DRAWING_VIDEO_MODE_FULLSCREEN_1440X900,
+        FRACTUS_DRAWING_VIDEO_MODE_FULLSCREEN_1920X1080,
+        FRACTUS_DRAWING_VIDEO_MODE_FULLSCREEN_1920X1200,
+        FRACTUS_DRAWING_VIDEO_MODE_FULLSCREEN_2560X1440,
+        FRACTUS_DRAWING_VIDEO_MODE_FULLSCREEN_2880X1800,
+        FRACTUS_DRAWING_VIDEO_MODE_FULLSCREEN_3840X2160
+    };
     const fractus_app_menu_entry dialog_entries[] = {
         {FRACTUS_APP_RECT(x0 + 15, y0 + 46, x0 + 300, y0 + 61), 8u, 0u, "Ventana 640x480"},
         {FRACTUS_APP_RECT(x0 + 15, y0 + 64, x0 + 300, y0 + 79), 8u, 0u, "Ventana 800x600"},
         {FRACTUS_APP_RECT(x0 + 15, y0 + 82, x0 + 300, y0 + 97), 8u, 0u, "Ventana 1024x768"},
         {FRACTUS_APP_RECT(x0 + 15, y0 + 100, x0 + 300, y0 + 115), 8u, 0u, "Ventana 1280x960 (Quad VGA)"},
-        {FRACTUS_APP_RECT(x0 + 15, y0 + 118, x0 + 300, y0 + 133), 8u, 0u, "Pantalla completa 1280x720 (HD)"},
-        {FRACTUS_APP_RECT(x0 + 15, y0 + 136, x0 + 300, y0 + 151), 8u, 0u, "Pantalla completa 1920x1080 (Full HD)"},
-        {FRACTUS_APP_RECT(x0 + 15, y0 + 154, x0 + 300, y0 + 169), 8u, 0u, "Pantalla completa 2560x1440 (Quad HD)"},
-        {FRACTUS_APP_RECT(x0 + 15, y0 + 172, x0 + 300, y0 + 187), 8u, 0u, "Pantalla completa 3840x2160 (4K / Quad Full HD)"},
-        {FRACTUS_APP_RECT(x0 + 50, y0 + 223, x0 + 150, y0 + 243), 8u, 0u, "Guardar"},
-        {FRACTUS_APP_RECT(x0 + 170, y0 + 223, x0 + 270, y0 + 243), 0u, 15u, "Cancelar"}
+        {FRACTUS_APP_RECT(x0 + 15, y0 + 118, x0 + 300, y0 + 133), 8u, 0u, "Pantalla completa 1280x720 (HD, 16:9)"},
+        {FRACTUS_APP_RECT(x0 + 15, y0 + 136, x0 + 300, y0 + 151), 8u, 0u, "Pantalla completa 1440x900 (WXGA+, 16:10)"},
+        {FRACTUS_APP_RECT(x0 + 15, y0 + 154, x0 + 300, y0 + 169), 8u, 0u, "Pantalla completa 1920x1080 (Full HD, 16:9)"},
+        {FRACTUS_APP_RECT(x0 + 15, y0 + 172, x0 + 300, y0 + 187), 8u, 0u, "Pantalla completa 1920x1200 (WUXGA, 16:10)"},
+        {FRACTUS_APP_RECT(x0 + 15, y0 + 190, x0 + 300, y0 + 205), 8u, 0u, "Pantalla completa 2560x1440 (Quad HD, 16:9)"},
+        {FRACTUS_APP_RECT(x0 + 15, y0 + 208, x0 + 300, y0 + 223), 8u, 0u, "Pantalla completa 2880x1800 (WQXGA+, 16:10)"},
+        {FRACTUS_APP_RECT(x0 + 15, y0 + 226, x0 + 300, y0 + 241), 8u, 0u, "Pantalla completa 3840x2160 (4K / Quad Full HD, 16:9)"},
+        {FRACTUS_APP_RECT(x0 + 50, y0 + 277, x0 + 150, y0 + 297), 8u, 0u, "Guardar"},
+        {FRACTUS_APP_RECT(x0 + 170, y0 + 277, x0 + 270, y0 + 297), 0u, 15u, "Cancelar"}
     };
     fractus_ui_menu_option dialog_options[FRACTUS_APP_ARRAY_COUNT(dialog_entries)];
     fractus_ui_radio_option video_options[FRACTUS_DRAWING_VIDEO_MODE_COUNT];
@@ -712,6 +728,7 @@ fractus_status fractus_app_run_video_config_view(
     int active_index;
     int selected_menu = -1;
     int cancelled = 0;
+    int selected_visual = 0;
 
     if (framebuffer == NULL || fonts == NULL || ui == NULL ||
         legacy_config == NULL || config_draft == NULL ||
@@ -726,13 +743,16 @@ fractus_status fractus_app_run_video_config_view(
     for (i = 0u; i < FRACTUS_DRAWING_VIDEO_MODE_COUNT; ++i) {
         video_options[i].bounds = dialog_entries[i].bounds;
         video_options[i].label = dialog_entries[i].label;
+        if (video_mode_order[i] == config_draft->drawing_video_mode) {
+            selected_visual = (int)i;
+        }
     }
 
     /* 1. Contenedor exterior */
     if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_window(framebuffer, x0, y0, x0 + 319, y0 + 253) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_window(framebuffer, x0, y0, x0 + 319, y0 + 307) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, x0 + 160, y0 + 4, 15u, "Resolución de los dibujos") != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, x0 + 5, y0 + 32, x0 + 314, y0 + 197, 8u, 0u, "Modo de vídeo") != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_group_box(framebuffer, fonts, x0 + 5, y0 + 32, x0 + 314, y0 + 251, 8u, 0u, "Modo de vídeo") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
@@ -742,9 +762,9 @@ fractus_status fractus_app_run_video_config_view(
             fonts,
             video_options,
             FRACTUS_DRAWING_VIDEO_MODE_COUNT,
-            (int)config_draft->drawing_video_mode,
+            selected_visual,
             (active_index >= 0 && active_index < (int)FRACTUS_DRAWING_VIDEO_MODE_COUNT) ? active_index : -1) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 160, y0 + 205, 0u, "La resolución elegida se guardará en fractus.cfg.") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 160, y0 + 259, 0u, "La resolución elegida se guardará en fractus.cfg.") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_button_list(
             framebuffer,
             fonts,
@@ -769,7 +789,7 @@ fractus_status fractus_app_run_video_config_view(
             }
             *view = FRACTUS_APP_VIEW_MAIN_MENU;
         } else if (selected_menu >= 0 && selected_menu < (int)FRACTUS_DRAWING_VIDEO_MODE_COUNT) {
-            config_draft->drawing_video_mode = (uint8_t)selected_menu;
+            config_draft->drawing_video_mode = video_mode_order[selected_menu];
         }
     }
 

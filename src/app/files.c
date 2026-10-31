@@ -386,6 +386,10 @@ fractus_status fractus_app_change_graphic_palette_into_state(
     status = fractus_legacy_graphic_save(output_path, &image, &new_palette);
     if (status != FRACTUS_STATUS_OK) {
         fractus_indexed_image_shutdown(&image);
+        if (status == FRACTUS_STATUS_UNSUPPORTED) {
+            fractus_app_log("graphic: drawing size has no .drsg video mode");
+            return FRACTUS_STATUS_ERROR;
+        }
         return status;
     }
 
@@ -456,6 +460,10 @@ fractus_status fractus_app_save_current_graphic_file_ex(
     status = fractus_legacy_graphic_save(graphic_path, &image, &framebuffer->palette);
     fractus_indexed_image_shutdown(&image);
     if (status != FRACTUS_STATUS_OK) {
+        if (status == FRACTUS_STATUS_UNSUPPORTED) {
+            fractus_app_log("graphic: drawing size has no .drsg video mode");
+            return FRACTUS_STATUS_ERROR;
+        }
         fractus_app_log("graphic: saving numbered .drsg failed");
         return status;
     }
@@ -514,12 +522,12 @@ fractus_status fractus_app_save_next_graphic_if_requested_ex(
     status = fractus_app_save_current_graphic_file_ex(platform, framebuffer, metadata, out_saved_name, out_saved_name_size);
     if (status != FRACTUS_STATUS_OK) {
         fractus_app_log("runtime: saving next graphic failed");
-        if (status == FRACTUS_STATUS_UNSUPPORTED) {
-            (void)fractus_app_set_message(
-                error_message,
-                error_message_size,
-                "No hay nombres libres de fractus0001.drsg a fractus9999.drsg.");
-        }
+        (void)fractus_app_set_message(
+            error_message,
+            error_message_size,
+            (status == FRACTUS_STATUS_UNSUPPORTED)
+                ? "No hay nombres libres de fractus0001.drsg a fractus9999.drsg."
+                : "No se ha podido grabar el dibujo.");
     }
 
     return FRACTUS_STATUS_OK;

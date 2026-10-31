@@ -265,6 +265,69 @@ static int test_graphic_metadata_json_load(void)
     return 1;
 }
 
+static int graphic_roundtrip(uint32_t width, uint32_t height, int expected_mode)
+{
+    fractus_indexed_image image;
+    fractus_indexed_image loaded;
+    fractus_palette palette;
+    fractus_palette loaded_palette;
+    fractus_size_u32 size;
+    uint16_t video_mode;
+    const char *path = "test_graphic_mode_temp.drsg";
+    uint8_t loaded_pixel;
+
+    size.width = width;
+    size.height = height;
+    video_mode = 0xffffu;
+    memset(&loaded, 0, sizeof(loaded));
+    TEST_ASSERT(fractus_indexed_image_init(&image, size) == FRACTUS_STATUS_OK, "Image init failed");
+    TEST_ASSERT(fractus_palette_init_default(&palette) == FRACTUS_STATUS_OK, "Palette init failed");
+    image.pixels[0] = 17u;
+    image.pixels[(size_t)(height - 1u) * image.pitch_pixels + (width - 1u)] = 219u;
+    image.pixels[((size_t)height / 2u) * image.pitch_pixels + (width / 2u)] = 64u;
+
+    TEST_ASSERT(fractus_legacy_graphic_save(path, &image, &palette) == FRACTUS_STATUS_OK, "Graphic save failed");
+    TEST_ASSERT(fractus_legacy_graphic_load(path, &loaded, &loaded_palette, &video_mode) == FRACTUS_STATUS_OK, "Graphic load failed");
+    TEST_ASSERT_EQUAL_INT(expected_mode, (int)video_mode, "Graphic video mode mismatch");
+    TEST_ASSERT_EQUAL_INT((int)width, (int)loaded.size.width, "Loaded width mismatch");
+    TEST_ASSERT_EQUAL_INT((int)height, (int)loaded.size.height, "Loaded height mismatch");
+    TEST_ASSERT_EQUAL_INT(17, loaded.pixels[0], "Origin pixel mismatch");
+    loaded_pixel = loaded.pixels[(size_t)(height - 1u) * loaded.pitch_pixels + (width - 1u)];
+    TEST_ASSERT_EQUAL_INT(219, loaded_pixel, "Corner pixel mismatch");
+    loaded_pixel = loaded.pixels[((size_t)height / 2u) * loaded.pitch_pixels + (width / 2u)];
+    TEST_ASSERT_EQUAL_INT(64, loaded_pixel, "Center pixel mismatch");
+
+    fractus_indexed_image_shutdown(&loaded);
+    fractus_indexed_image_shutdown(&image);
+    remove(path);
+    return 1;
+}
+
+static int test_graphic_video_mode_roundtrip(void)
+{
+    fractus_indexed_image image;
+    fractus_palette palette;
+    fractus_size_u32 unknown_size = {100u, 50u};
+    const char *path = "test_graphic_mode_temp.drsg";
+
+    if (!graphic_roundtrip(640u, 480u, 2) ||
+        !graphic_roundtrip(3840u, 2160u, 11) ||
+        !graphic_roundtrip(1440u, 900u, 12) ||
+        !graphic_roundtrip(1920u, 1200u, 13) ||
+        !graphic_roundtrip(2880u, 1800u, 14)) {
+        return 0;
+    }
+
+    TEST_ASSERT(fractus_indexed_image_init(&image, unknown_size) == FRACTUS_STATUS_OK, "Unknown image init failed");
+    TEST_ASSERT(fractus_palette_init_default(&palette) == FRACTUS_STATUS_OK, "Unknown palette init failed");
+    TEST_ASSERT(
+        fractus_legacy_graphic_save(path, &image, &palette) == FRACTUS_STATUS_UNSUPPORTED,
+        "Unknown size should stay unsupported");
+    fractus_indexed_image_shutdown(&image);
+    remove(path);
+    return 1;
+}
+
 int main(void)
 {
     printf("=== RUNNING FORMATS & CONFIG TESTS ===\n");
@@ -274,5 +337,6 @@ int main(void)
     TEST_RUN(test_bmp_save_and_formats_roundtrip);
     TEST_RUN(test_graphic_metadata_json_save);
     TEST_RUN(test_graphic_metadata_json_load);
+    TEST_RUN(test_graphic_video_mode_roundtrip);
     TEST_REPORT();
 }

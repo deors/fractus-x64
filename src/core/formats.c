@@ -155,6 +155,10 @@ static fractus_status fractus_write_u32_le(FILE *file, uint32_t value)
     return (fwrite(bytes, sizeof(bytes), 1u, file) == 1u) ? FRACTUS_STATUS_OK : FRACTUS_STATUS_ERROR;
 }
 
+/* Header word [3] of a .drsg. Ids 0..11 are fixed so older files still load.
+   New sizes are appended. This numbering is not drawing_video_mode. */
+#define FRACTUS_LEGACY_GRAPHIC_VIDEO_MODE_LAST 14u
+
 static fractus_status fractus_legacy_video_mode_info(
     uint16_t video_mode,
     fractus_size_u32 *size,
@@ -222,6 +226,21 @@ static fractus_status fractus_legacy_video_mode_info(
     case 11u:
         resolved_size.width = 3840u;
         resolved_size.height = 2160u;
+        resolved_chunk_count = 1u;
+        break;
+    case 12u:
+        resolved_size.width = 1440u;
+        resolved_size.height = 900u;
+        resolved_chunk_count = 1u;
+        break;
+    case 13u:
+        resolved_size.width = 1920u;
+        resolved_size.height = 1200u;
+        resolved_chunk_count = 1u;
+        break;
+    case 14u:
+        resolved_size.width = 2880u;
+        resolved_size.height = 1800u;
         resolved_chunk_count = 1u;
         break;
     default:
@@ -701,7 +720,8 @@ fractus_status fractus_legacy_graphic_save(
     }
 
     status = FRACTUS_STATUS_UNSUPPORTED;
-    for (video_mode = 0u; video_mode <= 11u; ++video_mode) {
+    chunk_count = 0u;
+    for (video_mode = 0u; video_mode <= FRACTUS_LEGACY_GRAPHIC_VIDEO_MODE_LAST; ++video_mode) {
         fractus_size_u32 known_size;
         uint16_t known_chunk_count;
 
