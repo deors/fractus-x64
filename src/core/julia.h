@@ -1,6 +1,8 @@
 #ifndef FRACTUS_X64_CORE_JULIA_H
 #define FRACTUS_X64_CORE_JULIA_H
 
+#include "core/precision.h"
+#include "core/progress.h"
 #include "platform/framebuffer.h"
 #include "platform/types.h"
 
@@ -22,6 +24,7 @@ typedef struct fractus_julia_params {
     uint8_t palette_offset;
     uint8_t palette_span;
     fractus_julia_color_mode color_mode;
+    fractus_hp_window precise;
 } fractus_julia_params;
 
 typedef enum fractus_julia_dem_color_mode {
@@ -42,14 +45,27 @@ typedef struct fractus_julia_dem_params {
     uint8_t palette_offset;
     uint8_t palette_span;
     fractus_julia_dem_color_mode color_mode;
+    fractus_hp_window precise;
 } fractus_julia_dem_params;
 
 fractus_status fractus_fractal_render_julia(
     fractus_framebuffer *framebuffer,
     const fractus_julia_params *params);
 
+fractus_status fractus_fractal_render_julia_with_progress(
+    fractus_framebuffer *framebuffer,
+    const fractus_julia_params *params,
+    const fractus_render_progress *progress);
+
 fractus_status fractus_fractal_render_julia_dem(
     fractus_framebuffer *framebuffer,
     const fractus_julia_dem_params *params);
+
+fractus_status fractus_fractal_render_julia_dem_with_progress(
+    fractus_framebuffer *framebuffer,
+    const fractus_julia_dem_params *params,
+    const fractus_render_progress *progress);
+
+int fractus_julia_precision_paths_match(void);
 
 #endif

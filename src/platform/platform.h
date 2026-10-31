@@ -93,6 +93,14 @@ fractus_status fractus_platform_poll_event(
     fractus_platform_event *event,
     int *has_event);
 
+void fractus_platform_pump_events(fractus_platform_context *platform);
+
+/* Drops queued Escape key events. Returns 1 when Escape was pressed or is held.
+   *still_held is 1 when the key is down after the queue is drained. */
+int fractus_platform_consume_escape(
+    fractus_platform_context *platform,
+    int *still_held);
+
 uint64_t fractus_platform_get_ticks_ms(const fractus_platform_context *platform);
 void fractus_platform_sleep_ms(uint32_t duration_ms);
 fractus_status fractus_platform_get_output_size(

@@ -144,7 +144,8 @@ static int test_graphic_metadata_json_save(void)
         .inside_color_index = 0,
         .palette_offset = 16,
         .palette_span = 240,
-        .color_mode = FRACTUS_MANDELBROT_COLOR_ESCAPE
+        .color_mode = FRACTUS_MANDELBROT_COLOR_ESCAPE,
+        .precise = FRACTUS_HP_WINDOW_ZERO
     };
     fractus_biomorph_params bio = {
         .xmin = -2.0,
@@ -160,7 +161,8 @@ static int test_graphic_metadata_json_save(void)
         .palette_offset = 16,
         .palette_span = 240,
         .equation = FRACTUS_BIOMORPH_EQ_Z3,
-        .trap_mode = FRACTUS_BIOMORPH_TRAP_RE_OR_IM
+        .trap_mode = FRACTUS_BIOMORPH_TRAP_RE_OR_IM,
+        .precise = FRACTUS_HP_WINDOW_ZERO
     };
     fractus_lorenz_params lorenz = {
         .sigma = 10.0,
@@ -240,7 +242,8 @@ static int test_graphic_metadata_json_load(void)
         .palette_offset = 16,
         .palette_span = 240,
         .equation = FRACTUS_BIOMORPH_EQ_SIN_Z,
-        .trap_mode = FRACTUS_BIOMORPH_TRAP_RE_AND_IM
+        .trap_mode = FRACTUS_BIOMORPH_TRAP_RE_AND_IM,
+        .precise = FRACTUS_HP_WINDOW_ZERO
     };
     const char *test_json = "test_metadata_load_temp.json";
     fractus_graphic_metadata saved_meta = fractus_graphic_metadata_from_biomorph(&bio, 800, 600);

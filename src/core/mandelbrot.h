@@ -1,6 +1,8 @@
 #ifndef FRACTUS_X64_CORE_MANDELBROT_H
 #define FRACTUS_X64_CORE_MANDELBROT_H
 
+#include "core/precision.h"
+#include "core/progress.h"
 #include "platform/framebuffer.h"
 #include "platform/types.h"
 
@@ -20,6 +22,7 @@ typedef struct fractus_mandelbrot_params {
     uint8_t palette_offset;
     uint8_t palette_span;
     fractus_mandelbrot_color_mode color_mode;
+    fractus_hp_window precise;
 } fractus_mandelbrot_params;
 
 typedef enum fractus_mandelbrot_dem_color_mode {
@@ -38,14 +41,27 @@ typedef struct fractus_mandelbrot_dem_params {
     uint8_t palette_offset;
     uint8_t palette_span;
     fractus_mandelbrot_dem_color_mode color_mode;
+    fractus_hp_window precise;
 } fractus_mandelbrot_dem_params;
 
 fractus_status fractus_fractal_render_mandelbrot(
     fractus_framebuffer *framebuffer,
     const fractus_mandelbrot_params *params);
 
+fractus_status fractus_fractal_render_mandelbrot_with_progress(
+    fractus_framebuffer *framebuffer,
+    const fractus_mandelbrot_params *params,
+    const fractus_render_progress *progress);
+
 fractus_status fractus_fractal_render_mandelbrot_dem(
     fractus_framebuffer *framebuffer,
     const fractus_mandelbrot_dem_params *params);
+
+fractus_status fractus_fractal_render_mandelbrot_dem_with_progress(
+    fractus_framebuffer *framebuffer,
+    const fractus_mandelbrot_dem_params *params,
+    const fractus_render_progress *progress);
+
+int fractus_mandelbrot_precision_paths_match(void);
 
 #endif

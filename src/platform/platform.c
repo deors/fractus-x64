@@ -482,6 +482,71 @@ fractus_status fractus_platform_poll_event(
     return FRACTUS_STATUS_OK;
 }
 
+void fractus_platform_pump_events(fractus_platform_context *platform)
+{
+    if (platform == NULL || !platform->initialized) {
+        return;
+    }
+
+    SDL_PumpEvents();
+}
+
+int fractus_platform_consume_escape(fractus_platform_context *platform, int *still_held)
+{
+    SDL_Event kept[64];
+    int kept_count = 0;
+    int seen_down = 0;
+    int index;
+    const uint8_t *keys;
+
+    if (still_held != NULL) {
+        *still_held = 0;
+    }
+    if (platform == NULL || !platform->initialized) {
+        return 0;
+    }
+
+    for (;;) {
+        SDL_Event batch[16];
+        int count = SDL_PeepEvents(batch, 16, SDL_GETEVENT, SDL_KEYDOWN, SDL_KEYUP);
+        int batch_index;
+
+        int stop = 0;
+
+        if (count <= 0) {
+            break;
+        }
+        for (batch_index = 0; batch_index < count; ++batch_index) {
+            if (batch[batch_index].key.keysym.sym == SDLK_ESCAPE) {
+                if (batch[batch_index].type == SDL_KEYDOWN) {
+                    seen_down = 1;
+                }
+            } else if (kept_count < (int)(sizeof(kept) / sizeof(kept[0]))) {
+                kept[kept_count++] = batch[batch_index];
+            } else {
+                SDL_PushEvent(&batch[batch_index]);
+                stop = 1;
+            }
+        }
+        if (stop || count < 16) {
+            break;
+        }
+    }
+
+    for (index = 0; index < kept_count; ++index) {
+        SDL_PushEvent(&kept[index]);
+    }
+
+    keys = SDL_GetKeyboardState(NULL);
+    if (keys != NULL && keys[SDL_SCANCODE_ESCAPE] != 0u) {
+        seen_down = 1;
+        if (still_held != NULL) {
+            *still_held = 1;
+        }
+    }
+    return seen_down;
+}
+
 uint64_t fractus_platform_get_ticks_ms(const fractus_platform_context *platform)
 {
     if (platform == NULL || !platform->initialized) {

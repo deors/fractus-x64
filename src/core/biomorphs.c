@@ -3,6 +3,25 @@
 #include <math.h>
 #include <stdlib.h>
 
+#define FRACTUS_COMPLEX_BIOMORPH
+#include "core/complex_step.h"
+
+FRACTUS_COMPLEX_DEFINE_Z2(fractus_d, double, FRACTUS_D_MUL, FRACTUS_D_ADD, FRACTUS_D_SUB, FRACTUS_D_LEFT)
+FRACTUS_COMPLEX_DEFINE_Z3(fractus_d, double, FRACTUS_D_MUL, FRACTUS_D_ADD, FRACTUS_D_SUB, FRACTUS_D_LEFT)
+FRACTUS_COMPLEX_DEFINE_Z4(fractus_d, double, FRACTUS_D_MUL, FRACTUS_D_ADD, FRACTUS_D_SUB, FRACTUS_D_LEFT)
+FRACTUS_COMPLEX_DEFINE_Z5(fractus_d, double, FRACTUS_D_MUL, FRACTUS_D_ADD, FRACTUS_D_SUB, FRACTUS_D_LEFT)
+FRACTUS_COMPLEX_DEFINE_SIN(fractus_d, double, FRACTUS_D_ADD, FRACTUS_D_SCALE, sin, cos, FRACTUS_D_HI, FRACTUS_D_TAIL, fractus_clamp_signed)
+FRACTUS_COMPLEX_DEFINE_EXP(fractus_d, double, FRACTUS_D_ADD, FRACTUS_D_SCALE, sin, cos, FRACTUS_D_HI, FRACTUS_D_TAIL, fractus_clamp_signed)
+FRACTUS_COMPLEX_DEFINE_BIOMORPH(fractus_d, double)
+
+FRACTUS_COMPLEX_DEFINE_Z2(fractus_hp, fractus_hp, FRACTUS_HP_MUL, FRACTUS_HP_ADD, FRACTUS_HP_SUB, FRACTUS_HP_LEFT)
+FRACTUS_COMPLEX_DEFINE_Z3(fractus_hp, fractus_hp, FRACTUS_HP_MUL, FRACTUS_HP_ADD, FRACTUS_HP_SUB, FRACTUS_HP_LEFT)
+FRACTUS_COMPLEX_DEFINE_Z4(fractus_hp, fractus_hp, FRACTUS_HP_MUL, FRACTUS_HP_ADD, FRACTUS_HP_SUB, FRACTUS_HP_LEFT)
+FRACTUS_COMPLEX_DEFINE_Z5(fractus_hp, fractus_hp, FRACTUS_HP_MUL, FRACTUS_HP_ADD, FRACTUS_HP_SUB, FRACTUS_HP_LEFT)
+FRACTUS_COMPLEX_DEFINE_SIN(fractus_hp, fractus_hp, FRACTUS_HP_ADD, FRACTUS_HP_SCALE, fractus_hp_sin, fractus_hp_cos, FRACTUS_HP_HI, FRACTUS_HP_TAIL, fractus_hp_clamp_signed)
+FRACTUS_COMPLEX_DEFINE_EXP(fractus_hp, fractus_hp, FRACTUS_HP_ADD, FRACTUS_HP_SCALE, fractus_hp_sin, fractus_hp_cos, FRACTUS_HP_HI, FRACTUS_HP_TAIL, fractus_hp_clamp_signed)
+FRACTUS_COMPLEX_DEFINE_BIOMORPH(fractus_hp, fractus_hp)
+
 static fractus_status fractus_biomorph_validate_common(
     const fractus_framebuffer *framebuffer,
     uint32_t max_iterations,
@@ -29,98 +48,91 @@ static uint8_t fractus_biomorph_iteration_color(
     return (uint8_t)(palette_offset + ((iteration - 1u) % palette_span));
 }
 
-static inline void fractus_biomorph_step_z2(
+static inline int fractus_biomorph_check_trap(
     double zr,
     double zi,
-    double cr,
-    double ci,
-    double *next_r,
-    double *next_i)
+    double cutoff,
+    fractus_biomorph_trap_mode mode);
+
+static fractus_status fractus_biomorph_render_extended(
+    fractus_framebuffer *framebuffer,
+    const fractus_biomorph_params *params,
+    const fractus_hp_window *window,
+    const fractus_render_progress *progress)
 {
-    *next_r = (zr * zr) - (zi * zi) + cr;
-    *next_i = (2.0 * zr * zi) + ci;
-}
+    uint32_t x;
+    uint32_t y;
+    fractus_hp dx;
+    fractus_hp dy;
+    fractus_hp cr = fractus_hp_from_double(params->constant_real);
+    fractus_hp ci = fractus_hp_from_double(params->constant_imag);
+    double cutoff = (params->cutoff > 0.0) ? params->cutoff : 1.0;
 
-static inline void fractus_biomorph_step_z3(
-    double zr,
-    double zi,
-    double cr,
-    double ci,
-    double *next_r,
-    double *next_i)
-{
-    double zr2 = zr * zr;
-    double zi2 = zi * zi;
+    fractus_hp_plane_axes(window, framebuffer->size.width, framebuffer->size.height, &dx, &dy);
 
-    *next_r = zr * (zr2 - 3.0 * zi2) + cr;
-    *next_i = zi * (3.0 * zr2 - zi2) + ci;
-}
+    {
+        const uint32_t fractus_row_count = framebuffer->size.height;
+        const uint32_t fractus_row_band = fractus_render_band_rows(progress, fractus_row_count);
+        const int fractus_row_chunk = (progress == NULL || progress->report == NULL) ? 8 : 1;
+        uint32_t fractus_row_begin = 0u;
 
-static inline void fractus_biomorph_step_z4(
-    double zr,
-    double zi,
-    double cr,
-    double ci,
-    double *next_r,
-    double *next_i)
-{
-    double zr2 = zr * zr;
-    double zi2 = zi * zi;
+        (void)fractus_row_chunk;
+        while (fractus_row_begin < fractus_row_count) {
+            uint32_t fractus_row_end = fractus_row_begin + fractus_row_band;
+            if (fractus_row_end > fractus_row_count) {
+                fractus_row_end = fractus_row_count;
+            }
 
-    *next_r = (zr2 * zr2) - (6.0 * zr2 * zi2) + (zi2 * zi2) + cr;
-    *next_i = (4.0 * zr * zi * (zr2 - zi2)) + ci;
-}
+            #pragma omp parallel for schedule(dynamic, fractus_row_chunk) private(x)
+            for (y = fractus_row_begin; y < fractus_row_end; ++y) {
+        fractus_hp zi_row = fractus_hp_plane_imag(window, dy, y);
+        for (x = 0u; x < framebuffer->size.width; ++x) {
+            fractus_hp zr = fractus_hp_plane_real(window, dx, x);
+            fractus_hp zi = zi_row;
+            uint32_t iteration;
+            uint8_t color_index = params->background_color_index;
 
-static inline void fractus_biomorph_step_z5(
-    double zr,
-    double zi,
-    double cr,
-    double ci,
-    double *next_r,
-    double *next_i)
-{
-    double zr2 = zr * zr;
-    double zi2 = zi * zi;
-    double zr4 = zr2 * zr2;
-    double zi4 = zi2 * zi2;
+            for (iteration = 1u; iteration <= params->max_iterations; ++iteration) {
+                fractus_hp mag = fractus_hp_add(fractus_hp_mul(zr, zr), fractus_hp_mul(zi, zi));
+                fractus_hp next_r;
+                fractus_hp next_i;
 
-    *next_r = (zr * (zr4 - (10.0 * zr2 * zi2) + (5.0 * zi4))) + cr;
-    *next_i = (zi * ((5.0 * zr4) - (10.0 * zr2 * zi2) + zi4)) + ci;
-}
+                if (fractus_hp_greater_double(mag, params->escape_radius_squared) || !isfinite(mag.hi)) {
+                    if (fractus_biomorph_check_trap(zr.hi, zi.hi, cutoff, params->trap_mode)) {
+                        color_index = fractus_biomorph_iteration_color(
+                            iteration,
+                            params->palette_offset,
+                            params->palette_span);
+                    }
+                    break;
+                }
 
-static inline void fractus_biomorph_step_sin_z(
-    double zr,
-    double zi,
-    double cr,
-    double ci,
-    double *next_r,
-    double *next_i)
-{
-    /* Evitar overflow y optimizar calculo hiperbolico evaluando exp una sola vez */
-    double clamped_i = (zi > 50.0) ? 50.0 : ((zi < -50.0) ? -50.0 : zi);
-    double exp_p = exp(clamped_i);
-    double exp_m = 1.0 / exp_p;
-    double cosh_i = 0.5 * (exp_p + exp_m);
-    double sinh_i = 0.5 * (exp_p - exp_m);
+                fractus_hp_biomorph_step(params->equation, zr, zi, cr, ci, &next_r, &next_i);
+                zr = next_r;
+                zi = next_i;
+            }
 
-    *next_r = (sin(zr) * cosh_i) + cr;
-    *next_i = (cos(zr) * sinh_i) + ci;
-}
+            if (iteration > params->max_iterations &&
+                fractus_biomorph_check_trap(zr.hi, zi.hi, cutoff, params->trap_mode)) {
+                color_index = fractus_biomorph_iteration_color(
+                    params->max_iterations,
+                    params->palette_offset,
+                    params->palette_span);
+            }
 
-static inline void fractus_biomorph_step_exp_z(
-    double zr,
-    double zi,
-    double cr,
-    double ci,
-    double *next_r,
-    double *next_i)
-{
-    /* Evitar overflow en exp manteniendo el argumento en rango seguro */
-    double clamped_r = (zr > 100.0) ? 100.0 : ((zr < -100.0) ? -100.0 : zr);
-    double exp_r = exp(clamped_r);
+            framebuffer->index_pixels[(size_t)y * framebuffer->pitch_pixels + x] = color_index;
+        }
+    }
+            if (fractus_render_progress_report(progress, fractus_row_end, fractus_row_count) != 0) {
+                framebuffer->pixels_dirty = 1;
+                return FRACTUS_STATUS_CANCELLED;
+            }
+            fractus_row_begin = fractus_row_end;
+        }
+    }
 
-    *next_r = (exp_r * cos(zi)) + cr;
-    *next_i = (exp_r * sin(zi)) + ci;
+    framebuffer->pixels_dirty = 1;
+    return FRACTUS_STATUS_OK;
 }
 
 static inline int fractus_biomorph_check_trap(
@@ -145,9 +157,10 @@ static inline int fractus_biomorph_check_trap(
     }
 }
 
-fractus_status fractus_fractal_render_biomorph(
+fractus_status fractus_fractal_render_biomorph_with_progress(
     fractus_framebuffer *framebuffer,
-    const fractus_biomorph_params *params)
+    const fractus_biomorph_params *params,
+    const fractus_render_progress *progress)
 {
     uint32_t x;
     uint32_t y;
@@ -164,12 +177,40 @@ fractus_status fractus_fractal_render_biomorph(
         return FRACTUS_STATUS_INVALID_ARGUMENT;
     }
 
+    {
+        fractus_hp_window window;
+        if (fractus_hp_window_use_extended(
+                &window,
+                &params->precise,
+                params->xmin,
+                params->xmax,
+                params->ymin,
+                params->ymax,
+                framebuffer->size.width,
+                framebuffer->size.height)) {
+            return fractus_biomorph_render_extended(framebuffer, params, &window, progress);
+        }
+    }
+
     dx = (params->xmax - params->xmin) / (double)(framebuffer->size.width - 1u);
     dy = (params->ymax - params->ymin) / (double)(framebuffer->size.height - 1u);
     cutoff = (params->cutoff > 0.0) ? params->cutoff : 1.0;
 
-    #pragma omp parallel for schedule(dynamic, 8) private(x)
-    for (y = 0u; y < framebuffer->size.height; ++y) {
+    {
+        const uint32_t fractus_row_count = framebuffer->size.height;
+        const uint32_t fractus_row_band = fractus_render_band_rows(progress, fractus_row_count);
+        const int fractus_row_chunk = (progress == NULL || progress->report == NULL) ? 8 : 1;
+        uint32_t fractus_row_begin = 0u;
+
+        (void)fractus_row_chunk;
+        while (fractus_row_begin < fractus_row_count) {
+            uint32_t fractus_row_end = fractus_row_begin + fractus_row_band;
+            if (fractus_row_end > fractus_row_count) {
+                fractus_row_end = fractus_row_count;
+            }
+
+            #pragma omp parallel for schedule(dynamic, fractus_row_chunk) private(x)
+            for (y = fractus_row_begin; y < fractus_row_end; ++y) {
         for (x = 0u; x < framebuffer->size.width; ++x) {
             double zr = params->xmin + (double)x * dx;
             double zi = params->ymax - (double)y * dy;
@@ -191,27 +232,14 @@ fractus_status fractus_fractal_render_biomorph(
                     break;
                 }
 
-                switch (params->equation) {
-                case FRACTUS_BIOMORPH_EQ_Z3:
-                    fractus_biomorph_step_z3(zr, zi, params->constant_real, params->constant_imag, &next_r, &next_i);
-                    break;
-                case FRACTUS_BIOMORPH_EQ_Z4:
-                    fractus_biomorph_step_z4(zr, zi, params->constant_real, params->constant_imag, &next_r, &next_i);
-                    break;
-                case FRACTUS_BIOMORPH_EQ_Z5:
-                    fractus_biomorph_step_z5(zr, zi, params->constant_real, params->constant_imag, &next_r, &next_i);
-                    break;
-                case FRACTUS_BIOMORPH_EQ_SIN_Z:
-                    fractus_biomorph_step_sin_z(zr, zi, params->constant_real, params->constant_imag, &next_r, &next_i);
-                    break;
-                case FRACTUS_BIOMORPH_EQ_EXP_Z:
-                    fractus_biomorph_step_exp_z(zr, zi, params->constant_real, params->constant_imag, &next_r, &next_i);
-                    break;
-                case FRACTUS_BIOMORPH_EQ_Z2:
-                default:
-                    fractus_biomorph_step_z2(zr, zi, params->constant_real, params->constant_imag, &next_r, &next_i);
-                    break;
-                }
+                fractus_d_biomorph_step(
+                    params->equation,
+                    zr,
+                    zi,
+                    params->constant_real,
+                    params->constant_imag,
+                    &next_r,
+                    &next_i);
 
                 zr = next_r;
                 zi = next_i;
@@ -229,7 +257,67 @@ fractus_status fractus_fractal_render_biomorph(
             framebuffer->index_pixels[(size_t)y * framebuffer->pitch_pixels + x] = color_index;
         }
     }
+            if (fractus_render_progress_report(progress, fractus_row_end, fractus_row_count) != 0) {
+                framebuffer->pixels_dirty = 1;
+                return FRACTUS_STATUS_CANCELLED;
+            }
+            fractus_row_begin = fractus_row_end;
+        }
+    }
 
     framebuffer->pixels_dirty = 1;
     return FRACTUS_STATUS_OK;
+}
+
+fractus_status fractus_fractal_render_biomorph(
+    fractus_framebuffer *framebuffer,
+    const fractus_biomorph_params *params)
+{
+    return fractus_fractal_render_biomorph_with_progress(framebuffer, params, NULL);
+}
+
+int fractus_biomorph_precision_paths_match(void)
+{
+    fractus_framebuffer fast;
+    fractus_framebuffer extended;
+    fractus_size_u32 size = {40u, 30u};
+    fractus_biomorph_params params = {
+        -2.0, 2.0, -1.5, 1.5,
+        -0.6, 0.55,
+        40u, 1000.0, 1.0,
+        0u, FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN,
+        FRACTUS_BIOMORPH_EQ_Z2,
+        FRACTUS_BIOMORPH_TRAP_RE_OR_IM,
+        FRACTUS_HP_WINDOW_ZERO
+    };
+    int equation;
+    int match = 1;
+
+    if (fractus_framebuffer_init(&fast, size) != FRACTUS_STATUS_OK) {
+        return 0;
+    }
+    if (fractus_framebuffer_init(&extended, size) != FRACTUS_STATUS_OK) {
+        fractus_framebuffer_shutdown(&fast);
+        return 0;
+    }
+
+    for (equation = (int)FRACTUS_BIOMORPH_EQ_Z2; equation <= (int)FRACTUS_BIOMORPH_EQ_EXP_Z; ++equation) {
+        fractus_hp_window window = {0};
+
+        params.equation = (fractus_biomorph_equation)equation;
+        if (fractus_fractal_render_biomorph(&fast, &params) != FRACTUS_STATUS_OK) {
+            match = 0;
+            break;
+        }
+        fractus_hp_window_adopt_doubles(&window, params.xmin, params.xmax, params.ymin, params.ymax);
+        if (fractus_biomorph_render_extended(&extended, &params, &window, NULL) != FRACTUS_STATUS_OK ||
+            !fractus_precision_indices_match(&fast, &extended)) {
+            match = 0;
+            break;
+        }
+    }
+
+    fractus_framebuffer_shutdown(&extended);
+    fractus_framebuffer_shutdown(&fast);
+    return match;
 }

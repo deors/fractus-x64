@@ -95,7 +95,8 @@ fractus_status fractus_app_render_julia(
     char *error_message,
     size_t error_message_size,
     char *saved_filename,
-    size_t saved_filename_size);
+    size_t saved_filename_size,
+    const fractus_render_progress *progress);
 
 fractus_status fractus_app_render_julia_dem(
     const fractus_platform_context *platform,
@@ -106,6 +107,7 @@ fractus_status fractus_app_render_julia_dem(
     char *error_message,
     size_t error_message_size,
     char *saved_filename,
-    size_t saved_filename_size);
+    size_t saved_filename_size,
+    const fractus_render_progress *progress);
 
 #endif

@@ -1,6 +1,8 @@
 #ifndef FRACTUS_X64_CORE_BIOMORPHS_H
 #define FRACTUS_X64_CORE_BIOMORPHS_H
 
+#include "core/precision.h"
+#include "core/progress.h"
 #include "platform/framebuffer.h"
 #include "platform/types.h"
 
@@ -35,10 +37,18 @@ typedef struct fractus_biomorph_params {
     uint8_t palette_span;
     fractus_biomorph_equation equation;
     fractus_biomorph_trap_mode trap_mode;
+    fractus_hp_window precise;
 } fractus_biomorph_params;
 
 fractus_status fractus_fractal_render_biomorph(
     fractus_framebuffer *framebuffer,
     const fractus_biomorph_params *params);
+
+fractus_status fractus_fractal_render_biomorph_with_progress(
+    fractus_framebuffer *framebuffer,
+    const fractus_biomorph_params *params,
+    const fractus_render_progress *progress);
+
+int fractus_biomorph_precision_paths_match(void);
 
 #endif

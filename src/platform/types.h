@@ -8,7 +8,8 @@ typedef enum fractus_status {
     FRACTUS_STATUS_OK = 0,
     FRACTUS_STATUS_ERROR = 1,
     FRACTUS_STATUS_INVALID_ARGUMENT = 2,
-    FRACTUS_STATUS_UNSUPPORTED = 3
+    FRACTUS_STATUS_UNSUPPORTED = 3,
+    FRACTUS_STATUS_CANCELLED = 4
 } fractus_status;
 
 typedef struct fractus_size_u32 {

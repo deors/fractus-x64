@@ -16,7 +16,8 @@ static int test_biomorph_validation(void)
         250u, 1000.0, 1.0,
         0u, FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN,
         FRACTUS_BIOMORPH_EQ_Z2,
-        FRACTUS_BIOMORPH_TRAP_RE_OR_IM
+        FRACTUS_BIOMORPH_TRAP_RE_OR_IM,
+        FRACTUS_HP_WINDOW_ZERO
     };
 
     /* Valid render */
@@ -63,7 +64,8 @@ static int test_biomorph_all_24_combinations(void)
                 100u, 1000.0, 1.0,
                 0u, FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN,
                 (fractus_biomorph_equation)eq,
-                (fractus_biomorph_trap_mode)trap
+                (fractus_biomorph_trap_mode)trap,
+                FRACTUS_HP_WINDOW_ZERO
             };
 
             fractus_status status = fractus_fractal_render_biomorph(&fb, &params);
@@ -90,7 +92,8 @@ static int test_biomorph_numerical_stability(void)
         200u, 10000.0, 2.0,
         0u, FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN,
         FRACTUS_BIOMORPH_EQ_SIN_Z,
-        FRACTUS_BIOMORPH_TRAP_RE_OR_IM
+        FRACTUS_BIOMORPH_TRAP_RE_OR_IM,
+        FRACTUS_HP_WINDOW_ZERO
     };
     TEST_ASSERT(fractus_fractal_render_biomorph(&fb, &params) == FRACTUS_STATUS_OK, "sin(z) stress render failed");
 
@@ -121,7 +124,8 @@ static int test_biomorph_trap_logic(void)
         50u, 100.0, 1.0,
         0u, FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN,
         FRACTUS_BIOMORPH_EQ_Z2,
-        FRACTUS_BIOMORPH_TRAP_RE_OR_IM
+        FRACTUS_BIOMORPH_TRAP_RE_OR_IM,
+        FRACTUS_HP_WINDOW_ZERO
     };
 
     TEST_ASSERT(fractus_fractal_render_biomorph(&fb, &params) == FRACTUS_STATUS_OK, "Trap render failed");

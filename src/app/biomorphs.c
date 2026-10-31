@@ -31,7 +31,7 @@ void fractus_app_init_biomorph_fields(
     (void)fractus_ui_numeric_field_init_float(&fields->ymax, (fractus_rect_i32){x0 + 189, y0 + 126, 73, 20}, ymax, -5.0, 5.0, 3);
     (void)fractus_ui_numeric_field_init_float(&fields->constant_real, (fractus_rect_i32){x0 + 189, y0 + 152, 73, 20}, constant_real, -5.0, 5.0, 3);
     (void)fractus_ui_numeric_field_init_float(&fields->constant_imag, (fractus_rect_i32){x0 + 189, y0 + 178, 73, 20}, constant_imag, -5.0, 5.0, 3);
-    (void)fractus_ui_numeric_field_init_int(&fields->max_iterations, (fractus_rect_i32){x0 + 189, y0 + 204, 73, 20}, (int32_t)max_iterations, 1, 1000);
+    (void)fractus_ui_numeric_field_init_int(&fields->max_iterations, (fractus_rect_i32){x0 + 189, y0 + 204, 73, 20}, (int32_t)max_iterations, 1, 25000);
     (void)fractus_ui_numeric_field_init_int(&fields->escape_radius_squared, (fractus_rect_i32){x0 + 189, y0 + 230, 73, 20}, (int32_t)escape_radius_squared, 4, 1000);
     (void)fractus_ui_numeric_field_init_int(&fields->cutoff, (fractus_rect_i32){x0 + 189, y0 + 256, 73, 20}, (int32_t)cutoff, 1, 100);
 }
@@ -145,7 +145,7 @@ fractus_status fractus_app_run_biomorph_config_view(
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->constant_real) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 183, 0u, "Constante imaginaria") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->constant_imag) != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 209, 0u, "Iteraciones máximas (1-1000)") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 209, 0u, "Iteraciones máximas (1-25000)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->max_iterations) != FRACTUS_STATUS_OK ||
         fractus_ui_draw_text_left(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 15, y0 + 235, 0u, "Radio de escape al cuadrado (4-1000)") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_numeric_field(framebuffer, fonts, &fields->escape_radius_squared) != FRACTUS_STATUS_OK ||
@@ -391,10 +391,10 @@ fractus_status fractus_app_run_biomorph_config_view(
             pending->constant_imag = fractus_app_clamp_f64(pending->constant_imag + 0.05, -2.0, 2.0);
             fractus_app_init_biomorph_fields(fields, pending->xmin, pending->xmax, pending->ymin, pending->ymax, pending->constant_real, pending->constant_imag, pending->max_iterations, pending->escape_radius_squared, pending->cutoff);
         } else if (selected_menu == FRACTUS_APP_BIOMORPH_ITERATIONS_DEC) {
-            pending->max_iterations = (uint32_t)fractus_app_clamp_i32((int32_t)pending->max_iterations - 1, 1, 1000);
+            pending->max_iterations = (uint32_t)fractus_app_clamp_i32((int32_t)pending->max_iterations - 1, 1, 25000);
             fractus_app_init_biomorph_fields(fields, pending->xmin, pending->xmax, pending->ymin, pending->ymax, pending->constant_real, pending->constant_imag, pending->max_iterations, pending->escape_radius_squared, pending->cutoff);
         } else if (selected_menu == FRACTUS_APP_BIOMORPH_ITERATIONS_INC) {
-            pending->max_iterations = (uint32_t)fractus_app_clamp_i32((int32_t)pending->max_iterations + 1, 1, 1000);
+            pending->max_iterations = (uint32_t)fractus_app_clamp_i32((int32_t)pending->max_iterations + 1, 1, 25000);
             fractus_app_init_biomorph_fields(fields, pending->xmin, pending->xmax, pending->ymin, pending->ymax, pending->constant_real, pending->constant_imag, pending->max_iterations, pending->escape_radius_squared, pending->cutoff);
         } else if (selected_menu == FRACTUS_APP_BIOMORPH_RADIUS_DEC) {
             pending->escape_radius_squared = (double)fractus_app_clamp_i32((int32_t)pending->escape_radius_squared - 4, 4, 1000);
@@ -443,7 +443,8 @@ fractus_status fractus_app_render_biomorph(
     char *error_message,
     size_t error_message_size,
     char *saved_filename,
-    size_t saved_filename_size)
+    size_t saved_filename_size,
+    const fractus_render_progress *progress)
 {
     fractus_graphic_metadata metadata;
 
@@ -453,8 +454,13 @@ fractus_status fractus_app_render_biomorph(
 
     metadata = fractus_graphic_metadata_from_biomorph(params, framebuffer->size.width, framebuffer->size.height);
 
-    if (fractus_fractal_render_biomorph(framebuffer, params) != FRACTUS_STATUS_OK ||
-        fractus_app_save_next_graphic_if_requested_ex(
+    {
+        fractus_status status = fractus_fractal_render_biomorph_with_progress(framebuffer, params, progress);
+        if (status != FRACTUS_STATUS_OK) {
+            return status;
+        }
+    }
+    if (fractus_app_save_next_graphic_if_requested_ex(
             platform,
             framebuffer,
             &metadata,

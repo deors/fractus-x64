@@ -117,6 +117,7 @@ typedef struct fractus_app_zoom_frame {
     double xmax;
     double ymin;
     double ymax;
+    fractus_hp_window precise;
 } fractus_app_zoom_frame;
 
 typedef struct fractus_app_zoom_history {
@@ -219,6 +220,8 @@ typedef struct fractus_app_drawing_hud {
     int has_plane_point;
     double plane_x;
     double plane_y;
+    char plane_x_text[80];
+    char plane_y_text[80];
     int has_zoom;
     double zoom;
     int has_render_time;
@@ -240,6 +243,11 @@ fractus_status fractus_app_draw_drawing_hud(
     fractus_framebuffer *framebuffer,
     const fractus_font_library *fonts,
     const fractus_app_drawing_hud *hud);
+
+fractus_status fractus_app_draw_render_progress(
+    fractus_framebuffer *framebuffer,
+    const fractus_font_library *fonts,
+    uint32_t percent);
 
 fractus_status fractus_app_draw_drawing_footer_ex(
     fractus_framebuffer *framebuffer,
@@ -280,6 +288,7 @@ int fractus_app_apply_complex_selection(
     double *xmax,
     double *ymin,
     double *ymax,
+    fractus_hp_window *precise,
     fractus_point_i32 first,
     fractus_point_i32 second);
 
@@ -291,6 +300,7 @@ int fractus_app_handle_zone_selection_input(
     double *xmax,
     double *ymin,
     double *ymax,
+    fractus_hp_window *precise,
     fractus_app_zone_selection *selection,
     fractus_app_zoom_history *zoom_history);
 
@@ -300,25 +310,29 @@ void fractus_app_zoom_history_reset(
     double xmin,
     double xmax,
     double ymin,
-    double ymax);
+    double ymax,
+    const fractus_hp_window *precise);
 int fractus_app_zoom_history_push(
     fractus_app_zoom_history *history,
     double xmin,
     double xmax,
     double ymin,
-    double ymax);
+    double ymax,
+    const fractus_hp_window *precise);
 int fractus_app_zoom_history_back(
     fractus_app_zoom_history *history,
     double *xmin,
     double *xmax,
     double *ymin,
-    double *ymax);
+    double *ymax,
+    fractus_hp_window *precise);
 int fractus_app_zoom_history_forward(
     fractus_app_zoom_history *history,
     double *xmin,
     double *xmax,
     double *ymin,
-    double *ymax);
+    double *ymax,
+    fractus_hp_window *precise);
 
 fractus_status fractus_app_draw_graphic_metadata_panel(
     fractus_framebuffer *framebuffer,

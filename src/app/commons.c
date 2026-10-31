@@ -478,7 +478,7 @@ fractus_status fractus_app_draw_drawing_hud(
     const fractus_font_library *fonts,
     const fractus_app_drawing_hud *hud)
 {
-    char line_one[160];
+    char line_one[192];
     char line_two[192];
     char zoom_text[48];
     char render_text[32];
@@ -519,7 +519,9 @@ fractus_status fractus_app_draw_drawing_hud(
         return FRACTUS_STATUS_OK;
     }
 
-    if (hud->has_plane_point) {
+    if (hud->has_plane_point && hud->plane_x_text[0] != '\0' && hud->plane_y_text[0] != '\0') {
+        (void)snprintf(line_one, sizeof(line_one), "X %s   Y %s", hud->plane_x_text, hud->plane_y_text);
+    } else if (hud->has_plane_point) {
         (void)snprintf(line_one, sizeof(line_one), "X %.12g   Y %.12g", hud->plane_x, hud->plane_y);
     } else {
         (void)snprintf(line_one, sizeof(line_one), "X --   Y --");
@@ -580,11 +582,22 @@ fractus_status fractus_app_draw_drawing_hud(
         return FRACTUS_STATUS_ERROR;
     }
 
-    if (fractus_font_draw_text_scaled(
-            framebuffer, fonts, font, pad, pad, 15u, line_one, scale) != FRACTUS_STATUS_OK ||
-        fractus_font_draw_text_scaled(
-            framebuffer, fonts, font, pad, pad + line_step, 15u, line_two, scale) != FRACTUS_STATUS_OK) {
-        return FRACTUS_STATUS_ERROR;
+    {
+        uint32_t line_scale = scale;
+        int32_t line_width = 0;
+        int32_t line_limit = (int32_t)framebuffer->size.width - pad * 2;
+
+        if (fractus_font_measure_text(fonts, font, line_one, &line_width, NULL) == FRACTUS_STATUS_OK) {
+            while (line_scale > 1u && line_width * (int32_t)line_scale > line_limit) {
+                line_scale -= 1u;
+            }
+        }
+        if (fractus_font_draw_text_scaled(
+                framebuffer, fonts, font, pad, pad, 15u, line_one, line_scale) != FRACTUS_STATUS_OK ||
+            fractus_font_draw_text_scaled(
+                framebuffer, fonts, font, pad, pad + line_step, 15u, line_two, scale) != FRACTUS_STATUS_OK) {
+            return FRACTUS_STATUS_ERROR;
+        }
     }
 
     if (hud->has_color) {
@@ -606,6 +619,115 @@ fractus_status fractus_app_draw_drawing_hud(
                 return FRACTUS_STATUS_ERROR;
             }
         }
+    }
+
+    return FRACTUS_STATUS_OK;
+}
+
+fractus_status fractus_app_draw_render_progress(
+    fractus_framebuffer *framebuffer,
+    const fractus_font_library *fonts,
+    uint32_t percent)
+{
+    char text[48];
+    uint32_t scale;
+    int32_t text_width;
+    int32_t text_height;
+    int32_t pad;
+    int32_t gap;
+    int32_t panel_width;
+    int32_t panel_height;
+    int32_t panel_x;
+    int32_t panel_y;
+    int32_t track_width;
+    int32_t track_height;
+    int32_t fill_width;
+    fractus_font_kind font;
+
+    if (framebuffer == NULL || fonts == NULL || !framebuffer->initialized) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+    if (framebuffer->size.width < 64u || framebuffer->size.height < 48u) {
+        return FRACTUS_STATUS_OK;
+    }
+    if (percent > 100u) {
+        percent = 100u;
+    }
+
+    scale = fractus_app_drawing_text_scale(framebuffer->size.height);
+    font = (framebuffer->size.width <= 1024u) ? FRACTUS_FONT_SMALL : FRACTUS_FONT_ARIAL;
+    (void)snprintf(text, sizeof(text), "Calculando %u%%  ESC: parar", (unsigned)percent);
+    if (fractus_font_measure_text(fonts, font, text, &text_width, &text_height) != FRACTUS_STATUS_OK) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    text_width *= (int32_t)scale;
+    text_height *= (int32_t)scale;
+    pad = (int32_t)(6u * scale);
+    gap = (int32_t)(4u * scale);
+    track_height = (int32_t)(6u * scale);
+    if (track_height < 4) {
+        track_height = 4;
+    }
+    panel_width = text_width + pad * 2;
+    if (panel_width < (int32_t)(120u * scale)) {
+        panel_width = (int32_t)(120u * scale);
+    }
+    if (panel_width > (int32_t)framebuffer->size.width - pad * 2) {
+        panel_width = (int32_t)framebuffer->size.width - pad * 2;
+    }
+    if (panel_width < 16) {
+        return FRACTUS_STATUS_OK;
+    }
+    panel_height = pad + text_height + gap + track_height + pad;
+    if (panel_height >= (int32_t)framebuffer->size.height) {
+        return FRACTUS_STATUS_OK;
+    }
+
+    panel_x = ((int32_t)framebuffer->size.width - panel_width) / 2;
+    panel_y = (int32_t)framebuffer->size.height - panel_height - pad;
+    if (panel_y < 0) {
+        panel_y = 0;
+    }
+    track_width = panel_width - pad * 2;
+    fill_width = (int32_t)(((int64_t)track_width * (int64_t)percent) / 100);
+    if (fill_width < 0) {
+        fill_width = 0;
+    }
+    if (fill_width > track_width) {
+        fill_width = track_width;
+    }
+
+    if (fractus_graphics_fill_rect(
+            framebuffer,
+            (fractus_rect_i32){panel_x, panel_y, panel_width, panel_height},
+            7u) != FRACTUS_STATUS_OK ||
+        fractus_graphics_rect(
+            framebuffer,
+            (fractus_rect_i32){panel_x, panel_y, panel_width, panel_height},
+            15u) != FRACTUS_STATUS_OK ||
+        fractus_font_draw_text_scaled(
+            framebuffer,
+            fonts,
+            font,
+            panel_x + pad,
+            panel_y + pad,
+            15u,
+            text,
+            scale) != FRACTUS_STATUS_OK ||
+        fractus_graphics_fill_rect(
+            framebuffer,
+            (fractus_rect_i32){panel_x + pad, panel_y + pad + text_height + gap, track_width, track_height},
+            0u) != FRACTUS_STATUS_OK) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    if (fill_width > 0 &&
+        fractus_graphics_fill_rect(
+            framebuffer,
+            (fractus_rect_i32){panel_x + pad, panel_y + pad + text_height + gap, fill_width, track_height},
+            15u) != FRACTUS_STATUS_OK) {
+        return FRACTUS_STATUS_ERROR;
     }
 
     return FRACTUS_STATUS_OK;
@@ -917,13 +1039,14 @@ int fractus_app_apply_complex_selection(
     double *xmax,
     double *ymin,
     double *ymax,
+    fractus_hp_window *precise,
     fractus_point_i32 first,
     fractus_point_i32 second)
 {
     fractus_point_i32 constrained_second;
     int32_t x_min, x_max, y_min, y_max;
-    double old_xmin, old_xmax, old_ymin, old_ymax;
-    double dx, dy;
+    fractus_hp_window local = {0};
+    fractus_hp_window *window = (precise != NULL) ? precise : &local;
 
     if (framebuffer == NULL || xmin == NULL || xmax == NULL || ymin == NULL || ymax == NULL ||
         !framebuffer->initialized || framebuffer->size.width < 2u || framebuffer->size.height < 2u) {
@@ -941,18 +1064,18 @@ int fractus_app_apply_complex_selection(
         return 0;
     }
 
-    old_xmin = *xmin;
-    old_xmax = *xmax;
-    old_ymin = *ymin;
-    old_ymax = *ymax;
-    dx = (old_xmax - old_xmin) / (double)(framebuffer->size.width - 1u);
-    dy = (old_ymax - old_ymin) / (double)(framebuffer->size.height - 1u);
-
-    *xmin = old_xmin + (double)x_min * dx;
-    *xmax = old_xmin + (double)x_max * dx;
-    *ymax = old_ymax - (double)y_min * dy;
-    *ymin = old_ymax - (double)y_max * dy;
-
+    fractus_hp_window_adopt_doubles(window, *xmin, *xmax, *ymin, *ymax);
+    if (!fractus_hp_plane_apply_selection(
+            window,
+            framebuffer->size.width,
+            framebuffer->size.height,
+            x_min,
+            x_max,
+            y_min,
+            y_max)) {
+        return 0;
+    }
+    fractus_hp_window_publish_doubles(window, xmin, xmax, ymin, ymax);
     return 1;
 }
 
@@ -966,26 +1089,73 @@ void fractus_app_zoom_history_clear(fractus_app_zoom_history *history)
     history->cursor = -1;
 }
 
+static void fractus_app_zoom_frame_store(
+    fractus_app_zoom_frame *frame,
+    double xmin,
+    double xmax,
+    double ymin,
+    double ymax,
+    const fractus_hp_window *precise)
+{
+    fractus_hp_window window = {0};
+
+    if (precise != NULL) {
+        window = *precise;
+    }
+    fractus_hp_window_adopt_doubles(&window, xmin, xmax, ymin, ymax);
+    if (window.valid) {
+        frame->xmin = window.xmin.hi;
+        frame->xmax = window.xmax.hi;
+        frame->ymin = window.ymin.hi;
+        frame->ymax = window.ymax.hi;
+    } else {
+        frame->xmin = xmin;
+        frame->xmax = xmax;
+        frame->ymin = ymin;
+        frame->ymax = ymax;
+    }
+    frame->precise = window;
+}
+
+static int fractus_app_zoom_frame_matches(
+    const fractus_app_zoom_frame *frame,
+    double xmin,
+    double xmax,
+    double ymin,
+    double ymax,
+    const fractus_hp_window *precise)
+{
+    fractus_app_zoom_frame incoming;
+
+    fractus_app_zoom_frame_store(&incoming, xmin, xmax, ymin, ymax, precise);
+    return frame->xmin == incoming.xmin &&
+        frame->xmax == incoming.xmax &&
+        frame->ymin == incoming.ymin &&
+        frame->ymax == incoming.ymax &&
+        fractus_hp_window_equal(&frame->precise, &incoming.precise);
+}
+
 void fractus_app_zoom_history_reset(
     fractus_app_zoom_history *history,
     double xmin,
     double xmax,
     double ymin,
-    double ymax)
+    double ymax,
+    const fractus_hp_window *precise)
 {
+    fractus_app_zoom_frame frame;
+
     if (history == NULL) {
         return;
     }
 
     fractus_app_zoom_history_clear(history);
-    if (!(xmax > xmin) || !(ymax > ymin)) {
+    fractus_app_zoom_frame_store(&frame, xmin, xmax, ymin, ymax, precise);
+    if (!fractus_hp_window_spans_positive(&frame.precise)) {
         return;
     }
 
-    history->frames[0].xmin = xmin;
-    history->frames[0].xmax = xmax;
-    history->frames[0].ymin = ymin;
-    history->frames[0].ymax = ymax;
+    history->frames[0] = frame;
     history->count = 1;
     history->cursor = 0;
 }
@@ -995,21 +1165,28 @@ int fractus_app_zoom_history_push(
     double xmin,
     double xmax,
     double ymin,
-    double ymax)
+    double ymax,
+    const fractus_hp_window *precise)
 {
+    fractus_app_zoom_frame frame;
     const fractus_app_zoom_frame *current;
 
-    if (history == NULL || !(xmax > xmin) || !(ymax > ymin)) {
+    if (history == NULL) {
+        return 0;
+    }
+
+    fractus_app_zoom_frame_store(&frame, xmin, xmax, ymin, ymax, precise);
+    if (!fractus_hp_window_spans_positive(&frame.precise)) {
         return 0;
     }
 
     if (history->count <= 0 || history->cursor < 0 || history->cursor >= history->count) {
-        fractus_app_zoom_history_reset(history, xmin, xmax, ymin, ymax);
+        fractus_app_zoom_history_reset(history, xmin, xmax, ymin, ymax, precise);
         return history->count == 1;
     }
 
     current = &history->frames[history->cursor];
-    if (current->xmin == xmin && current->xmax == xmax && current->ymin == ymin && current->ymax == ymax) {
+    if (fractus_app_zoom_frame_matches(current, xmin, xmax, ymin, ymax, precise)) {
         return 0;
     }
 
@@ -1023,10 +1200,7 @@ int fractus_app_zoom_history_push(
         history->cursor = history->count - 1;
     }
 
-    history->frames[history->count].xmin = xmin;
-    history->frames[history->count].xmax = xmax;
-    history->frames[history->count].ymin = ymin;
-    history->frames[history->count].ymax = ymax;
+    history->frames[history->count] = frame;
     history->count++;
     history->cursor = history->count - 1;
     return 1;
@@ -1038,7 +1212,8 @@ static int fractus_app_zoom_history_recall(
     double *xmin,
     double *xmax,
     double *ymin,
-    double *ymax)
+    double *ymax,
+    fractus_hp_window *precise)
 {
     const fractus_app_zoom_frame *frame;
 
@@ -1053,6 +1228,9 @@ static int fractus_app_zoom_history_recall(
     *xmax = frame->xmax;
     *ymin = frame->ymin;
     *ymax = frame->ymax;
+    if (precise != NULL) {
+        *precise = frame->precise;
+    }
     return 1;
 }
 
@@ -1061,13 +1239,14 @@ int fractus_app_zoom_history_back(
     double *xmin,
     double *xmax,
     double *ymin,
-    double *ymax)
+    double *ymax,
+    fractus_hp_window *precise)
 {
     if (history == NULL || history->cursor <= 0) {
         return 0;
     }
 
-    return fractus_app_zoom_history_recall(history, history->cursor - 1, xmin, xmax, ymin, ymax);
+    return fractus_app_zoom_history_recall(history, history->cursor - 1, xmin, xmax, ymin, ymax, precise);
 }
 
 int fractus_app_zoom_history_forward(
@@ -1075,13 +1254,14 @@ int fractus_app_zoom_history_forward(
     double *xmin,
     double *xmax,
     double *ymin,
-    double *ymax)
+    double *ymax,
+    fractus_hp_window *precise)
 {
     if (history == NULL || history->cursor < 0 || history->cursor + 1 >= history->count) {
         return 0;
     }
 
-    return fractus_app_zoom_history_recall(history, history->cursor + 1, xmin, xmax, ymin, ymax);
+    return fractus_app_zoom_history_recall(history, history->cursor + 1, xmin, xmax, ymin, ymax, precise);
 }
 
 int fractus_app_handle_zone_selection_input(
@@ -1092,6 +1272,7 @@ int fractus_app_handle_zone_selection_input(
     double *xmax,
     double *ymin,
     double *ymax,
+    fractus_hp_window *precise,
     fractus_app_zone_selection *selection,
     fractus_app_zoom_history *zoom_history)
 {
@@ -1123,10 +1304,11 @@ int fractus_app_handle_zone_selection_input(
         if (!selection->has_first_corner) {
             selection->first_corner = selected_point;
             selection->has_first_corner = 1;
-        } else if (fractus_app_apply_complex_selection(framebuffer, xmin, xmax, ymin, ymax, selection->first_corner, selected_point)) {
+        } else if (fractus_app_apply_complex_selection(
+                       framebuffer, xmin, xmax, ymin, ymax, precise, selection->first_corner, selected_point)) {
             selection->active = 0;
             selection->has_first_corner = 0;
-            (void)fractus_app_zoom_history_push(zoom_history, *xmin, *xmax, *ymin, *ymax);
+            (void)fractus_app_zoom_history_push(zoom_history, *xmin, *xmax, *ymin, *ymax, precise);
             return 1;
         }
     }

@@ -4,6 +4,7 @@ fractus_resolve_sdl2(FRACTUS_SDL2_TARGET)
 
 add_library(fractus_core
     core/core.c
+    core/precision.c
     core/formats.c
     core/mandelbrot.c
     core/julia.c
