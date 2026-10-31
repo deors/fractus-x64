@@ -62,6 +62,7 @@ typedef struct fractus_ui_context {
     int quit_requested;
     int press_pending;
     int release_pending;
+    int32_t wheel_delta;
     int key_press_pending;
     int key_release_pending;
     int text_input_pending;

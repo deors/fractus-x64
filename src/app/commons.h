@@ -257,6 +257,11 @@ int fractus_app_map_drawing_window_point(
     const fractus_framebuffer *framebuffer,
     fractus_point_i32 window_point,
     fractus_point_i32 *framebuffer_point);
+int fractus_app_map_drawing_window_point_unclamped(
+    const fractus_platform_context *platform,
+    const fractus_framebuffer *framebuffer,
+    fractus_point_i32 window_point,
+    fractus_point_i32 *framebuffer_point);
 
 fractus_point_i32 fractus_app_constrain_selection_aspect_ratio(
     const fractus_framebuffer *framebuffer,

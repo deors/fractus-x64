@@ -29,6 +29,7 @@ fractus_status fractus_ui_init(fractus_ui_context *ui, fractus_size_u32 logical_
     ui->quit_requested = 0;
     ui->press_pending = 0;
     ui->release_pending = 0;
+    ui->wheel_delta = 0;
     ui->key_press_pending = 0;
     ui->key_release_pending = 0;
     ui->text_input_pending = 0;
@@ -51,6 +52,7 @@ void fractus_ui_shutdown(fractus_ui_context *ui)
     ui->buttons_down.right = 0;
     ui->press_pending = 0;
     ui->release_pending = 0;
+    ui->wheel_delta = 0;
     ui->key_press_pending = 0;
     ui->key_release_pending = 0;
     ui->text_input_pending = 0;
@@ -67,6 +69,7 @@ void fractus_ui_begin_frame(fractus_ui_context *ui)
 
     ui->press_pending = 0;
     ui->release_pending = 0;
+    ui->wheel_delta = 0;
     ui->key_press_pending = 0;
     ui->key_release_pending = 0;
     ui->key_pressed = 0u;
@@ -100,6 +103,9 @@ fractus_status fractus_ui_handle_platform_event(
         break;
     case FRACTUS_PLATFORM_EVENT_MOUSE_MOVED:
         ui->pointer_position = event->data.mouse_move.position;
+        break;
+    case FRACTUS_PLATFORM_EVENT_MOUSE_WHEEL:
+        ui->wheel_delta += event->data.mouse_wheel.vertical;
         break;
     case FRACTUS_PLATFORM_EVENT_MOUSE_BUTTON_DOWN:
         ui->pointer_position = event->data.mouse_button.position;

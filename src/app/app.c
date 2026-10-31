@@ -830,6 +830,274 @@ static int fractus_app_recall_zoom_history(
     return 1;
 }
 
+static int fractus_app_read_plane_bounds(
+    fractus_app_view view,
+    const fractus_mandelbrot_params *mandelbrot,
+    const fractus_mandelbrot_dem_params *mandelbrot_dem,
+    const fractus_julia_params *julia,
+    const fractus_julia_dem_params *julia_dem,
+    const fractus_biomorph_params *biomorph,
+    double *xmin,
+    double *xmax,
+    double *ymin,
+    double *ymax)
+{
+    if (xmin == NULL || xmax == NULL || ymin == NULL || ymax == NULL) {
+        return 0;
+    }
+
+    if (view == FRACTUS_APP_VIEW_MANDELBROT && mandelbrot != NULL) {
+        *xmin = mandelbrot->xmin;
+        *xmax = mandelbrot->xmax;
+        *ymin = mandelbrot->ymin;
+        *ymax = mandelbrot->ymax;
+        return 1;
+    }
+    if (view == FRACTUS_APP_VIEW_MANDELBROT_DEM && mandelbrot_dem != NULL) {
+        *xmin = mandelbrot_dem->xmin;
+        *xmax = mandelbrot_dem->xmax;
+        *ymin = mandelbrot_dem->ymin;
+        *ymax = mandelbrot_dem->ymax;
+        return 1;
+    }
+    if (view == FRACTUS_APP_VIEW_JULIA && julia != NULL) {
+        *xmin = julia->xmin;
+        *xmax = julia->xmax;
+        *ymin = julia->ymin;
+        *ymax = julia->ymax;
+        return 1;
+    }
+    if (view == FRACTUS_APP_VIEW_JULIA_DEM && julia_dem != NULL) {
+        *xmin = julia_dem->xmin;
+        *xmax = julia_dem->xmax;
+        *ymin = julia_dem->ymin;
+        *ymax = julia_dem->ymax;
+        return 1;
+    }
+    if (view == FRACTUS_APP_VIEW_BIOMORPH && biomorph != NULL) {
+        *xmin = biomorph->xmin;
+        *xmax = biomorph->xmax;
+        *ymin = biomorph->ymin;
+        *ymax = biomorph->ymax;
+        return 1;
+    }
+    return 0;
+}
+
+static int fractus_app_write_plane_bounds(
+    fractus_app_view view,
+    fractus_mandelbrot_params *mandelbrot,
+    fractus_mandelbrot_dem_params *mandelbrot_dem,
+    fractus_julia_params *julia,
+    fractus_julia_dem_params *julia_dem,
+    fractus_biomorph_params *biomorph,
+    int *mandelbrot_needs_render,
+    int *mandelbrot_dem_needs_render,
+    int *julia_needs_render,
+    int *julia_dem_needs_render,
+    int *biomorph_needs_render,
+    double xmin,
+    double xmax,
+    double ymin,
+    double ymax)
+{
+    if (!(xmax > xmin) || !(ymax > ymin)) {
+        return 0;
+    }
+
+    if (view == FRACTUS_APP_VIEW_MANDELBROT && mandelbrot != NULL) {
+        mandelbrot->xmin = xmin;
+        mandelbrot->xmax = xmax;
+        mandelbrot->ymin = ymin;
+        mandelbrot->ymax = ymax;
+        if (mandelbrot_needs_render != NULL) {
+            *mandelbrot_needs_render = 1;
+        }
+        return 1;
+    }
+    if (view == FRACTUS_APP_VIEW_MANDELBROT_DEM && mandelbrot_dem != NULL) {
+        mandelbrot_dem->xmin = xmin;
+        mandelbrot_dem->xmax = xmax;
+        mandelbrot_dem->ymin = ymin;
+        mandelbrot_dem->ymax = ymax;
+        if (mandelbrot_dem_needs_render != NULL) {
+            *mandelbrot_dem_needs_render = 1;
+        }
+        return 1;
+    }
+    if (view == FRACTUS_APP_VIEW_JULIA && julia != NULL) {
+        julia->xmin = xmin;
+        julia->xmax = xmax;
+        julia->ymin = ymin;
+        julia->ymax = ymax;
+        if (julia_needs_render != NULL) {
+            *julia_needs_render = 1;
+        }
+        return 1;
+    }
+    if (view == FRACTUS_APP_VIEW_JULIA_DEM && julia_dem != NULL) {
+        julia_dem->xmin = xmin;
+        julia_dem->xmax = xmax;
+        julia_dem->ymin = ymin;
+        julia_dem->ymax = ymax;
+        if (julia_dem_needs_render != NULL) {
+            *julia_dem_needs_render = 1;
+        }
+        return 1;
+    }
+    if (view == FRACTUS_APP_VIEW_BIOMORPH && biomorph != NULL) {
+        biomorph->xmin = xmin;
+        biomorph->xmax = xmax;
+        biomorph->ymin = ymin;
+        biomorph->ymax = ymax;
+        if (biomorph_needs_render != NULL) {
+            *biomorph_needs_render = 1;
+        }
+        return 1;
+    }
+    return 0;
+}
+
+static void fractus_app_commit_plane_drag(
+    int *drag_active,
+    int *drag_moved,
+    fractus_app_view drag_view,
+    fractus_app_zoom_history *history,
+    const fractus_mandelbrot_params *mandelbrot,
+    const fractus_mandelbrot_dem_params *mandelbrot_dem,
+    const fractus_julia_params *julia,
+    const fractus_julia_dem_params *julia_dem,
+    const fractus_biomorph_params *biomorph)
+{
+    double xmin;
+    double xmax;
+    double ymin;
+    double ymax;
+
+    if (drag_active == NULL || drag_moved == NULL || !*drag_active) {
+        return;
+    }
+
+    if (*drag_moved &&
+        fractus_app_read_plane_bounds(
+            drag_view, mandelbrot, mandelbrot_dem, julia, julia_dem, biomorph, &xmin, &xmax, &ymin, &ymax)) {
+        (void)fractus_app_zoom_history_push(history, xmin, xmax, ymin, ymax);
+    }
+    *drag_active = 0;
+    *drag_moved = 0;
+}
+
+static int fractus_app_handle_plane_pointer(
+    fractus_app_view view,
+    const fractus_platform_context *platform,
+    const fractus_framebuffer *framebuffer,
+    const fractus_ui_context *ui,
+    const fractus_app_zone_selection *selection,
+    int selection_cancelled,
+    fractus_app_zoom_history *history,
+    int *drag_active,
+    int *drag_moved,
+    fractus_app_view *drag_view,
+    fractus_point_i32 *drag_pixel,
+    fractus_mandelbrot_params *mandelbrot,
+    fractus_mandelbrot_dem_params *mandelbrot_dem,
+    fractus_julia_params *julia,
+    fractus_julia_dem_params *julia_dem,
+    fractus_biomorph_params *biomorph,
+    int *mandelbrot_needs_render,
+    int *mandelbrot_dem_needs_render,
+    int *julia_needs_render,
+    int *julia_dem_needs_render,
+    int *biomorph_needs_render)
+{
+    int changed = 0;
+    double xmin;
+    double xmax;
+    double ymin;
+    double ymax;
+    fractus_point_i32 pixel;
+
+    if (drag_active == NULL || drag_moved == NULL || drag_view == NULL || drag_pixel == NULL || ui == NULL) {
+        return 0;
+    }
+
+    if (*drag_active && view != *drag_view) {
+        fractus_app_commit_plane_drag(
+            drag_active, drag_moved, *drag_view, history,
+            mandelbrot, mandelbrot_dem, julia, julia_dem, biomorph);
+        return 0;
+    }
+
+    if (!fractus_app_view_supports_zone_selection(view) || framebuffer == NULL || !framebuffer->initialized) {
+        *drag_active = 0;
+        *drag_moved = 0;
+        return 0;
+    }
+
+    if (*drag_active && ui->key_press_pending && (ui->key_pressed == 's' || ui->key_pressed == 'S')) {
+        int moved = *drag_moved;
+        fractus_app_commit_plane_drag(
+            drag_active, drag_moved, *drag_view, history,
+            mandelbrot, mandelbrot_dem, julia, julia_dem, biomorph);
+        if (moved) {
+            changed = 1;
+        }
+    }
+
+    if (!*drag_active && !selection_cancelled && selection != NULL && !selection->active &&
+        ui->press_pending && ui->press_event.buttons.right &&
+        fractus_app_map_drawing_window_point(platform, framebuffer, ui->press_event.position, drag_pixel)) {
+        *drag_active = 1;
+        *drag_moved = 0;
+        *drag_view = view;
+    }
+
+    if (*drag_active &&
+        fractus_app_read_plane_bounds(view, mandelbrot, mandelbrot_dem, julia, julia_dem, biomorph, &xmin, &xmax, &ymin, &ymax) &&
+        fractus_app_map_drawing_window_point_unclamped(platform, framebuffer, ui->pointer_position, &pixel) &&
+        fractus_plane_pan(
+            &xmin, &xmax, &ymin, &ymax,
+            framebuffer->size.width, framebuffer->size.height,
+            drag_pixel->x, drag_pixel->y, pixel.x, pixel.y) &&
+        fractus_app_write_plane_bounds(
+            view, mandelbrot, mandelbrot_dem, julia, julia_dem, biomorph,
+            mandelbrot_needs_render, mandelbrot_dem_needs_render,
+            julia_needs_render, julia_dem_needs_render, biomorph_needs_render,
+            xmin, xmax, ymin, ymax)) {
+        *drag_pixel = pixel;
+        *drag_moved = 1;
+        changed = 1;
+    }
+
+    if (*drag_active &&
+        ((ui->release_pending && ui->release_event.buttons.right) ||
+         (!ui->buttons_down.right && !(ui->press_pending && ui->press_event.buttons.right)))) {
+        fractus_app_commit_plane_drag(
+            drag_active, drag_moved, *drag_view, history,
+            mandelbrot, mandelbrot_dem, julia, julia_dem, biomorph);
+    }
+
+    if ((selection == NULL || !selection->active) && ui->wheel_delta != 0 &&
+        fractus_app_map_drawing_window_point(platform, framebuffer, ui->pointer_position, &pixel) &&
+        pixel.x >= 0 && pixel.y >= 0 &&
+        fractus_app_read_plane_bounds(view, mandelbrot, mandelbrot_dem, julia, julia_dem, biomorph, &xmin, &xmax, &ymin, &ymax) &&
+        fractus_plane_zoom_at_pixel(
+            &xmin, &xmax, &ymin, &ymax,
+            framebuffer->size.width, framebuffer->size.height,
+            (uint32_t)pixel.x, (uint32_t)pixel.y,
+            (double)ui->wheel_delta) &&
+        fractus_app_write_plane_bounds(
+            view, mandelbrot, mandelbrot_dem, julia, julia_dem, biomorph,
+            mandelbrot_needs_render, mandelbrot_dem_needs_render,
+            julia_needs_render, julia_dem_needs_render, biomorph_needs_render,
+            xmin, xmax, ymin, ymax)) {
+        (void)fractus_app_zoom_history_push(history, xmin, xmax, ymin, ymax);
+        changed = 1;
+    }
+
+    return changed;
+}
+
 int fractus_app_run(void)
 {
     fractus_core core;
@@ -860,6 +1128,10 @@ int fractus_app_run(void)
     fractus_plasma_circular_params plasma_circular_pending;
     fractus_app_zone_selection zone_selection;
     fractus_app_zoom_history zoom_history;
+    int plane_drag_active;
+    int plane_drag_moved;
+    fractus_app_view plane_drag_view;
+    fractus_point_i32 plane_drag_pixel;
     fractus_color_rgba8 palette_original_color;
     fractus_color_rgba8 palette_pending_color;
     fractus_color_rgba8 palette_copy_color;
@@ -950,6 +1222,11 @@ int fractus_app_run(void)
     memset(&attractor_fields, 0, sizeof(attractor_fields));
     memset(&zone_selection, 0, sizeof(zone_selection));
     fractus_app_zoom_history_clear(&zoom_history);
+    plane_drag_active = 0;
+    plane_drag_moved = 0;
+    plane_drag_view = FRACTUS_APP_VIEW_MAIN_MENU;
+    plane_drag_pixel.x = 0;
+    plane_drag_pixel.y = 0;
     memset(&loaded_graphic_metadata, 0, sizeof(loaded_graphic_metadata));
     has_loaded_graphic_metadata = 0;
     graphic_metadata_panel_visible = 0;
@@ -1530,18 +1807,71 @@ int fractus_app_run(void)
                     save_requested_this_frame = 0;
                 }
 
-                if (fractus_app_view_supports_zone_selection(view) &&
-                    zone_selection.active &&
-                    ((ui.key_press_pending && ui.key_pressed == 27u) ||
-                     (ui.press_pending && ui.press_event.buttons.right))) {
-                    zone_selection.active = 0;
-                    zone_selection.has_first_corner = 0;
-                } else if ((ui.key_press_pending && ui.key_pressed == 27u) ||
-                    (ui.press_pending && ui.press_event.buttons.right)) {
-                    zone_selection.active = 0;
-                    zone_selection.has_first_corner = 0;
-                    palette_flow_active = 0;
-                    view = FRACTUS_APP_VIEW_MAIN_MENU;
+                {
+                    int right_click = ui.press_pending && ui.press_event.buttons.right;
+                    int escape_pressed = ui.key_press_pending && ui.key_pressed == 27u;
+                    int selection_cancelled = 0;
+
+                    if (fractus_app_view_supports_zone_selection(view) &&
+                        zone_selection.active &&
+                        (escape_pressed || right_click)) {
+                        zone_selection.active = 0;
+                        zone_selection.has_first_corner = 0;
+                        selection_cancelled = 1;
+                    } else if (escape_pressed ||
+                        (right_click && !fractus_app_view_supports_zone_selection(view))) {
+                        zone_selection.active = 0;
+                        zone_selection.has_first_corner = 0;
+                        palette_flow_active = 0;
+                        view = FRACTUS_APP_VIEW_MAIN_MENU;
+                    }
+
+                    if (fractus_app_view_supports_zone_selection(view)) {
+                        if (fractus_app_ensure_drawing_framebuffer_size(
+                                &legacy_config,
+                                &core.drawing_framebuffer,
+                                &core.ui_framebuffer) != FRACTUS_STATUS_OK) {
+                            fractus_app_log("runtime: drawing framebuffer resize failed");
+                            running = 0;
+                        } else if (fractus_app_handle_plane_pointer(
+                                view,
+                                &platform,
+                                &core.drawing_framebuffer,
+                                &ui,
+                                &zone_selection,
+                                selection_cancelled,
+                                &zoom_history,
+                                &plane_drag_active,
+                                &plane_drag_moved,
+                                &plane_drag_view,
+                                &plane_drag_pixel,
+                                &mandelbrot_params,
+                                &mandelbrot_dem_params,
+                                &julia_params,
+                                &julia_dem_params,
+                                &biomorph_params,
+                                &mandelbrot_needs_render,
+                                &mandelbrot_dem_needs_render,
+                                &julia_needs_render,
+                                &julia_dem_needs_render,
+                                &biomorph_needs_render)) {
+                            drawing_presented_once = 0;
+                            save_next_graphic = 0;
+                            render_save_next_graphic = 0;
+                            save_requested_this_frame = 0;
+                        }
+                    } else if (plane_drag_active) {
+                        fractus_app_commit_plane_drag(
+                            &plane_drag_active,
+                            &plane_drag_moved,
+                            plane_drag_view,
+                            &zoom_history,
+                            &mandelbrot_params,
+                            &mandelbrot_dem_params,
+                            &julia_params,
+                            &julia_dem_params,
+                            &biomorph_params);
+                    }
                 }
 
                 if (ui.key_press_pending &&
@@ -1611,6 +1941,24 @@ int fractus_app_run(void)
                     (ui.key_pressed == 'h' || ui.key_pressed == 'H') &&
                     (fractus_app_view_is_generated_drawing(view) || view == FRACTUS_APP_VIEW_GRAPHIC)) {
                     drawing_footer_visible = !drawing_footer_visible;
+                }
+
+                if (ui.key_press_pending &&
+                    (ui.key_pressed == 'x' || ui.key_pressed == 'X' ||
+                     ui.key_pressed == 'z' || ui.key_pressed == 'Z') &&
+                    fractus_app_view_supports_zone_selection(view)) {
+                    if (plane_drag_active) {
+                        fractus_app_commit_plane_drag(
+                            &plane_drag_active,
+                            &plane_drag_moved,
+                            plane_drag_view,
+                            &zoom_history,
+                            &mandelbrot_params,
+                            &mandelbrot_dem_params,
+                            &julia_params,
+                            &julia_dem_params,
+                            &biomorph_params);
+                    }
                 }
 
                 if (ui.key_press_pending &&
@@ -1719,7 +2067,7 @@ int fractus_app_run(void)
                                 (void)fractus_app_draw_drawing_footer_ex(
                                     &zone_overlay_framebuffer,
                                     &fonts,
-                                    "ESC / botón derecho: menú - G: grabar - S: seleccionar zona - X: retroceder - Z: avanzar - M: metadatos - F: flujo - I: información",
+                                    "ESC: menú - G: grabar - S: sel. zona - derecho: desplazar - rueda: zoom - X: retroceder - Z: avanzar - M: metadatos - F: flujo - I: información",
                                     last_saved_filename,
                                     1);
                             }
@@ -1815,7 +2163,7 @@ int fractus_app_run(void)
                                 (void)fractus_app_draw_drawing_footer_ex(
                                     &zone_overlay_framebuffer,
                                     &fonts,
-                                    "ESC / botón derecho: menú - G: grabar - S: seleccionar zona - X: retroceder - Z: avanzar - M: metadatos - F: flujo - I: información",
+                                    "ESC: menú - G: grabar - S: sel. zona - derecho: desplazar - rueda: zoom - X: retroceder - Z: avanzar - M: metadatos - F: flujo - I: información",
                                     last_saved_filename,
                                     1);
                             }
@@ -1911,7 +2259,7 @@ int fractus_app_run(void)
                                 (void)fractus_app_draw_drawing_footer_ex(
                                     &zone_overlay_framebuffer,
                                     &fonts,
-                                    "ESC / botón derecho: menú - G: grabar - S: seleccionar zona - X: retroceder - Z: avanzar - M: metadatos - F: flujo - I: información",
+                                    "ESC: menú - G: grabar - S: sel. zona - derecho: desplazar - rueda: zoom - X: retroceder - Z: avanzar - M: metadatos - F: flujo - I: información",
                                     last_saved_filename,
                                     1);
                             }
@@ -2007,7 +2355,7 @@ int fractus_app_run(void)
                                 (void)fractus_app_draw_drawing_footer_ex(
                                     &zone_overlay_framebuffer,
                                     &fonts,
-                                    "ESC / botón derecho: menú - G: grabar - S: seleccionar zona - X: retroceder - Z: avanzar - M: metadatos - F: flujo - I: información",
+                                    "ESC: menú - G: grabar - S: sel. zona - derecho: desplazar - rueda: zoom - X: retroceder - Z: avanzar - M: metadatos - F: flujo - I: información",
                                     last_saved_filename,
                                     1);
                             }
@@ -2103,7 +2451,7 @@ int fractus_app_run(void)
                                 (void)fractus_app_draw_drawing_footer_ex(
                                     &zone_overlay_framebuffer,
                                     &fonts,
-                                    "ESC / botón derecho: menú - G: grabar - S: seleccionar zona - X: retroceder - Z: avanzar - M: metadatos - F: flujo - I: información",
+                                    "ESC: menú - G: grabar - S: sel. zona - derecho: desplazar - rueda: zoom - X: retroceder - Z: avanzar - M: metadatos - F: flujo - I: información",
                                     last_saved_filename,
                                     1);
                             }

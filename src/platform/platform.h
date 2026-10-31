@@ -10,6 +10,7 @@ typedef enum fractus_platform_event_type {
     FRACTUS_PLATFORM_EVENT_MOUSE_MOVED,
     FRACTUS_PLATFORM_EVENT_MOUSE_BUTTON_DOWN,
     FRACTUS_PLATFORM_EVENT_MOUSE_BUTTON_UP,
+    FRACTUS_PLATFORM_EVENT_MOUSE_WHEEL,
     FRACTUS_PLATFORM_EVENT_KEY_DOWN,
     FRACTUS_PLATFORM_EVENT_KEY_UP,
     FRACTUS_PLATFORM_EVENT_TEXT_INPUT
@@ -63,6 +64,9 @@ typedef struct fractus_platform_event {
         struct {
             fractus_point_i32 position;
         } mouse_move;
+        struct {
+            int32_t vertical;
+        } mouse_wheel;
         struct {
             uint32_t keycode;
         } key;

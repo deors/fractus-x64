@@ -681,7 +681,7 @@ fractus_status fractus_app_draw_drawing_footer_ex(
 
     if (saved_filename != NULL && saved_filename[0] != '\0') {
         if (allow_selection) {
-            (void)snprintf(footer_buf, sizeof(footer_buf), "Grabado %s - ESC / botón derecho: menú - S: seleccionar zona - X: retroceder - Z: avanzar - M: metadatos - F: flujo - I: información", saved_filename);
+            (void)snprintf(footer_buf, sizeof(footer_buf), "Grabado %s - ESC: menú - S: sel. zona - derecho: desplazar - rueda: zoom - X: retroceder - Z: avanzar - M: metadatos - F: flujo - I: información", saved_filename);
         } else {
             (void)snprintf(footer_buf, sizeof(footer_buf), "Grabado %s - ESC o botón derecho: menú - M: metadatos - F: flujo - I: información", saved_filename);
         }
@@ -726,10 +726,11 @@ fractus_status fractus_app_draw_save_feedback(
     return FRACTUS_STATUS_OK;
 }
 
-int fractus_app_map_drawing_window_point(
+static int fractus_app_map_drawing_window_point_ex(
     const fractus_platform_context *platform,
     const fractus_framebuffer *framebuffer,
     fractus_point_i32 window_point,
+    int accept_outside,
     fractus_point_i32 *framebuffer_point)
 {
     fractus_size_u32 output_size;
@@ -740,6 +741,7 @@ int fractus_app_map_drawing_window_point(
     int32_t destination_y;
     int32_t destination_width;
     int32_t destination_height;
+    int outside;
 
     if (platform == NULL || framebuffer == NULL || framebuffer_point == NULL ||
         !framebuffer->initialized || framebuffer->size.width == 0u || framebuffer->size.height == 0u) {
@@ -762,19 +764,39 @@ int fractus_app_map_drawing_window_point(
     destination_height = (int32_t)((double)framebuffer->size.height * scale);
     destination_x = ((int32_t)output_size.width - destination_width) / 2;
     destination_y = ((int32_t)output_size.height - destination_height) / 2;
-
-    if (window_point.x < destination_x ||
+    outside = window_point.x < destination_x ||
         window_point.y < destination_y ||
         window_point.x >= destination_x + destination_width ||
-        window_point.y >= destination_y + destination_height) {
+        window_point.y >= destination_y + destination_height;
+    if (outside && !accept_outside) {
         return 0;
     }
 
     framebuffer_point->x = (int32_t)((double)(window_point.x - destination_x) / scale);
     framebuffer_point->y = (int32_t)((double)(window_point.y - destination_y) / scale);
-    framebuffer_point->x = fractus_app_clamp_i32(framebuffer_point->x, 0, (int32_t)framebuffer->size.width - 1);
-    framebuffer_point->y = fractus_app_clamp_i32(framebuffer_point->y, 0, (int32_t)framebuffer->size.height - 1);
+    if (!accept_outside) {
+        framebuffer_point->x = fractus_app_clamp_i32(framebuffer_point->x, 0, (int32_t)framebuffer->size.width - 1);
+        framebuffer_point->y = fractus_app_clamp_i32(framebuffer_point->y, 0, (int32_t)framebuffer->size.height - 1);
+    }
     return 1;
+}
+
+int fractus_app_map_drawing_window_point(
+    const fractus_platform_context *platform,
+    const fractus_framebuffer *framebuffer,
+    fractus_point_i32 window_point,
+    fractus_point_i32 *framebuffer_point)
+{
+    return fractus_app_map_drawing_window_point_ex(platform, framebuffer, window_point, 0, framebuffer_point);
+}
+
+int fractus_app_map_drawing_window_point_unclamped(
+    const fractus_platform_context *platform,
+    const fractus_framebuffer *framebuffer,
+    fractus_point_i32 window_point,
+    fractus_point_i32 *framebuffer_point)
+{
+    return fractus_app_map_drawing_window_point_ex(platform, framebuffer, window_point, 1, framebuffer_point);
 }
 
 fractus_point_i32 fractus_app_constrain_selection_aspect_ratio(

@@ -238,6 +238,43 @@ static int test_plane_point_and_zoom(void)
         "Zoom should be the reference span divided by the current span");
     TEST_ASSERT(fractus_plane_zoom_level(0.0, 1.0) == 0.0, "Zero reference span should not zoom");
 
+    {
+        double xmin = -2.4;
+        double xmax = 1.2;
+        double ymin = -1.2;
+        double ymax = 1.2;
+
+        TEST_ASSERT(fractus_plane_pan(&xmin, &xmax, &ymin, &ymax, 3u, 3u, 1, 1, 2, 1), "Pan should move the plane");
+        TEST_ASSERT(fabs(xmin - (-4.2)) < 1e-12, "Pan real minimum mismatch");
+        TEST_ASSERT(fabs(xmax - (-0.6)) < 1e-12, "Pan real maximum mismatch");
+        TEST_ASSERT(
+            fractus_plane_point_from_pixel(xmin, xmax, ymin, ymax, 3u, 3u, 2u, 1u, &real_part, &imag_part),
+            "Panned pixel should map");
+        TEST_ASSERT(fabs(real_part - (-0.6)) < 1e-12, "Pan should keep the grabbed point under the cursor");
+        TEST_ASSERT(fabs(imag_part - 0.0) < 1e-12, "Pan should keep the grabbed imag under the cursor");
+        TEST_ASSERT(!fractus_plane_pan(&xmin, &xmax, &ymin, &ymax, 3u, 3u, 2, 1, 2, 1), "A zero pan should not change the plane");
+
+        xmin = -2.4;
+        xmax = 1.2;
+        ymin = -1.2;
+        ymax = 1.2;
+        TEST_ASSERT(fractus_plane_zoom_at_pixel(&xmin, &xmax, &ymin, &ymax, 3u, 3u, 1u, 1u, 1.0),
+            "Wheel zoom should shrink the window");
+        TEST_ASSERT(fabs((xmax - xmin) - (3.6 / FRACTUS_PLANE_WHEEL_ZOOM_STEP)) < 1e-12, "Zoomed real span mismatch");
+        TEST_ASSERT(fabs((ymax - ymin) - (2.4 / FRACTUS_PLANE_WHEEL_ZOOM_STEP)) < 1e-12, "Zoomed imag span mismatch");
+        TEST_ASSERT(
+            fractus_plane_point_from_pixel(xmin, xmax, ymin, ymax, 3u, 3u, 1u, 1u, &real_part, &imag_part),
+            "Zoomed center should map");
+        TEST_ASSERT(fabs(real_part - (-0.6)) < 1e-12, "Zoom should keep the cursor's real coordinate");
+        TEST_ASSERT(fabs(imag_part - 0.0) < 1e-12, "Zoom should keep the cursor's imag coordinate");
+        TEST_ASSERT(fractus_plane_zoom_at_pixel(&xmin, &xmax, &ymin, &ymax, 3u, 3u, 1u, 1u, -1.0),
+            "Wheel zoom out should restore the span");
+        TEST_ASSERT(fabs(xmin - (-2.4)) < 1e-9, "Zoom out real minimum mismatch");
+        TEST_ASSERT(fabs(xmax - 1.2) < 1e-9, "Zoom out real maximum mismatch");
+        TEST_ASSERT(fabs(ymin - (-1.2)) < 1e-9, "Zoom out imag minimum mismatch");
+        TEST_ASSERT(fabs(ymax - 1.2) < 1e-9, "Zoom out imag maximum mismatch");
+    }
+
     return 1;
 }
 

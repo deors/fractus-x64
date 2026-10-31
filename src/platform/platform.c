@@ -275,6 +275,13 @@ static int fractus_platform_translate_event(
         event->data.mouse_button.position.y = sdl_event->button.y;
         event->data.mouse_button.button = sdl_event->button.button;
         return 1;
+    case SDL_MOUSEWHEEL:
+        event->type = FRACTUS_PLATFORM_EVENT_MOUSE_WHEEL;
+        event->data.mouse_wheel.vertical = (int32_t)sdl_event->wheel.y;
+        if (sdl_event->wheel.direction == SDL_MOUSEWHEEL_FLIPPED) {
+            event->data.mouse_wheel.vertical = -event->data.mouse_wheel.vertical;
+        }
+        return event->data.mouse_wheel.vertical != 0;
     case SDL_KEYDOWN:
         event->type = FRACTUS_PLATFORM_EVENT_KEY_DOWN;
         event->data.key.keycode = (uint32_t)sdl_event->key.keysym.sym;
