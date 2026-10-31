@@ -53,7 +53,7 @@ if(OpenMP_C_FOUND)
     target_link_libraries(fractus_core PUBLIC OpenMP::OpenMP_C)
 endif()
 
-add_executable(fractus_x64
+add_executable(fractus_x64 WIN32
     app/main.c
     app/app.c
     app/commons.c
@@ -65,6 +65,12 @@ add_executable(fractus_x64
     app/plasma.c
     app/attractors.c
 )
+
+if(MSVC)
+    # The WINDOWS subsystem still enters through main(). SDL_MAIN_HANDLED
+    # is set in the platform code, so there is no WinMain.
+    target_link_options(fractus_x64 PRIVATE "/ENTRY:mainCRTStartup")
+endif()
 
 target_include_directories(fractus_x64 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
