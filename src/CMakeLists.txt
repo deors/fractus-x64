@@ -76,11 +76,17 @@ target_link_libraries(fractus_x64 PRIVATE
 
 if(MINGW)
     get_filename_component(MINGW_BIN_DIR ${CMAKE_C_COMPILER} DIRECTORY)
+    set(_fractus_runtime_dlls
+        "${MINGW_BIN_DIR}/libgomp-1.dll"
+        "${MINGW_BIN_DIR}/libwinpthread-1.dll"
+        "${MINGW_BIN_DIR}/libgcc_s_seh-1.dll"
+    )
+    if(EXISTS "${MINGW_BIN_DIR}/SDL2.dll")
+        list(APPEND _fractus_runtime_dlls "${MINGW_BIN_DIR}/SDL2.dll")
+    endif()
     add_custom_command(TARGET fractus_x64 POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${MINGW_BIN_DIR}/libgomp-1.dll"
-            "${MINGW_BIN_DIR}/libwinpthread-1.dll"
-            "${MINGW_BIN_DIR}/libgcc_s_seh-1.dll"
+            ${_fractus_runtime_dlls}
             $<TARGET_FILE_DIR:fractus_x64>
     )
 endif()
