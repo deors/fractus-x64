@@ -2,6 +2,7 @@
 
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
 void fractus_app_set_button(
     fractus_app_menu_entry *entry,
@@ -675,12 +676,12 @@ fractus_status fractus_app_draw_drawing_footer_ex(
     const char *saved_filename,
     int allow_selection)
 {
-    char footer_buf[160];
+    char footer_buf[256];
     const char *text = default_text;
 
     if (saved_filename != NULL && saved_filename[0] != '\0') {
         if (allow_selection) {
-            (void)snprintf(footer_buf, sizeof(footer_buf), "Grabado %s - ESC / botón derecho: menú - S: seleccionar zona - M: metadatos - F: flujo - I: información", saved_filename);
+            (void)snprintf(footer_buf, sizeof(footer_buf), "Grabado %s - ESC / botón derecho: menú - S: seleccionar zona - X: retroceder - Z: avanzar - M: metadatos - F: flujo - I: información", saved_filename);
         } else {
             (void)snprintf(footer_buf, sizeof(footer_buf), "Grabado %s - ESC o botón derecho: menú - M: metadatos - F: flujo - I: información", saved_filename);
         }
@@ -933,6 +934,134 @@ int fractus_app_apply_complex_selection(
     return 1;
 }
 
+void fractus_app_zoom_history_clear(fractus_app_zoom_history *history)
+{
+    if (history == NULL) {
+        return;
+    }
+
+    memset(history, 0, sizeof(*history));
+    history->cursor = -1;
+}
+
+void fractus_app_zoom_history_reset(
+    fractus_app_zoom_history *history,
+    double xmin,
+    double xmax,
+    double ymin,
+    double ymax)
+{
+    if (history == NULL) {
+        return;
+    }
+
+    fractus_app_zoom_history_clear(history);
+    if (!(xmax > xmin) || !(ymax > ymin)) {
+        return;
+    }
+
+    history->frames[0].xmin = xmin;
+    history->frames[0].xmax = xmax;
+    history->frames[0].ymin = ymin;
+    history->frames[0].ymax = ymax;
+    history->count = 1;
+    history->cursor = 0;
+}
+
+int fractus_app_zoom_history_push(
+    fractus_app_zoom_history *history,
+    double xmin,
+    double xmax,
+    double ymin,
+    double ymax)
+{
+    const fractus_app_zoom_frame *current;
+
+    if (history == NULL || !(xmax > xmin) || !(ymax > ymin)) {
+        return 0;
+    }
+
+    if (history->count <= 0 || history->cursor < 0 || history->cursor >= history->count) {
+        fractus_app_zoom_history_reset(history, xmin, xmax, ymin, ymax);
+        return history->count == 1;
+    }
+
+    current = &history->frames[history->cursor];
+    if (current->xmin == xmin && current->xmax == xmax && current->ymin == ymin && current->ymax == ymax) {
+        return 0;
+    }
+
+    history->count = history->cursor + 1;
+    if (history->count == FRACTUS_APP_ZOOM_HISTORY_CAPACITY) {
+        memmove(
+            &history->frames[0],
+            &history->frames[1],
+            (size_t)(FRACTUS_APP_ZOOM_HISTORY_CAPACITY - 1) * sizeof(history->frames[0]));
+        history->count = FRACTUS_APP_ZOOM_HISTORY_CAPACITY - 1;
+        history->cursor = history->count - 1;
+    }
+
+    history->frames[history->count].xmin = xmin;
+    history->frames[history->count].xmax = xmax;
+    history->frames[history->count].ymin = ymin;
+    history->frames[history->count].ymax = ymax;
+    history->count++;
+    history->cursor = history->count - 1;
+    return 1;
+}
+
+static int fractus_app_zoom_history_recall(
+    fractus_app_zoom_history *history,
+    int cursor,
+    double *xmin,
+    double *xmax,
+    double *ymin,
+    double *ymax)
+{
+    const fractus_app_zoom_frame *frame;
+
+    if (history == NULL || xmin == NULL || xmax == NULL || ymin == NULL || ymax == NULL ||
+        cursor < 0 || cursor >= history->count) {
+        return 0;
+    }
+
+    history->cursor = cursor;
+    frame = &history->frames[cursor];
+    *xmin = frame->xmin;
+    *xmax = frame->xmax;
+    *ymin = frame->ymin;
+    *ymax = frame->ymax;
+    return 1;
+}
+
+int fractus_app_zoom_history_back(
+    fractus_app_zoom_history *history,
+    double *xmin,
+    double *xmax,
+    double *ymin,
+    double *ymax)
+{
+    if (history == NULL || history->cursor <= 0) {
+        return 0;
+    }
+
+    return fractus_app_zoom_history_recall(history, history->cursor - 1, xmin, xmax, ymin, ymax);
+}
+
+int fractus_app_zoom_history_forward(
+    fractus_app_zoom_history *history,
+    double *xmin,
+    double *xmax,
+    double *ymin,
+    double *ymax)
+{
+    if (history == NULL || history->cursor < 0 || history->cursor + 1 >= history->count) {
+        return 0;
+    }
+
+    return fractus_app_zoom_history_recall(history, history->cursor + 1, xmin, xmax, ymin, ymax);
+}
+
 int fractus_app_handle_zone_selection_input(
     const fractus_platform_context *platform,
     const fractus_framebuffer *framebuffer,
@@ -941,7 +1070,8 @@ int fractus_app_handle_zone_selection_input(
     double *xmax,
     double *ymin,
     double *ymax,
-    fractus_app_zone_selection *selection)
+    fractus_app_zone_selection *selection,
+    fractus_app_zoom_history *zoom_history)
 {
     fractus_point_i32 selected_point;
 
@@ -974,6 +1104,7 @@ int fractus_app_handle_zone_selection_input(
         } else if (fractus_app_apply_complex_selection(framebuffer, xmin, xmax, ymin, ymax, selection->first_corner, selected_point)) {
             selection->active = 0;
             selection->has_first_corner = 0;
+            (void)fractus_app_zoom_history_push(zoom_history, *xmin, *xmax, *ymin, *ymax);
             return 1;
         }
     }

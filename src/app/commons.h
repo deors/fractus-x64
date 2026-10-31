@@ -110,6 +110,22 @@ typedef struct fractus_app_zone_selection {
     fractus_point_i32 first_corner;
 } fractus_app_zone_selection;
 
+#define FRACTUS_APP_ZOOM_HISTORY_CAPACITY 25
+
+typedef struct fractus_app_zoom_frame {
+    double xmin;
+    double xmax;
+    double ymin;
+    double ymax;
+} fractus_app_zoom_frame;
+
+typedef struct fractus_app_zoom_history {
+    fractus_app_zoom_frame frames[FRACTUS_APP_ZOOM_HISTORY_CAPACITY];
+    int count;
+    int cursor;
+    fractus_app_view view;
+} fractus_app_zoom_history;
+
 void fractus_app_set_button(
     fractus_app_menu_entry *entry,
     int32_t x1,
@@ -270,7 +286,34 @@ int fractus_app_handle_zone_selection_input(
     double *xmax,
     double *ymin,
     double *ymax,
-    fractus_app_zone_selection *selection);
+    fractus_app_zone_selection *selection,
+    fractus_app_zoom_history *zoom_history);
+
+void fractus_app_zoom_history_clear(fractus_app_zoom_history *history);
+void fractus_app_zoom_history_reset(
+    fractus_app_zoom_history *history,
+    double xmin,
+    double xmax,
+    double ymin,
+    double ymax);
+int fractus_app_zoom_history_push(
+    fractus_app_zoom_history *history,
+    double xmin,
+    double xmax,
+    double ymin,
+    double ymax);
+int fractus_app_zoom_history_back(
+    fractus_app_zoom_history *history,
+    double *xmin,
+    double *xmax,
+    double *ymin,
+    double *ymax);
+int fractus_app_zoom_history_forward(
+    fractus_app_zoom_history *history,
+    double *xmin,
+    double *xmax,
+    double *ymin,
+    double *ymax);
 
 fractus_status fractus_app_draw_graphic_metadata_panel(
     fractus_framebuffer *framebuffer,
