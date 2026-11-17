@@ -7,6 +7,7 @@
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static const char *fractus_formats_search_prefixes[] = {"", "../", "../../", "../../../"};
@@ -40,6 +41,29 @@ static uint8_t fractus_from_legacy_6bit(uint8_t value)
 static uint8_t fractus_valid_drawing_video_mode(uint8_t value)
 {
     return (value < FRACTUS_DRAWING_VIDEO_MODE_COUNT) ? value : (uint8_t)FRACTUS_DRAWING_VIDEO_MODE_WINDOW_640X480;
+}
+
+uint8_t fractus_graphic_output_format_normalize(uint8_t format)
+{
+    if (format == (uint8_t)FRACTUS_GRAPHIC_OUTPUT_PNG ||
+        format == (uint8_t)FRACTUS_GRAPHIC_OUTPUT_BMP) {
+        return format;
+    }
+
+    return (uint8_t)FRACTUS_GRAPHIC_OUTPUT_DRSG;
+}
+
+const char *fractus_graphic_output_extension(uint8_t format)
+{
+    format = fractus_graphic_output_format_normalize(format);
+    if (format == (uint8_t)FRACTUS_GRAPHIC_OUTPUT_PNG) {
+        return ".png";
+    }
+    if (format == (uint8_t)FRACTUS_GRAPHIC_OUTPUT_BMP) {
+        return ".bmp";
+    }
+
+    return ".drsg";
 }
 
 static fractus_status fractus_read_u8(FILE *file, uint8_t *value)
@@ -341,6 +365,7 @@ fractus_status fractus_legacy_config_init_default(fractus_legacy_config *config)
     config->biomorph_cutoff = 10;
     config->plasma_rectangular_seed = 1337u;
     config->plasma_circular_seed = 7331u;
+    config->graphic_output_format = (uint8_t)FRACTUS_GRAPHIC_OUTPUT_DRSG;
 
     for (i = 0u; i < FRACTUS_LEGACY_PALETTE_DATA_COUNT; ++i) {
         config->palette[i] = fractus_default_fractal_palette[i];
@@ -360,6 +385,7 @@ fractus_status fractus_legacy_config_load(
     int16_t biomorph_iterations_val;
     uint32_t rect_seed;
     uint32_t circ_seed;
+    uint8_t output_format;
     uint32_t i;
 
     if (path == NULL || config == NULL) {
@@ -430,6 +456,9 @@ fractus_status fractus_legacy_config_load(
                 config->plasma_rectangular_seed = (rect_seed > 0u) ? rect_seed : 1337u;
                 if (fractus_read_u32_le(file, &circ_seed) == FRACTUS_STATUS_OK) {
                     config->plasma_circular_seed = (circ_seed > 0u) ? circ_seed : 7331u;
+                    if (fractus_read_u8(file, &output_format) == FRACTUS_STATUS_OK) {
+                        config->graphic_output_format = fractus_graphic_output_format_normalize(output_format);
+                    }
                 }
             }
         }
@@ -498,7 +527,8 @@ fractus_status fractus_legacy_config_save(
     }
 
     if (fractus_write_u32_le(file, config->plasma_rectangular_seed > 0u ? config->plasma_rectangular_seed : 1337u) != FRACTUS_STATUS_OK ||
-        fractus_write_u32_le(file, config->plasma_circular_seed > 0u ? config->plasma_circular_seed : 7331u) != FRACTUS_STATUS_OK) {
+        fractus_write_u32_le(file, config->plasma_circular_seed > 0u ? config->plasma_circular_seed : 7331u) != FRACTUS_STATUS_OK ||
+        fractus_write_u8(file, fractus_graphic_output_format_normalize(config->graphic_output_format)) != FRACTUS_STATUS_OK) {
         fclose(file);
         return FRACTUS_STATUS_ERROR;
     }
@@ -883,6 +913,792 @@ fractus_status fractus_legacy_bmp_save(
 
     fclose(file);
     return FRACTUS_STATUS_OK;
+}
+
+/* Indexed PNG uses zlib stored blocks so the writer needs no deflate compressor.
+   The reader accepts that encoding and rejects compressed or non-indexed PNGs. */
+
+static uint32_t fractus_crc32_table[256];
+static int fractus_crc32_ready;
+
+static void fractus_crc32_ensure_table(void)
+{
+    uint32_t i;
+
+    if (fractus_crc32_ready) {
+        return;
+    }
+
+    for (i = 0u; i < 256u; ++i) {
+        uint32_t crc = i;
+        int bit;
+
+        for (bit = 0; bit < 8; ++bit) {
+            if ((crc & 1u) != 0u) {
+                crc = (crc >> 1) ^ 0xedb88320u;
+            } else {
+                crc >>= 1;
+            }
+        }
+        fractus_crc32_table[i] = crc;
+    }
+
+    fractus_crc32_ready = 1;
+}
+
+static uint32_t fractus_crc32_type_and_data(const uint8_t type[4], const uint8_t *data, uint32_t length)
+{
+    uint32_t crc = 0xffffffffu;
+    uint32_t i;
+
+    fractus_crc32_ensure_table();
+    for (i = 0u; i < 4u; ++i) {
+        crc = fractus_crc32_table[(crc ^ type[i]) & 0xffu] ^ (crc >> 8);
+    }
+    for (i = 0u; i < length; ++i) {
+        crc = fractus_crc32_table[(crc ^ data[i]) & 0xffu] ^ (crc >> 8);
+    }
+
+    return crc ^ 0xffffffffu;
+}
+
+static uint32_t fractus_adler32(const uint8_t *data, size_t length)
+{
+    uint64_t s1 = 1u;
+    uint64_t s2 = 0u;
+    size_t i = 0u;
+
+    while (i < length) {
+        size_t block = length - i;
+        size_t j;
+
+        if (block > 5552u) {
+            block = 5552u;
+        }
+        for (j = 0u; j < block; ++j) {
+            s1 += data[i + j];
+            s2 += s1;
+        }
+        s1 %= 65521u;
+        s2 %= 65521u;
+        i += block;
+    }
+
+    return (uint32_t)((s2 << 16) | s1);
+}
+
+static fractus_status fractus_write_u32_be(FILE *file, uint32_t value)
+{
+    uint8_t bytes[4];
+
+    if (file == NULL) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    bytes[0] = (uint8_t)((value >> 24) & 0xffu);
+    bytes[1] = (uint8_t)((value >> 16) & 0xffu);
+    bytes[2] = (uint8_t)((value >> 8) & 0xffu);
+    bytes[3] = (uint8_t)(value & 0xffu);
+    return (fwrite(bytes, sizeof(bytes), 1u, file) == 1u) ? FRACTUS_STATUS_OK : FRACTUS_STATUS_ERROR;
+}
+
+static fractus_status fractus_read_u32_be(FILE *file, uint32_t *value)
+{
+    uint8_t bytes[4];
+
+    if (file == NULL || value == NULL) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+    if (fread(bytes, sizeof(bytes), 1u, file) != 1u) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    *value = ((uint32_t)bytes[0] << 24) |
+             ((uint32_t)bytes[1] << 16) |
+             ((uint32_t)bytes[2] << 8) |
+             (uint32_t)bytes[3];
+    return FRACTUS_STATUS_OK;
+}
+
+static int fractus_indexed_dimensions_fit(uint32_t width, uint32_t height)
+{
+    if (width == 0u || height == 0u || width > 33554431u) {
+        return 0;
+    }
+
+    return height <= (33554432u / (width + 1u));
+}
+
+static fractus_status fractus_png_write_chunk(FILE *file, const uint8_t type[4], const uint8_t *data, uint32_t length)
+{
+    uint32_t crc;
+
+    if (fractus_write_u32_be(file, length) != FRACTUS_STATUS_OK ||
+        fwrite(type, 4u, 1u, file) != 1u) {
+        return FRACTUS_STATUS_ERROR;
+    }
+    if (length > 0u && fwrite(data, length, 1u, file) != 1u) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    crc = fractus_crc32_type_and_data(type, data, length);
+    return fractus_write_u32_be(file, crc);
+}
+
+static fractus_status fractus_png_save(
+    const char *path,
+    const fractus_indexed_image *image,
+    const fractus_palette *palette)
+{
+    static const uint8_t signature[8] = {137u, 80u, 78u, 71u, 13u, 10u, 26u, 10u};
+    static const uint8_t ihdr_type[4] = {'I', 'H', 'D', 'R'};
+    static const uint8_t plte_type[4] = {'P', 'L', 'T', 'E'};
+    static const uint8_t idat_type[4] = {'I', 'D', 'A', 'T'};
+    static const uint8_t iend_type[4] = {'I', 'E', 'N', 'D'};
+    FILE *file = NULL;
+    uint8_t *raw = NULL;
+    uint8_t *zlib = NULL;
+    uint8_t ihdr[13];
+    uint8_t plte[FRACTUS_PALETTE_SIZE * 3u];
+    uint32_t width;
+    uint32_t height;
+    uint32_t y;
+    uint32_t i;
+    size_t raw_size;
+    size_t zlib_size;
+    size_t offset;
+    size_t source_offset;
+    size_t remaining;
+    uint32_t adler;
+    fractus_status status = FRACTUS_STATUS_ERROR;
+
+    if (path == NULL || image == NULL || palette == NULL || !image->initialized) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    width = image->size.width;
+    height = image->size.height;
+    if (!fractus_indexed_dimensions_fit(width, height) || image->pitch_pixels < width) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    raw_size = (size_t)height * ((size_t)width + 1u);
+    raw = (uint8_t *)malloc(raw_size);
+    if (raw == NULL) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    for (y = 0u; y < height; ++y) {
+        uint8_t *row = raw + ((size_t)y * ((size_t)width + 1u));
+        row[0] = 0u;
+        memcpy(row + 1, image->pixels + ((size_t)y * image->pitch_pixels), width);
+    }
+
+    zlib_size = 2u + ((raw_size + 65534u) / 65535u) * 5u + raw_size + 4u;
+    zlib = (uint8_t *)malloc(zlib_size);
+    if (zlib == NULL) {
+        free(raw);
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    zlib[0] = 0x78u;
+    zlib[1] = 0x01u;
+    offset = 2u;
+    source_offset = 0u;
+    remaining = raw_size;
+    while (remaining > 0u) {
+        uint32_t chunk_len = (remaining > 65535u) ? 65535u : (uint32_t)remaining;
+        uint16_t nlen = (uint16_t)~(uint16_t)chunk_len;
+        int final_block = (remaining == (size_t)chunk_len);
+
+        zlib[offset++] = final_block ? 0x01u : 0x00u;
+        zlib[offset++] = (uint8_t)(chunk_len & 0xffu);
+        zlib[offset++] = (uint8_t)((chunk_len >> 8) & 0xffu);
+        zlib[offset++] = (uint8_t)(nlen & 0xffu);
+        zlib[offset++] = (uint8_t)((nlen >> 8) & 0xffu);
+        memcpy(zlib + offset, raw + source_offset, chunk_len);
+        offset += chunk_len;
+        source_offset += chunk_len;
+        remaining -= chunk_len;
+    }
+
+    if (offset + 4u > zlib_size) {
+        free(zlib);
+        free(raw);
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    adler = fractus_adler32(raw, raw_size);
+    zlib[offset++] = (uint8_t)((adler >> 24) & 0xffu);
+    zlib[offset++] = (uint8_t)((adler >> 16) & 0xffu);
+    zlib[offset++] = (uint8_t)((adler >> 8) & 0xffu);
+    zlib[offset++] = (uint8_t)(adler & 0xffu);
+
+    ihdr[0] = (uint8_t)((width >> 24) & 0xffu);
+    ihdr[1] = (uint8_t)((width >> 16) & 0xffu);
+    ihdr[2] = (uint8_t)((width >> 8) & 0xffu);
+    ihdr[3] = (uint8_t)(width & 0xffu);
+    ihdr[4] = (uint8_t)((height >> 24) & 0xffu);
+    ihdr[5] = (uint8_t)((height >> 16) & 0xffu);
+    ihdr[6] = (uint8_t)((height >> 8) & 0xffu);
+    ihdr[7] = (uint8_t)(height & 0xffu);
+    ihdr[8] = 8u;
+    ihdr[9] = 3u;
+    ihdr[10] = 0u;
+    ihdr[11] = 0u;
+    ihdr[12] = 0u;
+
+    for (i = 0u; i < FRACTUS_PALETTE_SIZE; ++i) {
+        plte[i * 3u] = palette->entries[i].r;
+        plte[i * 3u + 1u] = palette->entries[i].g;
+        plte[i * 3u + 2u] = palette->entries[i].b;
+    }
+
+    file = fopen(path, "wb");
+    if (file == NULL) {
+        free(zlib);
+        free(raw);
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    if (fwrite(signature, sizeof(signature), 1u, file) == 1u &&
+        fractus_png_write_chunk(file, ihdr_type, ihdr, 13u) == FRACTUS_STATUS_OK &&
+        fractus_png_write_chunk(file, plte_type, plte, (uint32_t)sizeof(plte)) == FRACTUS_STATUS_OK &&
+        fractus_png_write_chunk(file, idat_type, zlib, (uint32_t)offset) == FRACTUS_STATUS_OK &&
+        fractus_png_write_chunk(file, iend_type, NULL, 0u) == FRACTUS_STATUS_OK) {
+        status = FRACTUS_STATUS_OK;
+    }
+
+    fclose(file);
+    free(zlib);
+    free(raw);
+    return status;
+}
+
+static fractus_status fractus_buffer_append(
+    uint8_t **buffer,
+    size_t *length,
+    size_t *capacity,
+    const uint8_t *src,
+    size_t src_len,
+    size_t max_len)
+{
+    size_t needed;
+    size_t next;
+    uint8_t *grown;
+
+    if (src_len > max_len || *length > max_len - src_len) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    needed = *length + src_len;
+    if (needed > *capacity) {
+        next = (*capacity == 0u) ? 4096u : *capacity;
+        while (next < needed) {
+            if (next > (SIZE_MAX / 2u)) {
+                return FRACTUS_STATUS_ERROR;
+            }
+            next *= 2u;
+        }
+        grown = (uint8_t *)realloc(*buffer, next);
+        if (grown == NULL) {
+            return FRACTUS_STATUS_ERROR;
+        }
+        *buffer = grown;
+        *capacity = next;
+    }
+
+    if (src_len > 0u) {
+        memcpy(*buffer + *length, src, src_len);
+        *length = needed;
+    }
+    return FRACTUS_STATUS_OK;
+}
+
+static fractus_status fractus_png_read_chunk(
+    FILE *file,
+    uint8_t type[4],
+    uint8_t **data,
+    uint32_t *length)
+{
+    uint32_t len;
+    uint32_t expected_crc;
+    uint8_t *buffer = NULL;
+
+    *data = NULL;
+    *length = 0u;
+    if (fractus_read_u32_be(file, &len) != FRACTUS_STATUS_OK) {
+        return FRACTUS_STATUS_ERROR;
+    }
+    if (len > 32u * 1024u * 1024u) {
+        return FRACTUS_STATUS_ERROR;
+    }
+    if (fread(type, 4u, 1u, file) != 1u) {
+        return FRACTUS_STATUS_ERROR;
+    }
+    if (len > 0u) {
+        buffer = (uint8_t *)malloc(len);
+        if (buffer == NULL) {
+            return FRACTUS_STATUS_ERROR;
+        }
+        if (fread(buffer, len, 1u, file) != 1u) {
+            free(buffer);
+            return FRACTUS_STATUS_ERROR;
+        }
+    }
+    if (fractus_read_u32_be(file, &expected_crc) != FRACTUS_STATUS_OK ||
+        fractus_crc32_type_and_data(type, buffer, len) != expected_crc) {
+        free(buffer);
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    *data = buffer;
+    *length = len;
+    return FRACTUS_STATUS_OK;
+}
+
+static fractus_status fractus_zlib_stored_inflate(
+    const uint8_t *src,
+    size_t src_size,
+    uint8_t *dst,
+    size_t dst_size,
+    size_t *out_size)
+{
+    size_t in;
+    size_t out = 0u;
+    int final_block = 0;
+    uint32_t stored_adler;
+    uint32_t actual_adler;
+
+    if (src == NULL || dst == NULL || out_size == NULL || src_size < 6u) {
+        return FRACTUS_STATUS_ERROR;
+    }
+    if ((src[0] & 0x0fu) != 8u || (src[1] & 0x20u) != 0u) {
+        return FRACTUS_STATUS_UNSUPPORTED;
+    }
+    if (((((uint32_t)src[0] << 8) | src[1]) % 31u) != 0u) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    in = 2u;
+    while (!final_block) {
+        uint8_t header;
+        uint16_t len;
+        uint16_t nlen;
+
+        if (in >= src_size) {
+            return FRACTUS_STATUS_ERROR;
+        }
+        header = src[in++];
+        final_block = header & 1u;
+        if (((header >> 1) & 0x03u) != 0u) {
+            return FRACTUS_STATUS_UNSUPPORTED;
+        }
+        if (in + 4u > src_size) {
+            return FRACTUS_STATUS_ERROR;
+        }
+        len = (uint16_t)src[in] | (uint16_t)((uint16_t)src[in + 1u] << 8);
+        nlen = (uint16_t)src[in + 2u] | (uint16_t)((uint16_t)src[in + 3u] << 8);
+        in += 4u;
+        if ((uint16_t)(len ^ 0xffffu) != nlen) {
+            return FRACTUS_STATUS_ERROR;
+        }
+        if (in + (size_t)len > src_size || out + (size_t)len > dst_size) {
+            return FRACTUS_STATUS_ERROR;
+        }
+        if (len > 0u) {
+            memcpy(dst + out, src + in, len);
+        }
+        out += len;
+        in += len;
+    }
+
+    if (in + 4u != src_size) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    stored_adler = ((uint32_t)src[in] << 24) |
+                   ((uint32_t)src[in + 1u] << 16) |
+                   ((uint32_t)src[in + 2u] << 8) |
+                   (uint32_t)src[in + 3u];
+    actual_adler = fractus_adler32(dst, out);
+    if (stored_adler != actual_adler) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    *out_size = out;
+    return FRACTUS_STATUS_OK;
+}
+
+static fractus_status fractus_png_load(
+    const char *path,
+    fractus_indexed_image *image,
+    fractus_palette *palette,
+    uint16_t *video_mode)
+{
+    static const uint8_t signature[8] = {137u, 80u, 78u, 71u, 13u, 10u, 26u, 10u};
+    FILE *file;
+    uint8_t file_signature[8];
+    uint8_t *idat = NULL;
+    uint8_t *raw = NULL;
+    uint8_t *chunk = NULL;
+    fractus_indexed_image loaded;
+    fractus_palette loaded_palette;
+    uint32_t width = 0u;
+    uint32_t height = 0u;
+    size_t idat_len = 0u;
+    size_t idat_cap = 0u;
+    size_t raw_size = 0u;
+    size_t inflated = 0u;
+    int saw_ihdr = 0;
+    int saw_plte = 0;
+    int saw_idat = 0;
+    int idat_closed = 0;
+    int saw_iend = 0;
+    fractus_status status = FRACTUS_STATUS_OK;
+    uint32_t chunks = 0u;
+
+    if (path == NULL || image == NULL || palette == NULL) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    memset(&loaded, 0, sizeof(loaded));
+    file = fopen(path, "rb");
+    if (file == NULL) {
+        return FRACTUS_STATUS_ERROR;
+    }
+    if (fread(file_signature, sizeof(file_signature), 1u, file) != 1u ||
+        memcmp(file_signature, signature, sizeof(signature)) != 0) {
+        fclose(file);
+        return FRACTUS_STATUS_ERROR;
+    }
+    if (fractus_palette_init_default(&loaded_palette) != FRACTUS_STATUS_OK) {
+        fclose(file);
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    while (status == FRACTUS_STATUS_OK && !saw_iend && chunks < 64u) {
+        uint8_t type[4];
+        uint32_t length = 0u;
+
+        ++chunks;
+        status = fractus_png_read_chunk(file, type, &chunk, &length);
+        if (status != FRACTUS_STATUS_OK) {
+            break;
+        }
+
+        if (memcmp(type, "IHDR", 4) == 0) {
+            if (saw_ihdr || length != 13u) {
+                status = FRACTUS_STATUS_ERROR;
+            } else {
+                width = ((uint32_t)chunk[0] << 24) | ((uint32_t)chunk[1] << 16) |
+                        ((uint32_t)chunk[2] << 8) | (uint32_t)chunk[3];
+                height = ((uint32_t)chunk[4] << 24) | ((uint32_t)chunk[5] << 16) |
+                         ((uint32_t)chunk[6] << 8) | (uint32_t)chunk[7];
+                if (chunk[8] != 8u || chunk[9] != 3u || chunk[12] != 0u) {
+                    status = FRACTUS_STATUS_UNSUPPORTED;
+                } else if (chunk[10] != 0u || chunk[11] != 0u || !fractus_indexed_dimensions_fit(width, height)) {
+                    status = FRACTUS_STATUS_ERROR;
+                } else {
+                    saw_ihdr = 1;
+                    raw_size = (size_t)height * ((size_t)width + 1u);
+                }
+            }
+        } else if (!saw_ihdr) {
+            status = FRACTUS_STATUS_ERROR;
+        } else if (memcmp(type, "PLTE", 4) == 0) {
+            uint32_t colors;
+            uint32_t i;
+
+            if (saw_plte || saw_idat || length == 0u || (length % 3u) != 0u || length > 768u) {
+                status = FRACTUS_STATUS_ERROR;
+            } else {
+                colors = length / 3u;
+                for (i = 0u; i < colors; ++i) {
+                    loaded_palette.entries[i].r = chunk[i * 3u];
+                    loaded_palette.entries[i].g = chunk[i * 3u + 1u];
+                    loaded_palette.entries[i].b = chunk[i * 3u + 2u];
+                    loaded_palette.entries[i].a = 255u;
+                }
+                saw_plte = 1;
+            }
+        } else if (memcmp(type, "IDAT", 4) == 0) {
+            if (!saw_plte || idat_closed) {
+                status = FRACTUS_STATUS_ERROR;
+            } else {
+                status = fractus_buffer_append(&idat, &idat_len, &idat_cap, chunk, length, raw_size + 1048576u);
+                saw_idat = 1;
+            }
+        } else if (memcmp(type, "IEND", 4) == 0) {
+            if (length != 0u) {
+                status = FRACTUS_STATUS_ERROR;
+            } else {
+                saw_iend = 1;
+            }
+        } else if ((type[0] & 0x20u) == 0u) {
+            status = FRACTUS_STATUS_UNSUPPORTED;
+        } else if (saw_idat) {
+            idat_closed = 1;
+        }
+
+        free(chunk);
+        chunk = NULL;
+    }
+
+    if (status == FRACTUS_STATUS_OK && (!saw_iend || !saw_idat || idat == NULL)) {
+        status = FRACTUS_STATUS_ERROR;
+    }
+
+    if (status == FRACTUS_STATUS_OK) {
+        raw = (uint8_t *)malloc(raw_size);
+        if (raw == NULL) {
+            status = FRACTUS_STATUS_ERROR;
+        }
+    }
+
+    if (status == FRACTUS_STATUS_OK) {
+        status = fractus_zlib_stored_inflate(idat, idat_len, raw, raw_size, &inflated);
+        if (status == FRACTUS_STATUS_OK && inflated != raw_size) {
+            status = FRACTUS_STATUS_ERROR;
+        }
+    }
+
+    if (status == FRACTUS_STATUS_OK) {
+        fractus_size_u32 size;
+        uint32_t y;
+        size_t stride = (size_t)width + 1u;
+
+        size.width = width;
+        size.height = height;
+        status = fractus_indexed_image_init(&loaded, size);
+        if (status == FRACTUS_STATUS_OK) {
+            for (y = 0u; y < height; ++y) {
+                if (raw[y * stride] != 0u) {
+                    status = FRACTUS_STATUS_UNSUPPORTED;
+                    break;
+                }
+                memcpy(
+                    loaded.pixels + ((size_t)y * loaded.pitch_pixels),
+                    raw + (y * stride) + 1u,
+                    width);
+            }
+            if (status != FRACTUS_STATUS_OK) {
+                fractus_indexed_image_shutdown(&loaded);
+            }
+        }
+    }
+
+    fclose(file);
+    free(chunk);
+    free(idat);
+    free(raw);
+    if (status != FRACTUS_STATUS_OK) {
+        return status;
+    }
+
+    if (video_mode != NULL) {
+        *video_mode = 0u;
+    }
+    *palette = loaded_palette;
+    *image = loaded;
+    return FRACTUS_STATUS_OK;
+}
+
+static fractus_status fractus_legacy_bmp_load(
+    const char *path,
+    fractus_indexed_image *image,
+    fractus_palette *palette,
+    uint16_t *video_mode)
+{
+    FILE *file;
+    fractus_indexed_image loaded;
+    fractus_palette loaded_palette;
+    fractus_size_u32 size;
+    uint32_t file_size;
+    uint32_t data_offset;
+    uint32_t header_size;
+    uint32_t compression;
+    uint32_t colors_used;
+    uint32_t width;
+    uint32_t height;
+    uint32_t row_stride;
+    uint32_t y;
+    uint16_t planes;
+    uint16_t bit_count;
+    int32_t width_s;
+    int32_t height_s;
+    int top_down = 0;
+    long palette_pos;
+    uint8_t magic[2];
+
+    if (path == NULL || image == NULL || palette == NULL) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    memset(&loaded, 0, sizeof(loaded));
+    file = fopen(path, "rb");
+    if (file == NULL) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    if (fread(magic, 2u, 1u, file) != 1u || magic[0] != (uint8_t)'B' || magic[1] != (uint8_t)'M' ||
+        fractus_read_u32_le(file, &file_size) != FRACTUS_STATUS_OK ||
+        fractus_read_u16_le(file, &planes) != FRACTUS_STATUS_OK ||
+        fractus_read_u16_le(file, &bit_count) != FRACTUS_STATUS_OK ||
+        fractus_read_u32_le(file, &data_offset) != FRACTUS_STATUS_OK ||
+        fractus_read_u32_le(file, &header_size) != FRACTUS_STATUS_OK) {
+        fclose(file);
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    if (header_size != 40u) {
+        fclose(file);
+        return FRACTUS_STATUS_UNSUPPORTED;
+    }
+
+    if (fractus_read_u32_le(file, &file_size) != FRACTUS_STATUS_OK) {
+        fclose(file);
+        return FRACTUS_STATUS_ERROR;
+    }
+    width_s = (int32_t)file_size;
+    if (fractus_read_u32_le(file, &file_size) != FRACTUS_STATUS_OK) {
+        fclose(file);
+        return FRACTUS_STATUS_ERROR;
+    }
+    height_s = (int32_t)file_size;
+    if (fractus_read_u16_le(file, &planes) != FRACTUS_STATUS_OK ||
+        fractus_read_u16_le(file, &bit_count) != FRACTUS_STATUS_OK ||
+        fractus_read_u32_le(file, &compression) != FRACTUS_STATUS_OK) {
+        fclose(file);
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    if (width_s <= 0 || height_s == 0 || planes != 1u || bit_count != 8u || compression != 0u) {
+        fclose(file);
+        return FRACTUS_STATUS_UNSUPPORTED;
+    }
+
+    width = (uint32_t)width_s;
+    if (height_s < 0) {
+        height = (uint32_t)(-(height_s + 1)) + 1u;
+        top_down = 1;
+    } else {
+        height = (uint32_t)height_s;
+    }
+    if (!fractus_indexed_dimensions_fit(width, height)) {
+        fclose(file);
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    if (fractus_read_u32_le(file, &file_size) != FRACTUS_STATUS_OK ||
+        fractus_read_u32_le(file, &file_size) != FRACTUS_STATUS_OK ||
+        fractus_read_u32_le(file, &file_size) != FRACTUS_STATUS_OK ||
+        fractus_read_u32_le(file, &colors_used) != FRACTUS_STATUS_OK ||
+        fractus_read_u32_le(file, &file_size) != FRACTUS_STATUS_OK) {
+        fclose(file);
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    if (colors_used == 0u) {
+        colors_used = 256u;
+    }
+    if (colors_used > 256u) {
+        fclose(file);
+        return FRACTUS_STATUS_UNSUPPORTED;
+    }
+
+    if (fractus_palette_init_default(&loaded_palette) != FRACTUS_STATUS_OK) {
+        fclose(file);
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    for (y = 0u; y < colors_used; ++y) {
+        uint8_t b;
+        uint8_t g;
+        uint8_t r;
+        uint8_t reserved;
+
+        if (fractus_read_u8(file, &b) != FRACTUS_STATUS_OK ||
+            fractus_read_u8(file, &g) != FRACTUS_STATUS_OK ||
+            fractus_read_u8(file, &r) != FRACTUS_STATUS_OK ||
+            fractus_read_u8(file, &reserved) != FRACTUS_STATUS_OK) {
+            fclose(file);
+            return FRACTUS_STATUS_ERROR;
+        }
+        (void)reserved;
+        loaded_palette.entries[y].r = r;
+        loaded_palette.entries[y].g = g;
+        loaded_palette.entries[y].b = b;
+        loaded_palette.entries[y].a = 255u;
+    }
+
+    palette_pos = ftell(file);
+    if (palette_pos < 0 || (uint32_t)palette_pos > data_offset ||
+        fseek(file, (long)data_offset, SEEK_SET) != 0) {
+        fclose(file);
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    size.width = width;
+    size.height = height;
+    if (fractus_indexed_image_init(&loaded, size) != FRACTUS_STATUS_OK) {
+        fclose(file);
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    row_stride = (width + 3u) & ~3u;
+    for (y = 0u; y < height; ++y) {
+        uint32_t dest_y = top_down ? y : (height - 1u - y);
+        uint8_t *row = loaded.pixels + ((size_t)dest_y * loaded.pitch_pixels);
+        uint8_t padding[3];
+        size_t pad_len = (size_t)(row_stride - width);
+
+        if (fread(row, width, 1u, file) != 1u ||
+            (pad_len > 0u && fread(padding, pad_len, 1u, file) != 1u)) {
+            fractus_indexed_image_shutdown(&loaded);
+            fclose(file);
+            return FRACTUS_STATUS_ERROR;
+        }
+    }
+
+    fclose(file);
+    if (video_mode != NULL) {
+        *video_mode = 0u;
+    }
+    *palette = loaded_palette;
+    *image = loaded;
+    return FRACTUS_STATUS_OK;
+}
+
+fractus_status fractus_indexed_graphic_load(
+    const char *path,
+    fractus_indexed_image *image,
+    fractus_palette *palette,
+    uint16_t *video_mode)
+{
+    if (fractus_formats_has_extension(path, ".png")) {
+        return fractus_png_load(path, image, palette, video_mode);
+    }
+    if (fractus_formats_has_extension(path, ".bmp")) {
+        return fractus_legacy_bmp_load(path, image, palette, video_mode);
+    }
+    return fractus_legacy_graphic_load(path, image, palette, video_mode);
+}
+
+fractus_status fractus_indexed_graphic_save(
+    const char *path,
+    const fractus_indexed_image *image,
+    const fractus_palette *palette,
+    uint8_t format)
+{
+    format = fractus_graphic_output_format_normalize(format);
+    if (format == (uint8_t)FRACTUS_GRAPHIC_OUTPUT_PNG) {
+        return fractus_png_save(path, image, palette);
+    }
+    if (format == (uint8_t)FRACTUS_GRAPHIC_OUTPUT_BMP) {
+        return fractus_legacy_bmp_save(path, image, palette);
+    }
+    return fractus_legacy_graphic_save(path, image, palette);
 }
 
 int fractus_formats_file_exists(const char *path)

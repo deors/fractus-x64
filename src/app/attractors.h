@@ -102,6 +102,7 @@ fractus_status fractus_app_render_lorenz(
     char *error_message,
     size_t error_message_size,
     char *saved_filename,
-    size_t saved_filename_size);
+    size_t saved_filename_size,
+    uint8_t graphic_output_format);
 
 #endif

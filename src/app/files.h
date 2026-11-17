@@ -88,7 +88,8 @@ fractus_status fractus_app_save_current_graphic_file_ex(
     const fractus_framebuffer *framebuffer,
     const fractus_graphic_metadata *metadata,
     char *out_saved_name,
-    size_t out_saved_name_size);
+    size_t out_saved_name_size,
+    uint8_t graphic_output_format);
 
 fractus_status fractus_app_save_next_graphic_if_requested(
     const fractus_platform_context *platform,
@@ -105,7 +106,8 @@ fractus_status fractus_app_save_next_graphic_if_requested_ex(
     char *error_message,
     size_t error_message_size,
     char *out_saved_name,
-    size_t out_saved_name_size);
+    size_t out_saved_name_size,
+    uint8_t graphic_output_format);
 
 fractus_status fractus_app_run_load_graphic_view(
     fractus_framebuffer *ui_framebuffer,

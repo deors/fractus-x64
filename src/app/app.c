@@ -30,8 +30,9 @@ static const fractus_app_menu_entry fractus_app_main_menu_controls[] = {
     {FRACTUS_APP_RECT(327, 270, 629, 290), 3u, 15u, "Crear un gradiente"},
     {FRACTUS_APP_RECT(327, 290, 629, 310), 3u, 15u, "Restaurar la paleta por defecto"},
     {FRACTUS_APP_RECT(327, 334, 629, 354), 5u, 15u, "Resolución de los dibujos"},
-    {FRACTUS_APP_RECT(327, 354, 629, 374), 5u, 15u, "Parámetros por defecto de conjuntos fractales"},
-    {FRACTUS_APP_RECT(327, 374, 629, 394), 5u, 15u, "Restaurar parámetros de los conjuntos"},
+    {FRACTUS_APP_RECT(327, 354, 629, 374), 5u, 15u, "Formato de los dibujos"},
+    {FRACTUS_APP_RECT(327, 374, 629, 394), 5u, 15u, "Parámetros por defecto de conjuntos fractales"},
+    {FRACTUS_APP_RECT(327, 394, 629, 414), 5u, 15u, "Restaurar parámetros de los conjuntos"},
     {FRACTUS_APP_RECT(10, 448, 130, 468), 8u, 0u, "Ayuda"},
     {FRACTUS_APP_RECT(509, 448, 629, 468), 8u, 0u, "Acerca de..."},
     {FRACTUS_APP_RECT(260, 448, 380, 468), 0u, 15u, "Salir del programa"}
@@ -52,7 +53,7 @@ static fractus_status fractus_app_draw_main_menu_frame(
         fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, 320, 30, 0u, "Dibujo de conjuntos fractales") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_group_box(framebuffer, fonts, 5, 60, 318, 275, 8u, 0u, "Tipos de conjuntos") != FRACTUS_STATUS_OK ||
         fractus_ui_draw_group_box(framebuffer, fonts, 322, 60, 635, 316, 8u, 0u, "Gráficos y colores") != FRACTUS_STATUS_OK ||
-        fractus_ui_draw_group_box(framebuffer, fonts, 322, 324, 635, 400, 8u, 0u, "Configuración por defecto") != FRACTUS_STATUS_OK) {
+        fractus_ui_draw_group_box(framebuffer, fonts, 322, 324, 635, 420, 8u, 0u, "Configuración por defecto") != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
@@ -231,6 +232,9 @@ static fractus_status fractus_app_run_main_menu_view(
         } else if (selected_menu == FRACTUS_APP_MENU_VIDEO_INDEX) {
             *config_draft = *legacy_config;
             *view = FRACTUS_APP_VIEW_VIDEO_CONFIG;
+        } else if (selected_menu == FRACTUS_APP_MENU_GRAPHIC_FORMAT_INDEX) {
+            *config_draft = *legacy_config;
+            *view = FRACTUS_APP_VIEW_GRAPHIC_FORMAT_CONFIG;
         } else if (selected_menu == FRACTUS_APP_MENU_FRACTALS_CONFIG_INDEX) {
             *config_draft = *legacy_config;
             fractus_app_init_fractals_default_config_fields(
@@ -1944,6 +1948,18 @@ int fractus_app_run(void)
                     fractus_app_log("runtime: video config failed");
                     running = 0;
                 }
+            } else if (view == FRACTUS_APP_VIEW_GRAPHIC_FORMAT_CONFIG) {
+                if (fractus_app_run_graphic_format_config_view(
+                        &core.ui_framebuffer,
+                        &fonts,
+                        &ui,
+                        &legacy_config,
+                        &config_draft,
+                        cfg_path,
+                        &view) != FRACTUS_STATUS_OK) {
+                    fractus_app_log("runtime: graphic format config failed");
+                    running = 0;
+                }
             } else if (view == FRACTUS_APP_VIEW_FRACTALS_DEFAULT_CONFIG) {
                 if (fractus_app_run_fractals_default_config_view(
                         &core.ui_framebuffer,
@@ -2251,9 +2267,7 @@ int fractus_app_run(void)
                     } else if (k == 'f' || k == 'F') {
                         has_assigned_action = 1;
                     } else if (k == 'g' || k == 'G') {
-                        if (fractus_app_view_is_generated_drawing(view)) {
-                            has_assigned_action = 1;
-                        }
+                        has_assigned_action = 1;
                     } else if (k == 'm' || k == 'M') {
                         if (fractus_app_view_is_generated_drawing(view) ||
                             (view == FRACTUS_APP_VIEW_GRAPHIC && has_loaded_graphic_metadata)) {
@@ -2292,7 +2306,7 @@ int fractus_app_run(void)
 
                 if (ui.key_press_pending &&
                     (ui.key_pressed == 'g' || ui.key_pressed == 'G') &&
-                    fractus_app_view_is_generated_drawing(view)) {
+                    (fractus_app_view_is_generated_drawing(view) || view == FRACTUS_APP_VIEW_GRAPHIC)) {
                     save_next_graphic = 1;
                     render_save_next_graphic = 1;
                     save_requested_this_frame = 1;
@@ -2414,7 +2428,8 @@ int fractus_app_run(void)
                                         sizeof(runtime_error_message),
                                         last_saved_filename,
                                         sizeof(last_saved_filename),
-                                        &render_progress),
+                                        &render_progress,
+                                        legacy_config.graphic_output_format),
                                     &render_feedback,
                                     FRACTUS_APP_VIEW_MANDELBROT_CONFIG,
                                     &mandelbrot_needs_render,
@@ -2458,7 +2473,8 @@ int fractus_app_run(void)
                                     runtime_error_message,
                                     sizeof(runtime_error_message),
                                     last_saved_filename,
-                                    sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
+                                    sizeof(last_saved_filename),
+                                    legacy_config.graphic_output_format) != FRACTUS_STATUS_OK) {
                                 fractus_app_log("runtime: mandelbrot save failed");
                                 running = 0;
                             }
@@ -2549,7 +2565,8 @@ int fractus_app_run(void)
                                         sizeof(runtime_error_message),
                                         last_saved_filename,
                                         sizeof(last_saved_filename),
-                                        &render_progress),
+                                        &render_progress,
+                                        legacy_config.graphic_output_format),
                                     &render_feedback,
                                     FRACTUS_APP_VIEW_MANDELBROT_DEM_CONFIG,
                                     &mandelbrot_dem_needs_render,
@@ -2593,7 +2610,8 @@ int fractus_app_run(void)
                                     runtime_error_message,
                                     sizeof(runtime_error_message),
                                     last_saved_filename,
-                                    sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
+                                    sizeof(last_saved_filename),
+                                    legacy_config.graphic_output_format) != FRACTUS_STATUS_OK) {
                                 fractus_app_log("runtime: mandelbrot dem save failed");
                                 running = 0;
                             }
@@ -2684,7 +2702,8 @@ int fractus_app_run(void)
                                         sizeof(runtime_error_message),
                                         last_saved_filename,
                                         sizeof(last_saved_filename),
-                                        &render_progress),
+                                        &render_progress,
+                                        legacy_config.graphic_output_format),
                                     &render_feedback,
                                     FRACTUS_APP_VIEW_JULIA_CONFIG,
                                     &julia_needs_render,
@@ -2730,7 +2749,8 @@ int fractus_app_run(void)
                                     runtime_error_message,
                                     sizeof(runtime_error_message),
                                     last_saved_filename,
-                                    sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
+                                    sizeof(last_saved_filename),
+                                    legacy_config.graphic_output_format) != FRACTUS_STATUS_OK) {
                                 fractus_app_log("runtime: julia save failed");
                                 running = 0;
                             }
@@ -2821,7 +2841,8 @@ int fractus_app_run(void)
                                         sizeof(runtime_error_message),
                                         last_saved_filename,
                                         sizeof(last_saved_filename),
-                                        &render_progress),
+                                        &render_progress,
+                                        legacy_config.graphic_output_format),
                                     &render_feedback,
                                     FRACTUS_APP_VIEW_JULIA_DEM_CONFIG,
                                     &julia_dem_needs_render,
@@ -2867,7 +2888,8 @@ int fractus_app_run(void)
                                     runtime_error_message,
                                     sizeof(runtime_error_message),
                                     last_saved_filename,
-                                    sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
+                                    sizeof(last_saved_filename),
+                                    legacy_config.graphic_output_format) != FRACTUS_STATUS_OK) {
                                 fractus_app_log("runtime: julia dem save failed");
                                 running = 0;
                             }
@@ -2958,7 +2980,8 @@ int fractus_app_run(void)
                                         sizeof(runtime_error_message),
                                         last_saved_filename,
                                         sizeof(last_saved_filename),
-                                        &render_progress),
+                                        &render_progress,
+                                        legacy_config.graphic_output_format),
                                     &render_feedback,
                                     FRACTUS_APP_VIEW_BIOMORPH_CONFIG,
                                     &biomorph_needs_render,
@@ -3005,7 +3028,8 @@ int fractus_app_run(void)
                                     runtime_error_message,
                                     sizeof(runtime_error_message),
                                     last_saved_filename,
-                                    sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
+                                    sizeof(last_saved_filename),
+                                    legacy_config.graphic_output_format) != FRACTUS_STATUS_OK) {
                                 fractus_app_log("runtime: biomorph save failed");
                                 running = 0;
                             }
@@ -3065,7 +3089,8 @@ int fractus_app_run(void)
                                     runtime_error_message,
                                     sizeof(runtime_error_message),
                                     last_saved_filename,
-                                    sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
+                                    sizeof(last_saved_filename),
+                                    legacy_config.graphic_output_format) != FRACTUS_STATUS_OK) {
                                 fractus_app_log("runtime: plasma rectangular render failed");
                                 running = 0;
                             } else {
@@ -3085,7 +3110,8 @@ int fractus_app_run(void)
                                     runtime_error_message,
                                     sizeof(runtime_error_message),
                                     last_saved_filename,
-                                    sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
+                                    sizeof(last_saved_filename),
+                                    legacy_config.graphic_output_format) != FRACTUS_STATUS_OK) {
                                 fractus_app_log("runtime: plasma rectangular save failed");
                                 running = 0;
                             }
@@ -3142,7 +3168,8 @@ int fractus_app_run(void)
                                     runtime_error_message,
                                     sizeof(runtime_error_message),
                                     last_saved_filename,
-                                    sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
+                                    sizeof(last_saved_filename),
+                                    legacy_config.graphic_output_format) != FRACTUS_STATUS_OK) {
                                 fractus_app_log("runtime: circular plasma render failed");
                                 running = 0;
                             } else {
@@ -3162,7 +3189,8 @@ int fractus_app_run(void)
                                     runtime_error_message,
                                     sizeof(runtime_error_message),
                                     last_saved_filename,
-                                    sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
+                                    sizeof(last_saved_filename),
+                                    legacy_config.graphic_output_format) != FRACTUS_STATUS_OK) {
                                 fractus_app_log("runtime: circular plasma save failed");
                                 running = 0;
                             }
@@ -3219,7 +3247,8 @@ int fractus_app_run(void)
                                     runtime_error_message,
                                     sizeof(runtime_error_message),
                                     last_saved_filename,
-                                    sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
+                                    sizeof(last_saved_filename),
+                                    legacy_config.graphic_output_format) != FRACTUS_STATUS_OK) {
                                 fractus_app_log("runtime: lorenz render failed");
                                 running = 0;
                             } else {
@@ -3239,7 +3268,8 @@ int fractus_app_run(void)
                                     runtime_error_message,
                                     sizeof(runtime_error_message),
                                     last_saved_filename,
-                                    sizeof(last_saved_filename)) != FRACTUS_STATUS_OK) {
+                                    sizeof(last_saved_filename),
+                                    legacy_config.graphic_output_format) != FRACTUS_STATUS_OK) {
                                 fractus_app_log("runtime: lorenz save failed");
                                 running = 0;
                             }
@@ -3272,15 +3302,44 @@ int fractus_app_run(void)
                 } else if (view == FRACTUS_APP_VIEW_GRAPHIC) {
                     present_framebuffer = &core.drawing_framebuffer;
                     present_is_drawing = 1;
-                    if (drawing_footer_visible || (has_loaded_graphic_metadata && graphic_metadata_panel_visible)) {
+                    if (render_save_next_graphic) {
+                        if (fractus_app_save_next_graphic_if_requested_ex(
+                                &platform,
+                                &core.drawing_framebuffer,
+                                has_loaded_graphic_metadata ? &loaded_graphic_metadata : NULL,
+                                &render_save_next_graphic,
+                                runtime_error_message,
+                                sizeof(runtime_error_message),
+                                last_saved_filename,
+                                sizeof(last_saved_filename),
+                                legacy_config.graphic_output_format) != FRACTUS_STATUS_OK) {
+                            fractus_app_log("runtime: loaded graphic save failed");
+                            running = 0;
+                        }
+                    }
+                    if (running && (drawing_footer_visible || (has_loaded_graphic_metadata && graphic_metadata_panel_visible))) {
                         if (fractus_app_copy_framebuffer_for_overlay(&zone_overlay_framebuffer, &core.drawing_framebuffer) != FRACTUS_STATUS_OK) {
                             fractus_app_log("runtime: graphic overlay copy failed");
                             running = 0;
                         } else {
                             if (drawing_footer_visible) {
-                                const char *footer_text = (has_loaded_graphic_metadata)
-                                    ? "ESC o botón derecho: menú - M: metadatos - F: flujo - I: información"
-                                    : "ESC o botón derecho: menú - F: flujo - I: información";
+                                char footer_buf[256];
+                                const char *footer_text;
+
+                                if (last_saved_filename[0] != '\0') {
+                                    (void)snprintf(
+                                        footer_buf,
+                                        sizeof(footer_buf),
+                                        has_loaded_graphic_metadata
+                                            ? "Grabado %s - ESC o botón derecho: menú - G: grabar - M: metadatos - F: flujo - I: información"
+                                            : "Grabado %s - ESC o botón derecho: menú - G: grabar - F: flujo - I: información",
+                                        last_saved_filename);
+                                    footer_text = footer_buf;
+                                } else {
+                                    footer_text = has_loaded_graphic_metadata
+                                        ? "ESC o botón derecho: menú - G: grabar - M: metadatos - F: flujo - I: información"
+                                        : "ESC o botón derecho: menú - G: grabar - F: flujo - I: información";
+                                }
                                 (void)fractus_app_draw_drawing_footer(&zone_overlay_framebuffer, &fonts, footer_text);
                             }
                             if (has_loaded_graphic_metadata && graphic_metadata_panel_visible) {
@@ -3365,6 +3424,7 @@ int fractus_app_run(void)
             } else if (view == FRACTUS_APP_VIEW_GRAPHIC && previous_view != FRACTUS_APP_VIEW_GRAPHIC) {
                 drawing_presented_once = 1;
                 has_render_time = 0;
+                last_saved_filename[0] = '\0';
                 graphic_metadata_panel_visible = 0;
                 drawing_footer_visible = 0;
                 drawing_hud_visible = 0;

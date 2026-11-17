@@ -336,6 +336,9 @@ static const int32_t fcfg_y0 = 66;
 static const int32_t vcfg_x0 = 160;
 static const int32_t vcfg_y0 = 86;
 
+static const int32_t gfmt_x0 = 160;
+static const int32_t gfmt_y0 = 157;
+
 static size_t fractus_app_build_fractals_config_entries(
     fractus_app_menu_entry *entries,
     size_t capacity)
@@ -795,6 +798,92 @@ fractus_status fractus_app_run_video_config_view(
             *view = FRACTUS_APP_VIEW_MAIN_MENU;
         } else if (selected_menu >= 0 && selected_menu < (int)FRACTUS_DRAWING_VIDEO_MODE_COUNT) {
             config_draft->drawing_video_mode = video_mode_order[selected_menu];
+        }
+    }
+
+    return FRACTUS_STATUS_OK;
+}
+
+fractus_status fractus_app_run_graphic_format_config_view(
+    fractus_framebuffer *framebuffer,
+    const fractus_font_library *fonts,
+    fractus_ui_context *ui,
+    fractus_legacy_config *legacy_config,
+    fractus_legacy_config *config_draft,
+    const char *cfg_path,
+    fractus_app_view *view)
+{
+    const int32_t x0 = gfmt_x0;
+    const int32_t y0 = gfmt_y0;
+    const fractus_app_menu_entry dialog_entries[] = {
+        {FRACTUS_APP_RECT(x0 + 15, y0 + 48, x0 + 304, y0 + 63), 8u, 0u, "DRSG (legacy)"},
+        {FRACTUS_APP_RECT(x0 + 15, y0 + 66, x0 + 304, y0 + 81), 8u, 0u, "PNG"},
+        {FRACTUS_APP_RECT(x0 + 15, y0 + 84, x0 + 304, y0 + 99), 8u, 0u, "BMP"},
+        {FRACTUS_APP_RECT(x0 + 50, y0 + 135, x0 + 150, y0 + 155), 8u, 0u, "Guardar"},
+        {FRACTUS_APP_RECT(x0 + 170, y0 + 135, x0 + 270, y0 + 155), 0u, 15u, "Cancelar"}
+    };
+    fractus_ui_menu_option dialog_options[FRACTUS_APP_ARRAY_COUNT(dialog_entries)];
+    fractus_ui_radio_option format_options[3];
+    size_t i;
+    size_t dialog_entry_count = FRACTUS_APP_ARRAY_COUNT(dialog_entries);
+    const int save_button = 3;
+    const int cancel_button = 4;
+    int active_index;
+    int selected_menu = -1;
+    int cancelled = 0;
+    int selected_format;
+
+    if (framebuffer == NULL || fonts == NULL || ui == NULL ||
+        legacy_config == NULL || config_draft == NULL || view == NULL) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    fractus_app_build_options_from_entries(dialog_options, dialog_entries, dialog_entry_count);
+    active_index = fractus_ui_active_menu_index(ui, dialog_options, dialog_entry_count);
+    selected_format = (int)fractus_graphic_output_format_normalize(config_draft->graphic_output_format);
+
+    for (i = 0u; i < 3u; ++i) {
+        format_options[i].bounds = dialog_entries[i].bounds;
+        format_options[i].label = dialog_entries[i].label;
+    }
+
+    if (fractus_app_render_main_menu(framebuffer, fonts, -1) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_window(framebuffer, x0, y0, x0 + 319, y0 + 165) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_ARIAL, x0 + 160, y0 + 4, 15u, "Formato de los dibujos") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_group_box(framebuffer, fonts, x0 + 5, y0 + 32, x0 + 314, y0 + 109, 8u, 0u, "Formato de salida") != FRACTUS_STATUS_OK) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    if (fractus_ui_draw_radio_list(
+            framebuffer,
+            fonts,
+            format_options,
+            3u,
+            selected_format,
+            (active_index >= 0 && active_index < 3) ? active_index : -1) != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_text_centered(framebuffer, fonts, FRACTUS_FONT_SMALL, x0 + 160, y0 + 117, 0u, "El formato elegido se guardará en fractus.cfg.") != FRACTUS_STATUS_OK ||
+        fractus_ui_draw_button_list(
+            framebuffer,
+            fonts,
+            &dialog_entries[save_button],
+            2u,
+            (active_index >= save_button) ? active_index - save_button : -1) != FRACTUS_STATUS_OK) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    if (fractus_ui_menu(ui, dialog_options, dialog_entry_count, &selected_menu, &cancelled)) {
+        if (cancelled || selected_menu == cancel_button) {
+            *view = FRACTUS_APP_VIEW_MAIN_MENU;
+        } else if (selected_menu == save_button) {
+            *legacy_config = *config_draft;
+            fractus_app_capture_palette_to_config(framebuffer, legacy_config);
+            if (cfg_path != NULL && cfg_path[0] != '\0' &&
+                fractus_app_save_legacy_config(cfg_path, framebuffer, legacy_config) != FRACTUS_STATUS_OK) {
+                fractus_app_log("runtime: saving fractus.cfg failed");
+            }
+            *view = FRACTUS_APP_VIEW_MAIN_MENU;
+        } else if (selected_menu >= 0 && selected_menu < 3) {
+            config_draft->graphic_output_format = (uint8_t)selected_menu;
         }
     }
 

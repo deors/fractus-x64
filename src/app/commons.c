@@ -223,6 +223,71 @@ fractus_status fractus_app_resolve_numbered_write_path(
     return FRACTUS_STATUS_UNSUPPORTED;
 }
 
+fractus_status fractus_app_resolve_graphic_write_path(
+    const fractus_platform_context *platform,
+    uint8_t graphic_output_format,
+    char *buffer,
+    size_t buffer_size)
+{
+    static const char *extensions[3] = {".drsg", ".png", ".bmp"};
+    char directory_path[512];
+    const char *chosen;
+    uint32_t index;
+
+    if (platform == NULL || buffer == NULL || buffer_size == 0u) {
+        return FRACTUS_STATUS_INVALID_ARGUMENT;
+    }
+
+    chosen = fractus_graphic_output_extension(graphic_output_format);
+    if (fractus_formats_resolve_legacy_directory(platform, "dibujos", directory_path, sizeof(directory_path)) != FRACTUS_STATUS_OK) {
+        return FRACTUS_STATUS_ERROR;
+    }
+
+    for (index = 1u; index <= FRACTUS_APP_NUMBERED_FILE_LIMIT; ++index) {
+        int taken = 0;
+        int have_chosen = 0;
+        char chosen_path[512];
+        size_t ext_index;
+
+        chosen_path[0] = '\0';
+        for (ext_index = 0u; ext_index < 3u; ++ext_index) {
+            char file_name[32];
+            char candidate_path[512];
+            int written = snprintf(file_name, sizeof(file_name), "fractus%04u%s", (unsigned)index, extensions[ext_index]);
+
+            if (written < 0 || (size_t)written >= sizeof(file_name)) {
+                return FRACTUS_STATUS_ERROR;
+            }
+            if (fractus_formats_join_directory_path(
+                    directory_path,
+                    file_name,
+                    '/',
+                    candidate_path,
+                    sizeof(candidate_path)) != FRACTUS_STATUS_OK) {
+                return FRACTUS_STATUS_ERROR;
+            }
+            if (strcmp(extensions[ext_index], chosen) == 0) {
+                if (fractus_formats_copy_path(candidate_path, chosen_path, sizeof(chosen_path)) != FRACTUS_STATUS_OK) {
+                    return FRACTUS_STATUS_ERROR;
+                }
+                have_chosen = 1;
+            }
+            if (fractus_formats_file_exists(candidate_path)) {
+                taken = 1;
+            }
+        }
+
+        if (!taken) {
+            if (!have_chosen) {
+                return FRACTUS_STATUS_ERROR;
+            }
+            return fractus_formats_copy_path(chosen_path, buffer, buffer_size);
+        }
+    }
+
+    return FRACTUS_STATUS_UNSUPPORTED;
+}
+
 fractus_status fractus_app_apply_palette(
     fractus_framebuffer *framebuffer,
     const fractus_palette *palette)

@@ -359,7 +359,8 @@ fractus_status fractus_app_render_plasma_rectangular(
     char *error_message,
     size_t error_message_size,
     char *saved_filename,
-    size_t saved_filename_size)
+    size_t saved_filename_size,
+    uint8_t graphic_output_format)
 {
     fractus_graphic_metadata metadata;
 
@@ -378,7 +379,8 @@ fractus_status fractus_app_render_plasma_rectangular(
             error_message,
             error_message_size,
             saved_filename,
-            saved_filename_size) != FRACTUS_STATUS_OK) {
+            saved_filename_size,
+            graphic_output_format) != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 
@@ -597,7 +599,8 @@ fractus_status fractus_app_render_plasma_circular(
     char *error_message,
     size_t error_message_size,
     char *saved_filename,
-    size_t saved_filename_size)
+    size_t saved_filename_size,
+    uint8_t graphic_output_format)
 {
     fractus_graphic_metadata metadata;
 
@@ -616,7 +619,8 @@ fractus_status fractus_app_render_plasma_circular(
             error_message,
             error_message_size,
             saved_filename,
-            saved_filename_size) != FRACTUS_STATUS_OK) {
+            saved_filename_size,
+            graphic_output_format) != FRACTUS_STATUS_OK) {
         return FRACTUS_STATUS_ERROR;
     }
 

@@ -11,6 +11,12 @@
 #define FRACTUS_LEGACY_PALETTE_DATA_COUNT FRACTUS_PALETTE_SPAN
 #define FRACTUS_LEGACY_GRAPHIC_HEADER_WORD_COUNT 121u
 
+typedef enum fractus_graphic_output_format {
+    FRACTUS_GRAPHIC_OUTPUT_DRSG = 0,
+    FRACTUS_GRAPHIC_OUTPUT_PNG = 1,
+    FRACTUS_GRAPHIC_OUTPUT_BMP = 2
+} fractus_graphic_output_format;
+
 typedef enum fractus_drawing_video_mode {
     FRACTUS_DRAWING_VIDEO_MODE_WINDOW_640X480 = 0,
     FRACTUS_DRAWING_VIDEO_MODE_WINDOW_800X600,
@@ -37,7 +43,11 @@ typedef struct fractus_legacy_config {
     uint32_t plasma_circular_seed;
     fractus_color_rgba8 palette[FRACTUS_LEGACY_PALETTE_DATA_COUNT];
     fractus_color_rgba8 default_palette[FRACTUS_LEGACY_PALETTE_DATA_COUNT];
+    uint8_t graphic_output_format;
 } fractus_legacy_config;
+
+uint8_t fractus_graphic_output_format_normalize(uint8_t format);
+const char *fractus_graphic_output_extension(uint8_t format);
 
 fractus_status fractus_legacy_config_init_default(fractus_legacy_config *config);
 fractus_status fractus_legacy_config_load(
@@ -67,6 +77,16 @@ fractus_status fractus_legacy_bmp_save(
     const char *path,
     const fractus_indexed_image *image,
     const fractus_palette *palette);
+fractus_status fractus_indexed_graphic_load(
+    const char *path,
+    fractus_indexed_image *image,
+    fractus_palette *palette,
+    uint16_t *video_mode);
+fractus_status fractus_indexed_graphic_save(
+    const char *path,
+    const fractus_indexed_image *image,
+    const fractus_palette *palette,
+    uint8_t format);
 
 int fractus_formats_file_exists(const char *path);
 int fractus_formats_directory_exists(const char *path);

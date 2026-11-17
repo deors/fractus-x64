@@ -16,6 +16,7 @@ static int test_legacy_config_defaults(void)
     TEST_ASSERT_EQUAL_INT(10, config.biomorph_cutoff, "Default biomorph cutoff mismatch");
     TEST_ASSERT_EQUAL_INT(1337, (int)config.plasma_rectangular_seed, "Default rectangular plasma seed mismatch");
     TEST_ASSERT_EQUAL_INT(7331, (int)config.plasma_circular_seed, "Default circular plasma seed mismatch");
+    TEST_ASSERT_EQUAL_INT(FRACTUS_GRAPHIC_OUTPUT_DRSG, config.graphic_output_format, "Default graphic format mismatch");
 
     TEST_ASSERT_EQUAL_INT(121, config.default_palette[0].r, "Default palette entry 0 R mismatch");
     TEST_ASSERT_EQUAL_INT(61, config.default_palette[0].g, "Default palette entry 0 G mismatch");
@@ -46,6 +47,7 @@ static int test_legacy_config_save_and_load(void)
     original.plasma_rectangular_seed = 4242u;
     original.plasma_circular_seed = 9999u;
     original.drawing_video_mode = 2;
+    original.graphic_output_format = (uint8_t)FRACTUS_GRAPHIC_OUTPUT_PNG;
 
     for (i = 0; i < FRACTUS_LEGACY_PALETTE_DATA_COUNT; ++i) {
         original.palette[i].r = (uint8_t)(i & 0xFF);
@@ -69,6 +71,7 @@ static int test_legacy_config_save_and_load(void)
     TEST_ASSERT_EQUAL_INT((int)original.plasma_rectangular_seed, (int)loaded.plasma_rectangular_seed, "Saved rectangular seed mismatch");
     TEST_ASSERT_EQUAL_INT((int)original.plasma_circular_seed, (int)loaded.plasma_circular_seed, "Saved circular seed mismatch");
     TEST_ASSERT_EQUAL_INT(original.drawing_video_mode, loaded.drawing_video_mode, "Saved video mode mismatch");
+    TEST_ASSERT_EQUAL_INT(FRACTUS_GRAPHIC_OUTPUT_PNG, loaded.graphic_output_format, "Saved graphic format mismatch");
 
     /* Palette round-trip within 6-bit VGA DAC quantization tolerance (+-5 levels) */
     for (i = 0; i < FRACTUS_LEGACY_PALETTE_DATA_COUNT; ++i) {
@@ -331,11 +334,113 @@ static int test_graphic_video_mode_roundtrip(void)
     return 1;
 }
 
+static int test_legacy_config_format_tail(void)
+{
+    fractus_legacy_config original;
+    fractus_legacy_config loaded;
+    const char *full_path = "test_fractus_format_full.cfg";
+    const char *short_path = "test_fractus_format_short.cfg";
+    uint8_t bytes[4096];
+    FILE *file;
+    size_t read_count;
+    size_t written;
+
+    TEST_ASSERT(fractus_legacy_config_init_default(&original) == FRACTUS_STATUS_OK, "Format tail init failed");
+    original.iterations = 321;
+    original.plasma_circular_seed = 4242u;
+    original.graphic_output_format = (uint8_t)FRACTUS_GRAPHIC_OUTPUT_BMP;
+    TEST_ASSERT(fractus_legacy_config_save(full_path, &original) == FRACTUS_STATUS_OK, "Format tail save failed");
+
+    file = fopen(full_path, "rb");
+    TEST_ASSERT(file != NULL, "Format tail read failed");
+    read_count = fread(bytes, 1u, sizeof(bytes), file);
+    fclose(file);
+    TEST_ASSERT(read_count > 1u && read_count < sizeof(bytes), "Format tail size unexpected");
+
+    file = fopen(short_path, "wb");
+    TEST_ASSERT(file != NULL, "Format tail short create failed");
+    written = fwrite(bytes, 1u, read_count - 1u, file);
+    fclose(file);
+    TEST_ASSERT(written == read_count - 1u, "Format tail short write failed");
+    TEST_ASSERT(fractus_legacy_config_load(short_path, &loaded) == FRACTUS_STATUS_OK, "Short config load failed");
+    TEST_ASSERT_EQUAL_INT(FRACTUS_GRAPHIC_OUTPUT_DRSG, loaded.graphic_output_format, "Short config should keep drsg");
+    TEST_ASSERT_EQUAL_INT(321, loaded.iterations, "Short config iterations mismatch");
+    TEST_ASSERT_EQUAL_INT(4242, (int)loaded.plasma_circular_seed, "Short config circular seed mismatch");
+    TEST_ASSERT_EQUAL_INT(original.drawing_video_mode, loaded.drawing_video_mode, "Short config video mode mismatch");
+
+    file = fopen(full_path, "r+b");
+    TEST_ASSERT(file != NULL, "Format tail reopen failed");
+    TEST_ASSERT(fseek(file, -1, SEEK_END) == 0, "Format tail seek failed");
+    TEST_ASSERT(fputc(9, file) == 9, "Format tail unknown byte failed");
+    fclose(file);
+    TEST_ASSERT(fractus_legacy_config_load(full_path, &loaded) == FRACTUS_STATUS_OK, "Unknown format load failed");
+    TEST_ASSERT_EQUAL_INT(FRACTUS_GRAPHIC_OUTPUT_DRSG, loaded.graphic_output_format, "Unknown format should fall back to drsg");
+    TEST_ASSERT_EQUAL_INT(321, loaded.iterations, "Unknown format iterations mismatch");
+    TEST_ASSERT_EQUAL_INT(4242, (int)loaded.plasma_circular_seed, "Unknown format circular seed mismatch");
+
+    remove(full_path);
+    remove(short_path);
+    return 1;
+}
+
+static int indexed_roundtrip(const char *path, uint8_t format, uint32_t width, uint32_t height, int expected_mode)
+{
+    fractus_indexed_image image;
+    fractus_indexed_image loaded;
+    fractus_palette palette;
+    fractus_palette loaded_palette;
+    fractus_size_u32 size;
+    fractus_color_rgba8 color = {12u, 34u, 56u, 255u};
+    uint16_t video_mode = 0xffffu;
+
+    size.width = width;
+    size.height = height;
+    memset(&loaded, 0, sizeof(loaded));
+    TEST_ASSERT(fractus_indexed_image_init(&image, size) == FRACTUS_STATUS_OK, "Indexed init failed");
+    TEST_ASSERT(fractus_palette_init_default(&palette) == FRACTUS_STATUS_OK, "Indexed palette init failed");
+    TEST_ASSERT(fractus_palette_set_entry(&palette, 16u, color) == FRACTUS_STATUS_OK, "Indexed palette set failed");
+    image.pixels[0] = 16u;
+    image.pixels[(size_t)(height - 1u) * image.pitch_pixels + (width - 1u)] = 200u;
+
+    TEST_ASSERT(fractus_indexed_graphic_save(path, &image, &palette, format) == FRACTUS_STATUS_OK, "Indexed save failed");
+    TEST_ASSERT(fractus_indexed_graphic_load(path, &loaded, &loaded_palette, &video_mode) == FRACTUS_STATUS_OK, "Indexed load failed");
+    TEST_ASSERT_EQUAL_INT((int)width, (int)loaded.size.width, "Indexed width mismatch");
+    TEST_ASSERT_EQUAL_INT((int)height, (int)loaded.size.height, "Indexed height mismatch");
+    TEST_ASSERT_EQUAL_INT(16, loaded.pixels[0], "Indexed origin mismatch");
+    TEST_ASSERT_EQUAL_INT(200, loaded.pixels[(size_t)(height - 1u) * loaded.pitch_pixels + (width - 1u)], "Indexed corner mismatch");
+    if (format != (uint8_t)FRACTUS_GRAPHIC_OUTPUT_DRSG) {
+        TEST_ASSERT_EQUAL_INT(12, loaded_palette.entries[16].r, "Indexed palette R mismatch");
+        TEST_ASSERT_EQUAL_INT(34, loaded_palette.entries[16].g, "Indexed palette G mismatch");
+        TEST_ASSERT_EQUAL_INT(56, loaded_palette.entries[16].b, "Indexed palette B mismatch");
+    }
+    TEST_ASSERT_EQUAL_INT(expected_mode, (int)video_mode, "Indexed video mode mismatch");
+
+    fractus_indexed_image_shutdown(&loaded);
+    fractus_indexed_image_shutdown(&image);
+    remove(path);
+    return 1;
+}
+
+static int test_indexed_graphic_roundtrip(void)
+{
+    if (!indexed_roundtrip("test_indexed_temp.drsg", (uint8_t)FRACTUS_GRAPHIC_OUTPUT_DRSG, 640u, 480u, 2) ||
+        !indexed_roundtrip("test_indexed_temp.png", (uint8_t)FRACTUS_GRAPHIC_OUTPUT_PNG, 80u, 60u, 0) ||
+        !indexed_roundtrip("test_indexed_temp.png", (uint8_t)FRACTUS_GRAPHIC_OUTPUT_PNG, 100u, 50u, 0) ||
+        !indexed_roundtrip("test_indexed_temp.bmp", (uint8_t)FRACTUS_GRAPHIC_OUTPUT_BMP, 80u, 60u, 0) ||
+        !indexed_roundtrip("test_indexed_temp.bmp", (uint8_t)FRACTUS_GRAPHIC_OUTPUT_BMP, 81u, 3u, 0)) {
+        return 0;
+    }
+
+    return 1;
+}
+
 int main(void)
 {
     printf("=== RUNNING FORMATS & CONFIG TESTS ===\n");
     TEST_RUN(test_legacy_config_defaults);
     TEST_RUN(test_legacy_config_save_and_load);
+    TEST_RUN(test_legacy_config_format_tail);
+    TEST_RUN(test_indexed_graphic_roundtrip);
     TEST_RUN(test_palette_operations);
     TEST_RUN(test_bmp_save_and_formats_roundtrip);
     TEST_RUN(test_graphic_metadata_json_save);

@@ -88,7 +88,8 @@ fractus_status fractus_app_render_mandelbrot(
     size_t error_message_size,
     char *saved_filename,
     size_t saved_filename_size,
-    const fractus_render_progress *progress);
+    const fractus_render_progress *progress,
+    uint8_t graphic_output_format);
 
 fractus_status fractus_app_render_mandelbrot_dem(
     const fractus_platform_context *platform,
@@ -100,6 +101,7 @@ fractus_status fractus_app_render_mandelbrot_dem(
     size_t error_message_size,
     char *saved_filename,
     size_t saved_filename_size,
-    const fractus_render_progress *progress);
+    const fractus_render_progress *progress,
+    uint8_t graphic_output_format);
 
 #endif

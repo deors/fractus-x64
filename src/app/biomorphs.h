@@ -81,6 +81,7 @@ fractus_status fractus_app_render_biomorph(
     size_t error_message_size,
     char *saved_filename,
     size_t saved_filename_size,
-    const fractus_render_progress *progress);
+    const fractus_render_progress *progress,
+    uint8_t graphic_output_format);
 
 #endif

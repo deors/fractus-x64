@@ -106,6 +106,15 @@ fractus_status fractus_app_run_fractals_default_config_view(
     fractus_ui_numeric_field *plasma_circ_seed_field,
     fractus_app_view *view);
 
+fractus_status fractus_app_run_graphic_format_config_view(
+    fractus_framebuffer *framebuffer,
+    const fractus_font_library *fonts,
+    fractus_ui_context *ui,
+    fractus_legacy_config *legacy_config,
+    fractus_legacy_config *config_draft,
+    const char *cfg_path,
+    fractus_app_view *view);
+
 fractus_status fractus_app_run_video_config_view(
     fractus_framebuffer *framebuffer,
     const fractus_font_library *fonts,

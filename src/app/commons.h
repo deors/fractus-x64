@@ -30,11 +30,12 @@
 #define FRACTUS_APP_MENU_GRADIENT_PALETTE_INDEX 19
 #define FRACTUS_APP_MENU_RESTORE_PALETTE_INDEX 20
 #define FRACTUS_APP_MENU_VIDEO_INDEX 21
-#define FRACTUS_APP_MENU_FRACTALS_CONFIG_INDEX 22
-#define FRACTUS_APP_MENU_RESTORE_FRACTALS_CONFIG_INDEX 23
-#define FRACTUS_APP_MENU_HELP_INDEX 24
-#define FRACTUS_APP_MENU_ABOUT_INDEX 25
-#define FRACTUS_APP_MENU_EXIT_INDEX 26
+#define FRACTUS_APP_MENU_GRAPHIC_FORMAT_INDEX 22
+#define FRACTUS_APP_MENU_FRACTALS_CONFIG_INDEX 23
+#define FRACTUS_APP_MENU_RESTORE_FRACTALS_CONFIG_INDEX 24
+#define FRACTUS_APP_MENU_HELP_INDEX 25
+#define FRACTUS_APP_MENU_ABOUT_INDEX 26
+#define FRACTUS_APP_MENU_EXIT_INDEX 27
 #define FRACTUS_APP_PALETTE_GRID_X 51
 #define FRACTUS_APP_PALETTE_GRID_Y 80
 #define FRACTUS_APP_PALETTE_CELL_WIDTH 28
@@ -74,6 +75,7 @@ typedef enum fractus_app_view {
     FRACTUS_APP_VIEW_ATTRACTORS_CONFIG,
     FRACTUS_APP_VIEW_LORENZ,
     FRACTUS_APP_VIEW_VIDEO_CONFIG,
+    FRACTUS_APP_VIEW_GRAPHIC_FORMAT_CONFIG,
     FRACTUS_APP_VIEW_FRACTALS_DEFAULT_CONFIG,
     FRACTUS_APP_VIEW_LOAD_GRAPHIC,
     FRACTUS_APP_VIEW_LOAD_PALETTE,
@@ -170,6 +172,11 @@ fractus_status fractus_app_resolve_numbered_write_path(
     const fractus_platform_context *platform,
     const char *directory_name,
     const char *extension,
+    char *buffer,
+    size_t buffer_size);
+fractus_status fractus_app_resolve_graphic_write_path(
+    const fractus_platform_context *platform,
+    uint8_t graphic_output_format,
     char *buffer,
     size_t buffer_size);
 
