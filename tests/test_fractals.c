@@ -165,6 +165,13 @@ static int test_palette_cycling(void)
     TEST_ASSERT_EQUAL_INT(original_entry_16.r, fb.palette.entries[FRACTUS_PALETTE_OFFSET].r, "Entry 16 should match original after full loop");
     TEST_ASSERT_EQUAL_INT(original_entry_255.r, fb.palette.entries[255].r, "Entry 255 should match original after full loop");
 
+    original_entry_16 = fb.palette.entries[FRACTUS_PALETTE_OFFSET];
+    original_entry_255 = fb.palette.entries[FRACTUS_PALETTE_OFFSET + 1u];
+    TEST_ASSERT(fractus_framebuffer_cycle_palette(&fb, FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN, -1) == FRACTUS_STATUS_OK, "Cycle palette backward failed");
+    TEST_ASSERT_EQUAL_INT(original_entry_0.r, fb.palette.entries[0].r, "Entry 0 should stay unchanged when cycling backward");
+    TEST_ASSERT_EQUAL_INT(original_entry_255.r, fb.palette.entries[FRACTUS_PALETTE_OFFSET].r, "Entry 16 should have old entry 17 when cycling backward");
+    TEST_ASSERT_EQUAL_INT(original_entry_16.r, fb.palette.entries[255].r, "Entry 255 should have old entry 16 when cycling backward");
+
     /* Test invalid arguments */
     TEST_ASSERT(fractus_framebuffer_cycle_palette(NULL, FRACTUS_PALETTE_OFFSET, FRACTUS_PALETTE_SPAN, 1) == FRACTUS_STATUS_INVALID_ARGUMENT, "Null check failed");
     TEST_ASSERT(fractus_framebuffer_cycle_palette(&fb, FRACTUS_PALETTE_OFFSET, 1u, 1) == FRACTUS_STATUS_INVALID_ARGUMENT, "Span < 2 check failed");

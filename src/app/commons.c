@@ -868,9 +868,9 @@ fractus_status fractus_app_draw_drawing_footer_ex(
 
     if (saved_filename != NULL && saved_filename[0] != '\0') {
         if (allow_selection) {
-            (void)snprintf(footer_buf, sizeof(footer_buf), "Grabado %s - ESC: menú - S: sel. zona - derecho: desplazar - rueda: zoom - X: retroceder - Z: avanzar - M: metadatos - F: flujo - I: información", saved_filename);
+            (void)snprintf(footer_buf, sizeof(footer_buf), "Grabado %s - ESC: menú - S: sel. zona - derecho: desplazar - rueda: zoom - X: retroceder - Z: avanzar - M: metadatos - F+/- Retroceso: flujo - I: información", saved_filename);
         } else {
-            (void)snprintf(footer_buf, sizeof(footer_buf), "Grabado %s - ESC o botón derecho: menú - M: metadatos - F: flujo - I: información", saved_filename);
+            (void)snprintf(footer_buf, sizeof(footer_buf), "Grabado %s - ESC o botón derecho: menú - M: metadatos - F+/- Retroceso: flujo - I: información", saved_filename);
         }
         text = footer_buf;
     }

@@ -21,6 +21,8 @@ typedef enum fractus_platform_key {
     FRACTUS_PLATFORM_KEY_RETURN = 13u,
     FRACTUS_PLATFORM_KEY_ESCAPE = 27u,
     FRACTUS_PLATFORM_KEY_DELETE = 127u,
+    FRACTUS_PLATFORM_KEY_KP_MINUS = 0x40000056u,
+    FRACTUS_PLATFORM_KEY_KP_PLUS = 0x40000057u,
     FRACTUS_PLATFORM_KEY_LEFT = 0x40000050u,
     FRACTUS_PLATFORM_KEY_RIGHT = 0x4000004fu,
     FRACTUS_PLATFORM_KEY_HOME = 0x4000004au,
@@ -69,6 +71,7 @@ typedef struct fractus_platform_event {
         } mouse_wheel;
         struct {
             uint32_t keycode;
+            int repeat;
         } key;
         struct {
             char text[32];

@@ -285,10 +285,12 @@ static int fractus_platform_translate_event(
     case SDL_KEYDOWN:
         event->type = FRACTUS_PLATFORM_EVENT_KEY_DOWN;
         event->data.key.keycode = (uint32_t)sdl_event->key.keysym.sym;
+        event->data.key.repeat = sdl_event->key.repeat != 0;
         return 1;
     case SDL_KEYUP:
         event->type = FRACTUS_PLATFORM_EVENT_KEY_UP;
         event->data.key.keycode = (uint32_t)sdl_event->key.keysym.sym;
+        event->data.key.repeat = 0;
         return 1;
     case SDL_TEXTINPUT:
         event->type = FRACTUS_PLATFORM_EVENT_TEXT_INPUT;

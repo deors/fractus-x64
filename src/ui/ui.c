@@ -31,6 +31,7 @@ fractus_status fractus_ui_init(fractus_ui_context *ui, fractus_size_u32 logical_
     ui->release_pending = 0;
     ui->wheel_delta = 0;
     ui->key_press_pending = 0;
+    ui->key_press_repeat = 0;
     ui->key_release_pending = 0;
     ui->text_input_pending = 0;
     ui->initialized = 1;
@@ -54,6 +55,7 @@ void fractus_ui_shutdown(fractus_ui_context *ui)
     ui->release_pending = 0;
     ui->wheel_delta = 0;
     ui->key_press_pending = 0;
+    ui->key_press_repeat = 0;
     ui->key_release_pending = 0;
     ui->text_input_pending = 0;
     ui->active_menu_index = -1;
@@ -71,6 +73,7 @@ void fractus_ui_begin_frame(fractus_ui_context *ui)
     ui->release_pending = 0;
     ui->wheel_delta = 0;
     ui->key_press_pending = 0;
+    ui->key_press_repeat = 0;
     ui->key_release_pending = 0;
     ui->key_pressed = 0u;
     ui->key_released = 0u;
@@ -136,6 +139,7 @@ fractus_status fractus_ui_handle_platform_event(
     case FRACTUS_PLATFORM_EVENT_KEY_DOWN:
         ui->key_pressed = event->data.key.keycode;
         ui->key_press_pending = 1;
+        ui->key_press_repeat = event->data.key.repeat;
         break;
     case FRACTUS_PLATFORM_EVENT_KEY_UP:
         ui->key_released = event->data.key.keycode;
