@@ -17,6 +17,7 @@ fractus_status fractus_app_apply_legacy_config(
         framebuffer->palette.entries[i + FRACTUS_PALETTE_OFFSET] = config->palette[i];
     }
 
+    framebuffer->palette_dirty = 1;
     return FRACTUS_STATUS_OK;
 }
 

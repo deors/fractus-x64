@@ -307,7 +307,7 @@ fractus_status fractus_app_load_graphic_into_state_ex(
         }
     }
 
-    if (fractus_app_apply_palette(framebuffer, &palette) != FRACTUS_STATUS_OK ||
+    if (fractus_app_apply_legacy_config(framebuffer, config) != FRACTUS_STATUS_OK ||
         fractus_framebuffer_clear(framebuffer, 0u) != FRACTUS_STATUS_OK ||
         fractus_graphics_blit(framebuffer, (fractus_point_i32){0, 0}, &image) != FRACTUS_STATUS_OK) {
         fractus_indexed_image_shutdown(&image);
@@ -315,6 +315,8 @@ fractus_status fractus_app_load_graphic_into_state_ex(
     }
 
     fractus_indexed_image_shutdown(&image);
+    (void)palette;
+    (void)cfg_path;
 
     if (out_metadata != NULL && out_has_metadata != NULL) {
         char json_path[512];
@@ -332,7 +334,7 @@ fractus_status fractus_app_load_graphic_into_state_ex(
         }
     }
 
-    return fractus_app_persist_current_palette(cfg_path, framebuffer, config);
+    return FRACTUS_STATUS_OK;
 }
 
 fractus_status fractus_app_load_graphic_into_state(

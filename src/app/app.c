@@ -491,6 +491,15 @@ static int fractus_app_key_adjusts_palette_flow(uint32_t key)
         key == (uint32_t)FRACTUS_PLATFORM_KEY_BACKSPACE;
 }
 
+static void fractus_app_restore_active_palette(
+    fractus_framebuffer *drawing,
+    fractus_framebuffer *ui,
+    const fractus_legacy_config *config)
+{
+    (void)fractus_app_apply_legacy_config(drawing, config);
+    (void)fractus_app_apply_legacy_config(ui, config);
+}
+
 static void fractus_app_clear_palette_flow(
     int *active,
     int *rate,
@@ -3480,6 +3489,10 @@ int fractus_app_run(void)
                 graphic_metadata_panel_visible = 0;
                 drawing_footer_visible = 0;
                 drawing_hud_visible = 0;
+                fractus_app_restore_active_palette(
+                    &core.drawing_framebuffer,
+                    &core.ui_framebuffer,
+                    &legacy_config);
             }
 
             if (fractus_app_view_is_generated_drawing(previous_view) &&
@@ -3493,7 +3506,10 @@ int fractus_app_run(void)
                 graphic_metadata_panel_visible = 0;
                 drawing_footer_visible = 0;
                 drawing_hud_visible = 0;
-                (void)fractus_app_sync_framebuffer_palette(&core.drawing_framebuffer, &core.ui_framebuffer);
+                fractus_app_restore_active_palette(
+                    &core.drawing_framebuffer,
+                    &core.ui_framebuffer,
+                    &legacy_config);
             }
 
             if (!fractus_app_view_is_generated_drawing(previous_view) &&
